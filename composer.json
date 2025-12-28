@@ -1,0 +1,19 @@
+{
+    "name": "fluent-mailbox/plugin",
+    "description": "Fluent Mailbox Plugin",
+    "type": "wordpress-plugin",
+    "require": {
+        "php": ">=7.4",
+        "aws/aws-sdk-php": "^3.200"
+    },
+    "autoload": {
+        "psr-4": {
+            "FluentMailbox\\": "app/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
+    }
+}
