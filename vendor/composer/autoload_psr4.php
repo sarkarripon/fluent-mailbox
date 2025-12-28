@@ -6,15 +6,24 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
+    'ZBateson\\StreamDecorators\\' => array($vendorDir . '/zbateson/stream-decorators/src'),
+    'ZBateson\\MbWrapper\\' => array($vendorDir . '/zbateson/mb-wrapper/src'),
+    'ZBateson\\MailMimeParser\\' => array($vendorDir . '/zbateson/mail-mime-parser/src'),
     'Symfony\\Polyfill\\Mbstring\\' => array($vendorDir . '/symfony/polyfill-mbstring'),
+    'Symfony\\Polyfill\\Iconv\\' => array($vendorDir . '/symfony/polyfill-iconv'),
     'Symfony\\Polyfill\\Ctype\\' => array($vendorDir . '/symfony/polyfill-ctype'),
     'Symfony\\Component\\Filesystem\\' => array($vendorDir . '/symfony/filesystem'),
+    'Psr\\Log\\' => array($vendorDir . '/psr/log/src'),
     'Psr\\Http\\Message\\' => array($vendorDir . '/psr/http-factory/src', $vendorDir . '/psr/http-message/src'),
     'Psr\\Http\\Client\\' => array($vendorDir . '/psr/http-client/src'),
+    'Psr\\Container\\' => array($vendorDir . '/psr/container/src'),
+    'Laravel\\SerializableClosure\\' => array($vendorDir . '/laravel/serializable-closure/src'),
     'JmesPath\\' => array($vendorDir . '/mtdowling/jmespath.php/src'),
+    'Invoker\\' => array($vendorDir . '/php-di/invoker/src'),
     'GuzzleHttp\\Psr7\\' => array($vendorDir . '/guzzlehttp/psr7/src'),
     'GuzzleHttp\\Promise\\' => array($vendorDir . '/guzzlehttp/promises/src'),
     'GuzzleHttp\\' => array($vendorDir . '/guzzlehttp/guzzle/src'),
     'FluentMailbox\\' => array($baseDir . '/app'),
+    'DI\\' => array($vendorDir . '/php-di/php-di/src'),
     'Aws\\' => array($vendorDir . '/aws/aws-sdk-php/src'),
 );

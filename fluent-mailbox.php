@@ -87,7 +87,8 @@ final class FluentMailbox
         wp_localize_script('fluent-mailbox-app', 'FluentMailbox', [
             'root' => esc_url_raw(rest_url('fluent-mailbox/v1')),
             'nonce' => wp_create_nonce('wp_rest'),
-            'assets' => FLUENT_MAILBOX_URL . 'assets/'
+            'assets' => FLUENT_MAILBOX_URL . 'assets/',
+            'is_configured' => (get_option('fluent_mailbox_aws_key') && get_option('fluent_mailbox_from_email'))
         ]);
 
         add_filter('script_loader_tag', [$this, 'addModuleType'], 10, 3);

@@ -161,7 +161,9 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
 import api from '../utils/api';
+import { useAppStore } from '../stores/useAppStore';
 
+const store = useAppStore();
 const step = ref('credentials'); // credentials, identity, dashboard
 const loading = ref(false);
 const error = ref('');
@@ -236,6 +238,7 @@ const saveIdentity = async () => {
         await api.saveConnection(payload);
         // Update local form
         form.from_email = payload.from_email;
+        store.setConfigured(true);
         step.value = 'dashboard';
     } catch (e) {
         error.value = 'Failed to save configuration.';
@@ -266,6 +269,7 @@ const disconnect = async () => {
         form.key = '';
         form.secret = '';
         form.from_email = '';
+        store.setConfigured(false);
         step.value = 'credentials';
     } catch(e) {
         alert('Failed to disconnect');
