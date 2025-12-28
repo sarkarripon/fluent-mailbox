@@ -14,6 +14,21 @@ export default {
     getEmails(page = 1, status = 'all') {
         return api.get('/emails', { params: { page, status } });
     },
+    saveConnection(data) {
+        return api.post('/settings/save-connection', data);
+    },
+    fetchEmails() {
+        return api.post('/emails/fetch');
+    },
+    verifyCredentials(data) {
+        return api.post('/settings/verify', data);
+    },
+    setupInbound() {
+        return api.post('/settings/setup-inbound');
+    },
+    disconnect() {
+        return api.post('/settings/disconnect');
+    },
     sendEmail(data) {
         return api.post('/emails', data);
     },

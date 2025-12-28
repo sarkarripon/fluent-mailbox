@@ -74,4 +74,11 @@ class Email
         $data['updated_at'] = current_time('mysql');
         return $wpdb->update(self::getTable(), $data, ['id' => $id]);
     }
+
+    public static function deleteTrash()
+    {
+        global $wpdb;
+        $table = self::getTable();
+        return $wpdb->query("DELETE FROM $table WHERE status = 'trash'");
+    }
 }

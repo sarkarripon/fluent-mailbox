@@ -16,7 +16,20 @@ class SesService
         $region = get_option('fluent_mailbox_aws_region', 'us-east-1');
         $key = get_option('fluent_mailbox_aws_key', '');
         $secret = get_option('fluent_mailbox_aws_secret', '');
-        $this->senderEmail = get_option('fluent_mailbox_from_email', get_bloginfo('admin_email'));
+        $sender = get_option('fluent_mailbox_from_email', get_bloginfo('admin_email'));
+        
+        // If sender is just a domain (verified domain identity), assume a default user
+        if (strpos($sender, '@') === false) {
+            $sender = 'contact@' . $sender;
+        }
+
+        // Add friendly name if set
+        $name = get_option('fluent_mailbox_from_name', '');
+        if ($name) {
+            $sender = "$name <$sender>";
+        }
+        
+        $this->senderEmail = $sender;
 
         if ($key && $secret) {
             $this->client = new SesClient([

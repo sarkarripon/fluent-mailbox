@@ -28,6 +28,22 @@ class Router
             ]
         ]);
 
+        register_rest_route($namespace, '/emails/fetch', [
+            [
+                'methods' => \WP_REST_Server::CREATABLE,
+                'callback' => [new MailController(), 'fetchEmails'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
+        register_rest_route($namespace, '/emails/trash', [
+            [
+                'methods' => \WP_REST_Server::DELETABLE,
+                'callback' => [new MailController(), 'emptyTrash'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
         register_rest_route($namespace, '/emails/(?P<id>\d+)', [
             [
                 'methods' => \WP_REST_Server::READABLE,
@@ -49,15 +65,42 @@ class Router
             ]
         ]);
 
+        register_rest_route($namespace, '/settings/verify', [
+            [
+                'methods' => \WP_REST_Server::CREATABLE,
+                'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'verifyCredentials'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
+        register_rest_route($namespace, '/settings/save-connection', [
+            [
+                'methods' => \WP_REST_Server::CREATABLE,
+                'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'saveConnection'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
+        register_rest_route($namespace, '/settings/setup-inbound', [
+            [
+                'methods' => \WP_REST_Server::CREATABLE,
+                'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'setupInbound'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+        
         register_rest_route($namespace, '/settings', [
             [
                 'methods' => \WP_REST_Server::READABLE,
                 'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'getSettings'],
                 'permission_callback' => [$this, 'checkPermission']
-            ],
+            ]
+        ]);
+
+        register_rest_route($namespace, '/settings/disconnect', [
             [
                 'methods' => \WP_REST_Server::CREATABLE,
-                'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'saveSettings'],
+                'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'disconnect'],
                 'permission_callback' => [$this, 'checkPermission']
             ]
         ]);

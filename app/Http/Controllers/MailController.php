@@ -83,4 +83,30 @@ class MailController
 
         return rest_ensure_response(['message' => 'Email moved to trash']);
     }
+
+    public function fetchEmails($request)
+    {
+        $service = new \FluentMailbox\Services\InboundService();
+        $count = $service->fetchNewEmails();
+
+        if (is_wp_error($count)) {
+            return $count;
+        }
+
+        return rest_ensure_response([
+            'success' => true,
+            'imported_count' => $count,
+            'message' => $count > 0 ? "Imported $count new emails." : "No new emails found in S3."
+        ]);
+    }
+
+    public function emptyTrash($request)
+    {
+        $deleted = Email::deleteTrash();
+        
+        return rest_ensure_response([
+            'message' => 'All emails in trash deleted successfully',
+            'deleted_count' => $deleted
+        ]);
+    }
 }
