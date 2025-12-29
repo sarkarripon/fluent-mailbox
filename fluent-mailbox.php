@@ -8,6 +8,7 @@
  */
 
 defined('ABSPATH') || exit;
+defined('WP_ENV') || define('WP_ENV', 'development');
 
 define('FLUENT_MAILBOX_VERSION', '1.0.0');
 define('FLUENT_MAILBOX_PATH', plugin_dir_path(__FILE__));
@@ -70,17 +71,17 @@ final class FluentMailbox
 
         $scriptLocation = FLUENT_MAILBOX_URL . 'assets/js/main.js';
         $styleLocation = FLUENT_MAILBOX_URL . 'assets/css/style.css';
-        
+
         // Development mode check
-        if (defined('WP_ENV') && WP_ENV === 'development' && file_exists(FLUENT_MAILBOX_PATH . 'hot')) {
-             $scriptLocation = 'http://localhost:5173/resources/js/main.js';
+        if (defined('WP_ENV') && WP_ENV === 'development') {
+             $scriptLocation = 'http://localhost:4002/resources/js/main.js';
              // Vite handles CSS injection in dev
-             wp_enqueue_script('fluent-mailbox-vite-client', 'http://localhost:5173/@vite/client', [], null, false);
+             wp_enqueue_script('fluent-mailbox-vite-client', 'http://localhost:4002/@vite/client', [], null, false);
         }
 
         wp_enqueue_script('fluent-mailbox-app', $scriptLocation, [], FLUENT_MAILBOX_VERSION, true);
         
-        if (!defined('WP_ENV') || WP_ENV !== 'development' || !file_exists(FLUENT_MAILBOX_PATH . 'hot')) {
+        if (!defined('WP_ENV') || WP_ENV !== 'development') {
              wp_enqueue_style('fluent-mailbox-style', $styleLocation, [], FLUENT_MAILBOX_VERSION);
         }
 

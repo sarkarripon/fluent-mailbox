@@ -1,2 +1,5 @@
 node_modules
 vendor
+build/fluent-mailbox.zip
+build/fluent-mailbox.zip
+/node_modules
