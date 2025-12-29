@@ -9,14 +9,20 @@ class WebhookController
     public function handle($request)
     {
         $body = $request->get_body();
+        error_log('FluentMailbox Webhook Body: ' . $body);
+        
         $payload = json_decode($body, true);
 
-        // SES sends a subscription confirmation first
-        // SES sends a subscription confirmation first
+        if (!$payload) {
+             error_log('FluentMailbox Webhook Error: Invalid JSON payload');
+             return rest_ensure_response(['message' => 'Invalid JSON'], 400);
+        }
+
+        // SNS sends a subscription confirmation first
         if (isset($payload['Type']) && $payload['Type'] === 'SubscriptionConfirmation') {
             // Auto-confirm the subscription
             $subscribeUrl = $payload['SubscribeURL'];
-            error_log('SES Subscription URL: ' . $subscribeUrl);
+            error_log('FluentMailbox SES Subscription URL: ' . $subscribeUrl);
             
             wp_remote_get($subscribeUrl);
             
@@ -24,6 +30,7 @@ class WebhookController
         }
 
         if (isset($payload['Type']) && $payload['Type'] === 'Notification') {
+            error_log('FluentMailbox SNS Notification Received');
             $message = json_decode($payload['Message'], true);
 
             // Check if it's a receipt notification
@@ -36,16 +43,21 @@ class WebhookController
                     $bucket = $receipt['action']['bucketName'];
                     $key = $receipt['action']['objectKey'];
 
+                    error_log("FluentMailbox Processing from S3. Bucket: $bucket, Key: $key");
+
                     $service = new \FluentMailbox\Services\InboundService();
                     $result = $service->processFromS3($bucket, $key);
 
                     if (is_wp_error($result)) {
+                        error_log('FluentMailbox Error processing inbound: ' . $result->get_error_message());
                         return rest_ensure_response(['message' => 'Error processing inbound: ' . $result->get_error_message()], 500);
                     }
                     
+                    error_log('FluentMailbox Email processed successfully');
                     return rest_ensure_response(['message' => 'Email processed successfully']);
                 }
                 
+                error_log('FluentMailbox Webhook: Unsupported action type or missing S3 info');
                 // Fallback (no S3 info?)
                 return rest_ensure_response(['message' => 'Unsupported action type'], 200);
             }
@@ -54,6 +66,7 @@ class WebhookController
         // Allow direct posting for simple testing/integration (e.g. from a custom form or other service)
         $params = $request->get_params();
         if (!empty($params['subject']) && !empty($params['sender'])) {
+             error_log('FluentMailbox Webhook: Direct Post Received');
              Email::create([
                 'message_id' => uniqid('ext_'),
                 'subject' => $params['subject'],

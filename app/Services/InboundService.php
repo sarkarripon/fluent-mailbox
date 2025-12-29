@@ -38,6 +38,8 @@ class InboundService
         try {
             $s3 = new S3Client($this->s3Config);
             
+            error_log("FluentMailbox Inbound: Fetching from S3. Bucket: $bucket, Key: $key");
+
             // 1. Get object from S3
             $result = $s3->getObject([
                 'Bucket' => $bucket,
