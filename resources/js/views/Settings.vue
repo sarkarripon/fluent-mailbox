@@ -4,22 +4,22 @@
           <h1 class="text-xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Settings</h1>
       </header>
 
-      <div class="flex-1 overflow-auto p-6">
-          <div class="max-w-2xl mx-auto">
+      <div class="flex-1 overflow-auto p-4">
+          <div class="max-w-xl mx-auto">
 
               <!-- Step 1: Credentials configuration -->
-              <div v-if="step === 'credentials'" class="bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-gray-200/50 transition-all duration-300">
-                  <div class="flex items-center mb-4">
-                      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mr-3">
-                          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path></svg>
+              <div v-if="step === 'credentials'" class="bg-white/70 backdrop-blur-sm p-5 rounded-2xl border border-gray-200/50 transition-all duration-300">
+                  <div class="flex items-center mb-3">
+                      <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mr-3">
+                          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path></svg>
                       </div>
                       <div>
                           <h2 class="text-lg font-bold text-gray-800">Connect to AWS SES</h2>
-                          <p class="text-sm text-gray-500">Enter your AWS IAM credentials. Ensure the user has full access to SES, SNS, and S3.</p>
+                          <p class="text-xs text-gray-500 mt-0.5">Enter your AWS IAM credentials. Ensure the user has full access to SES, SNS, and S3.</p>
                       </div>
                   </div>
 
-                  <form @submit.prevent="verifyCredentials" class="space-y-4">
+                  <form @submit.prevent="verifyCredentials" class="space-y-3">
                        <div>
                           <label class="block text-sm font-medium text-gray-700 mb-1.5">AWS Region</label>
                           <select v-model="form.region" class="w-full px-3 py-2.5 bg-white border border-gray-200/70 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all hover:border-blue-300">
@@ -54,25 +54,19 @@
               </div>
 
               <!-- Step 2: Select Identity -->
-              <div v-else-if="step === 'identity'" class="bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-gray-200/50 transition-all duration-300">
-                  <div class="flex items-center mb-4 bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-xl border border-green-200/50">
-                      <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center mr-3">
-                          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+              <div v-else-if="step === 'identity'" class="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-gray-200/50 transition-all duration-300">
+                  <div class="flex items-center mb-3 bg-gradient-to-r from-green-50 to-emerald-50 p-2 rounded-lg border border-green-200/50">
+                      <div class="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center mr-2">
+                          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                       </div>
-                      <span class="font-semibold text-green-700 text-sm">Connection Successful!</span>
+                      <span class="font-semibold text-green-700 text-xs">Connected!</span>
                   </div>
 
-                  <div class="flex items-center mb-4">
-                      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center mr-3">
-                          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                      </div>
-                      <div>
-                          <h2 class="text-lg font-bold text-gray-800">Select Sender Identity</h2>
-                          <p class="text-sm text-gray-500">Choose a verified email address or domain to send emails from.</p>
-                      </div>
+                  <div class="mb-4">
+                      <h2 class="text-base font-bold text-gray-800">Select Sender Identity</h2>
                   </div>
 
-                   <form @submit.prevent="saveIdentity" class="space-y-4">
+                   <form @submit.prevent="saveIdentity" class="space-y-3">
                        <div>
                           <label class="block text-sm font-medium text-gray-700 mb-1.5">Verify Identity</label>
                           <select v-model="form.from_email" required class="w-full px-3 py-2.5 bg-white border border-gray-200/70 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all hover:border-blue-300">
@@ -138,19 +132,19 @@
                    </div>
 
                    <!-- Configuration Summary -->
-                   <div class="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-4 flex justify-between items-center">
+                   <div class="bg-white/70 backdrop-blur-sm rounded-xl border border-gray-200/50 p-3 flex justify-between items-center">
                        <div>
-                           <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Connected Region</div>
-                           <div class="font-semibold text-gray-800 text-base">{{ form.region }}</div>
+                           <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">Connected Region</div>
+                           <div class="font-semibold text-gray-800 text-sm">{{ form.region }}</div>
                        </div>
-                       <button @click="disconnect" class="text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-300">
-                           Disconnect & Reset
+                       <button @click="disconnect" class="text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1.5 rounded-lg text-xs font-medium transition-all duration-300">
+                           Disconnect
                        </button>
                    </div>
 
                    <!-- Incoming Config -->
                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 overflow-hidden">
-                        <div class="p-4 border-b border-gray-100/50 flex justify-between items-center">
+                        <div class="p-3 border-b border-gray-100/50 flex justify-between items-center">
                              <div class="flex items-center">
                                  <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mr-2">
                                      <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
