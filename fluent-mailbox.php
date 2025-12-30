@@ -131,6 +131,10 @@ final class FluentMailbox
             return;
         }
 
+        // Enqueue WordPress editor scripts and styles
+        wp_enqueue_editor();
+        wp_enqueue_media();
+
         $scriptLocation = FLUENT_MAILBOX_URL . 'assets/js/main.js';
         $styleLocation = FLUENT_MAILBOX_URL . 'assets/css/style.css';
 
@@ -141,7 +145,7 @@ final class FluentMailbox
              wp_enqueue_script('fluent-mailbox-vite-client', 'http://localhost:4002/@vite/client', [], null, false);
         }
 
-        wp_enqueue_script('fluent-mailbox-app', $scriptLocation, [], FLUENT_MAILBOX_VERSION, true);
+        wp_enqueue_script('fluent-mailbox-app', $scriptLocation, ['jquery'], FLUENT_MAILBOX_VERSION, true);
         
         if (!defined('WP_ENV') || WP_ENV !== 'development') {
              wp_enqueue_style('fluent-mailbox-style', $styleLocation, [], FLUENT_MAILBOX_VERSION);

@@ -27,7 +27,13 @@
 
                    <div>
                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Message</label>
-                       <textarea v-model="form.body" required rows="6" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all font-sans resize-none text-sm" placeholder="Write your message..."></textarea>
+                       <WpEditor
+                           v-model="form.body"
+                           :height="250"
+                           @update="(val) => {
+                               form.body = val;
+                           }"
+                       />
                    </div>
 
                    <div v-if="error" class="bg-red-50 text-red-600 p-3 rounded-lg text-sm border border-red-200 flex items-center">
@@ -55,6 +61,7 @@
 <script setup>
 import { ref, reactive } from 'vue';
 import api from '../utils/api';
+import WpEditor from './WpEditor.vue';
 
 const props = defineProps({
   isOpen: Boolean
@@ -73,9 +80,22 @@ const form = reactive({
 });
 
 const send = async () => {
-  loading.value = true;
+  // Validate form
+  if (!form.to || !form.subject || !form.body) {
+    error.value = 'Please fill in all fields';
+    return;
+  }
+  
+  // Check if body has content (strip HTML tags)
+  const bodyText = form.body.replace(/<[^>]*>?/gm, '').trim();
+  if (!bodyText) {
+    error.value = 'Message cannot be empty';
+    return;
+  }
+
   error.value = '';
   success.value = false;
+  loading.value = true;
 
   try {
       await api.sendEmail(form);

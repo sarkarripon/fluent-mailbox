@@ -343,3 +343,265 @@
     display: none !important;
   }
 }
+
+/* WordPress Editor Styles (FluentCart Style) */
+.custom-wp-editor-wrapper {
+  width: 100%;
+}
+
+.custom-wp-editor-wrapper * {
+  box-sizing: border-box;
+}
+
+.custom-wp-editor-wrapper .add_media {
+  margin: 0;
+}
+
+.custom-wp-editor-wrapper .wp-editor-tools .wp-media-buttons {
+  position: relative;
+}
+
+.custom-wp-editor-wrapper .wp-editor-tools .wp-media-buttons .add_media {
+  display: flex;
+  align-items: center;
+  text-transform: capitalize;
+  font-weight: 500;
+  padding: 0.5rem 0.75rem;
+  gap: 0.25rem;
+  line-height: 1;
+  background-color: #f9fafb;
+  font-size: 0.875rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  transition: all 0.2s;
+}
+
+.custom-wp-editor-wrapper .wp-editor-tools .wp-media-buttons .add_media:hover {
+  background-color: #f3f4f6;
+}
+
+.custom-wp-editor-wrapper .wp-editor-tools .wp-editor-container {
+  box-shadow: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+}
+
+.custom-wp-editor-wrapper .wp-media-buttons,
+.custom-wp-editor-wrapper .wp-editor-tabs {
+  margin-bottom: 0.625rem;
+}
+
+.custom-wp-editor-wrapper .wp-editor-tabs {
+  background-color: #f9fafb;
+  padding: 0.25rem;
+  border-radius: 0.375rem;
+}
+
+.custom-wp-editor-wrapper .wp-editor-tabs .wp-switch-editor {
+  background: transparent;
+  line-height: 1.07;
+  border: 0;
+  height: auto;
+  margin: 0;
+  top: auto;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.custom-wp-editor-wrapper .html-active .switch-html,
+.custom-wp-editor-wrapper .tmce-active .switch-tmce {
+  background-color: white;
+  color: #111827;
+  box-shadow: 0px 6px 10px 0px rgba(14, 18, 27, 0.06), 0px 2px 4px 0px rgba(14, 18, 27, 0.03);
+}
+
+.custom-wp-editor-wrapper .mce-widget.mce-btn.mce-menubtn {
+  border-radius: 0.25rem;
+}
+
+.custom-wp-editor-wrapper .mce-container.mce-flow-layout-item.mce-first.mce-last.mce-btn-group {
+  width: 100%;
+}
+
+.custom-wp-editor-wrapper .mce-container.mce-flow-layout-item.mce-first.mce-last.mce-btn-group > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  min-width: 100%;
+  padding: 0.25rem;
+  gap: 0.125rem;
+  flex-wrap: wrap;
+}
+
+.custom-wp-editor-wrapper .mce-container.mce-flow-layout-item.mce-first.mce-last.mce-btn-group > div:first-child > div {
+  margin: 0;
+}
+
+.custom-wp-editor-wrapper .mce-toolbar .mce-listbox button,
+.custom-wp-editor-wrapper .mce-btn button {
+  font-size: 0.75rem;
+  border-radius: 0.25rem;
+  background: transparent !important;
+}
+
+.custom-wp-editor-wrapper .mce-container-body.mce-stack-layout {
+  background-color: #f9fafb;
+}
+
+.custom-wp-editor-wrapper .mce-statusbar.mce-last {
+  display: none;
+}
+
+.custom-wp-editor-wrapper textarea.wp_vue_editor {
+  width: 100%;
+  border: none !important;
+  resize: none !important;
+}
+
+.custom-wp-editor-wrapper textarea.wp_vue_editor:focus {
+  box-shadow: none;
+}
+
+.custom-wp-editor-wrapper .quicktags-toolbar {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+}
+
+.custom-wp-editor-wrapper .quicktags-toolbar input {
+  border-color: transparent;
+  transition-duration: 300ms;
+  color: #6b7280;
+  transform: none;
+}
+
+.custom-wp-editor-wrapper .quicktags-toolbar input:hover {
+  border-color: #374151;
+  color: #374151;
+}
+
+.custom-wp-editor-wrapper .mce-btn.mce-active button {
+  color: #374151;
+}
+
+.custom-wp-editor-wrapper .mce-top-part::before {
+  box-shadow: none;
+}
+
+.custom-wp-editor-wrapper .mce-toolbar-grp {
+  border-color: #e5e7eb;
+}
+
+.custom-wp-editor-wrapper div.mce-toolbar-grp {
+  background-color: #f9fafb;
+}
+
+.custom-wp-editor-wrapper .mce-panel {
+  background-color: #f9fafb;
+}
+
+.custom-wp-editor-wrapper iframe {
+  height: 100% !important;
+}
+
+.custom-wp-editor-wrapper .wp-editor-container .mce-tinymce.mce-container.mce-panel {
+  height: 100% !important;
+}
+
+.custom-wp-editor-wrapper .mce-toolbar .mce-btn-group .mce-btn:focus,
+.custom-wp-editor-wrapper .mce-toolbar .mce-btn-group .mce-btn:hover,
+.custom-wp-editor-wrapper .qt-dfw:focus,
+.custom-wp-editor-wrapper .qt-dfw:hover {
+  background-color: #f3f4f6;
+}
+
+.custom-wp-editor-wrapper .wp-editor-container .mce-toolbar .mce-btn-group .mce-btn {
+  border-radius: 0.25rem;
+  background: transparent;
+}
+
+.custom-wp-editor-wrapper .wp-editor-container .mce-toolbar .mce-btn-group .mce-btn.mce-active {
+  border-color: #e5e7eb;
+  border-radius: 0.25rem;
+  background: transparent;
+}
+
+.custom-wp-editor-wrapper .wp-editor-container .mce-toolbar .mce-btn-group .mce-btn.mce-active i {
+  color: #111827;
+}
+
+.custom-wp-editor-wrapper .wp-editor-container .mce-toolbar .mce-btn-group .mce-btn:focus,
+.custom-wp-editor-wrapper .wp-editor-container .mce-toolbar .mce-btn-group .mce-btn:hover {
+  border-color: #e5e7eb;
+  border-radius: 0.25rem;
+  box-shadow: none;
+}
+
+.custom-wp-editor-wrapper .wp-editor-container .mce-toolbar .mce-btn-group .mce-btn:focus i,
+.custom-wp-editor-wrapper .wp-editor-container .mce-toolbar .mce-btn-group .mce-btn:hover i {
+  color: #111827;
+}
+
+.custom-wp-editor-wrapper .wp-editor-container .mce-toolbar .mce-ico {
+  font-size: 0.875rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #6b7280;
+}
+
+/* Fluent Cart Dialog Styles */
+.mce-window.fluent-cart {
+  border-radius: 0.5rem;
+  box-shadow: none;
+}
+
+.mce-window.fluent-cart .mce-window-head {
+  border-color: #e5e7eb;
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+}
+
+.mce-window.fluent-cart .mce-window-head .mce-title {
+  line-height: 44px;
+  font-size: 1rem;
+  color: #111827;
+}
+
+.mce-window.fluent-cart input {
+  border-color: #e5e7eb;
+  padding: 0 0.625rem;
+  width: 294px !important;
+}
+
+.mce-window.fluent-cart .mce-btn {
+  box-shadow: none;
+}
+
+.mce-window.fluent-cart .mce-btn.mce-menubtn {
+  box-shadow: none;
+  background-color: white;
+  border-radius: 0;
+  border-color: #e5e7eb !important;
+}
+
+.mce-window.fluent-cart .mce-btn.mce-menubtn.mce-active button {
+  color: #111827;
+}
+
+.mce-window.fluent-cart .mce-btn.mce-primary {
+  background-color: #374151;
+  border-color: #374151 !important;
+}
+
+.mce-window.fluent-cart .mce-foot {
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+  border-color: #e5e7eb;
+}
+
+.mce-window.fluent-cart .mce-foot .mce-btn {
+  border-color: #e5e7eb;
+}
