@@ -41,7 +41,49 @@ export default {
     getEmail(id) {
         return api.get(`/emails/${id}`);
     },
-    deleteEmail(id) {
-        return api.delete(`/emails/${id}`);
+    deleteEmail(id, params = {}) {
+        return api.delete(`/emails/${id}`, { params });
+    },
+    updateEmail(id, data) {
+        return api.put(`/emails/${id}`, data);
+    },
+    emptyTrash() {
+        return api.delete('/emails/trash');
+    },
+    uploadAttachment(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        return api.post('/attachments/upload', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+    },
+    getDrafts(page = 1) {
+        return api.get('/drafts', { params: { page } });
+    },
+    saveDraft(data) {
+        return api.post('/drafts', data);
+    },
+    deleteDraft(id) {
+        return api.delete(`/drafts/${id}`);
+    },
+    getSignatures() {
+        return api.get('/signatures');
+    },
+    saveSignature(data) {
+        return api.post('/signatures', data);
+    },
+    deleteSignature(id) {
+        return api.delete(`/signatures/${id}`);
+    },
+    getTemplates() {
+        return api.get('/templates');
+    },
+    saveTemplate(data) {
+        return api.post('/templates', data);
+    },
+    deleteTemplate(id) {
+        return api.delete(`/templates/${id}`);
     }
 };

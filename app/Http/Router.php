@@ -51,6 +51,11 @@ class Router
                 'permission_callback' => [$this, 'checkPermission']
             ],
             [
+                'methods' => \WP_REST_Server::EDITABLE,
+                'callback' => [new MailController(), 'update'],
+                'permission_callback' => [$this, 'checkPermission']
+            ],
+            [
                 'methods' => \WP_REST_Server::DELETABLE,
                 'callback' => [new MailController(), 'delete'],
                 'permission_callback' => [$this, 'checkPermission']
@@ -101,6 +106,93 @@ class Router
             [
                 'methods' => \WP_REST_Server::CREATABLE,
                 'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'disconnect'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
+        register_rest_route($namespace, '/attachments/upload', [
+            [
+                'methods' => \WP_REST_Server::CREATABLE,
+                'callback' => [new \FluentMailbox\Http\Controllers\AttachmentController(), 'upload'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
+        register_rest_route($namespace, '/drafts', [
+            [
+                'methods' => \WP_REST_Server::READABLE,
+                'callback' => [new MailController(), 'getDrafts'],
+                'permission_callback' => [$this, 'checkPermission']
+            ],
+            [
+                'methods' => \WP_REST_Server::CREATABLE,
+                'callback' => [new MailController(), 'saveDraft'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
+        register_rest_route($namespace, '/drafts/(?P<id>\d+)', [
+            [
+                'methods' => \WP_REST_Server::DELETABLE,
+                'callback' => [new MailController(), 'deleteDraft'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
+        register_rest_route($namespace, '/signatures', [
+            [
+                'methods' => \WP_REST_Server::READABLE,
+                'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'getSignatures'],
+                'permission_callback' => [$this, 'checkPermission']
+            ],
+            [
+                'methods' => \WP_REST_Server::CREATABLE,
+                'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'saveSignature'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
+        register_rest_route($namespace, '/signatures/(?P<id>\d+)', [
+            [
+                'methods' => \WP_REST_Server::DELETABLE,
+                'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'deleteSignature'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
+        register_rest_route($namespace, '/templates', [
+            [
+                'methods' => \WP_REST_Server::READABLE,
+                'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'getTemplates'],
+                'permission_callback' => [$this, 'checkPermission']
+            ],
+            [
+                'methods' => \WP_REST_Server::CREATABLE,
+                'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'saveTemplate'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
+        register_rest_route($namespace, '/templates/(?P<id>\d+)', [
+            [
+                'methods' => \WP_REST_Server::DELETABLE,
+                'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'deleteTemplate'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
+        register_rest_route($namespace, '/attachments/(?P<id>\d+)/download', [
+            [
+                'methods' => \WP_REST_Server::READABLE,
+                'callback' => [new \FluentMailbox\Http\Controllers\AttachmentController(), 'download'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
+        register_rest_route($namespace, '/attachments/(?P<id>\d+)', [
+            [
+                'methods' => \WP_REST_Server::READABLE,
+                'callback' => [new \FluentMailbox\Http\Controllers\AttachmentController(), 'getAttachmentInfo'],
                 'permission_callback' => [$this, 'checkPermission']
             ]
         ]);

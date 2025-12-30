@@ -3,7 +3,7 @@
         'name' => 'fluent-mailbox/plugin',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => 'b7bd33892b1f962dc97e4eb410b28259d00ceb61',
+        'reference' => '9066333ba2790502fa7395a63e1ac6c202777274',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -31,7 +31,7 @@
         'fluent-mailbox/plugin' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => 'b7bd33892b1f962dc97e4eb410b28259d00ceb61',
+            'reference' => '9066333ba2790502fa7395a63e1ac6c202777274',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -23,10 +23,15 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173,
+    port: 4005,
     strictPort: true,
     hmr: {
       host: 'localhost',
     },
+    cors: {
+      origin: "*",
+      methods: ["GET"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+  },
   },
 });
