@@ -1,7 +1,7 @@
 <template>
   <div class="flex bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 font-sans text-gray-900" :style="{ height: `calc(100vh - ${adminBarHeight}px)`, marginTop: adminBarHeight + 'px' }">
     <!-- Sidebar -->
-    <aside v-show="!store.isCompact" class="w-48 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out" :style="{ maxHeight: `calc(100vh - ${adminBarHeight + 16}px)` }">
+    <aside class="w-48 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out" :style="{ maxHeight: `calc(100vh - ${adminBarHeight + 32}px)` }">
       <div class="p-4 flex items-center space-x-2">
         <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
             <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
@@ -62,22 +62,19 @@
         </div>
       </nav>
       
-      <!-- Compact Mode Toggle Button -->
+      <!-- WordPress Sidebar Toggle Button -->
       <div class="p-3 border-t border-gray-200">
-          <button @click="toggleCompact" class="w-full flex items-center px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors group">
-              <svg v-if="!store.isCompact" class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V5l12 7-12 7z"></path></svg>
-              <svg v-else class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-              <span class="text-sm font-medium">{{ store.isCompact ? 'Show Sidebar' : 'Compact' }}</span>
-          </button>
+          <Tooltip :text="isWordPressSidebarFolded ? 'Expand WordPress Menu' : 'Collapse WordPress Menu'" position="right">
+              <button @click="toggleCompact" class="w-full flex items-center justify-center px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors group">
+                  <svg v-if="!isWordPressSidebarFolded" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path></svg>
+                  <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
+              </button>
+          </Tooltip>
       </div>
     </aside>
 
     <!-- Main Content -->
     <main class="flex-1 flex flex-col overflow-hidden bg-white/70 backdrop-blur-xl m-2 mb-2 rounded-3xl border border-white/50 relative" :style="{ maxHeight: `calc(100vh - ${adminBarHeight + 16}px)` }">
-      <!-- Expand Sidebar Button (shown when compact) -->
-      <button v-if="store.isCompact" @click="toggleCompact" class="absolute top-3 left-3 z-20 p-1.5 bg-white/90 hover:bg-white rounded-md border border-gray-200/50 shadow-sm hover:shadow transition-all flex items-center justify-center backdrop-blur-sm">
-          <svg class="w-4 h-4 text-gray-600 hover:text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-      </button>
       <router-view></router-view>
     </main>
 
@@ -101,6 +98,7 @@ import Tooltip from './components/Tooltip.vue';
 const store = useAppStore();
 const emailCounts = useEmailCounts();
 const adminBarHeight = ref(0);
+const isWordPressSidebarFolded = ref(false);
 
 // Enable keyboard shortcuts
 useKeyboardShortcuts();
@@ -131,8 +129,48 @@ const updateAdminBarHeight = () => {
   adminBarHeight.value = getAdminBarHeight();
 };
 
+const checkWordPressSidebarState = () => {
+  const body = document.body;
+  if (body) {
+    isWordPressSidebarFolded.value = body.classList.contains('folded');
+  }
+};
+
+const loadWordPressSidebarState = () => {
+  // WordPress stores the state in localStorage with key 'wp-admin-folded'
+  const savedState = localStorage.getItem('wp-admin-folded');
+  const body = document.body;
+  
+  if (body && savedState !== null) {
+    // WordPress uses '1' for folded, '0' or null for expanded
+    const shouldBeFolded = savedState === '1';
+    
+    if (shouldBeFolded && !body.classList.contains('folded')) {
+      body.classList.add('folded');
+    } else if (!shouldBeFolded && body.classList.contains('folded')) {
+      body.classList.remove('folded');
+    }
+  }
+  
+  checkWordPressSidebarState();
+};
+
 const toggleCompact = () => {
-  store.toggleCompact();
+  // Toggle WordPress admin sidebar
+  const body = document.body;
+  if (body) {
+    if (!body.classList.contains('folded')) {
+      body.classList.add('folded');
+      // Save to localStorage (WordPress uses '1' for folded)
+      localStorage.setItem('wp-admin-folded', '1');
+    } else {
+      body.classList.remove('folded');
+      // Save to localStorage (WordPress uses '0' for expanded)
+      localStorage.setItem('wp-admin-folded', '0');
+    }
+    // Update our state
+    checkWordPressSidebarState();
+  }
 };
 
 let adminBarObserver = null;
@@ -140,6 +178,8 @@ let resizeHandler = null;
 
 onMounted(() => {
   updateAdminBarHeight();
+  // Load WordPress sidebar state from localStorage on mount
+  loadWordPressSidebarState();
   emailCounts.fetchCounts();
   
   // Refresh counts every 30 seconds
@@ -151,6 +191,7 @@ onMounted(() => {
   if (typeof window !== 'undefined' && document.body) {
     adminBarObserver = new MutationObserver(() => {
       updateAdminBarHeight();
+      checkWordPressSidebarState();
     });
 
     // Observe admin bar
@@ -162,7 +203,7 @@ onMounted(() => {
       });
     }
 
-    // Watch body class changes for admin-bar class
+    // Watch body class changes for admin-bar class and folded class
     adminBarObserver.observe(document.body, {
       attributes: true,
       attributeFilter: ['class']
@@ -173,6 +214,13 @@ onMounted(() => {
       updateAdminBarHeight();
     };
     window.addEventListener('resize', resizeHandler);
+    
+    // Also listen for WordPress's own localStorage changes (if user clicks WordPress's toggle button)
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'wp-admin-folded') {
+        loadWordPressSidebarState();
+      }
+    });
   }
 });
 
