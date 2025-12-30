@@ -54,14 +54,114 @@
               </div>
           </div>
           
-          <!-- Search Bar -->
-          <div class="relative">
-              <input 
-                  v-model="searchQuery"
-                  type="text" 
-                  placeholder="Search..." 
-                  class="w-300[px] float-right pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all"
+          <!-- Search and Filters -->
+          <div class="flex items-center gap-3">
+              <!-- Search Bar -->
+              <div class="relative flex-1">
+                  <input 
+                      v-model="searchQuery"
+                      type="text" 
+                      placeholder="Search emails..." 
+                      class="w-[300px] float-right pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all"
+                  >
+              </div>
+              
+              <!-- Filter Toggle Button -->
+              <button 
+                  @click="showFilters = !showFilters"
+                  class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                  :class="hasActiveFilters ? 'border-blue-500 bg-blue-50' : ''"
               >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                  Filters
+                  <span v-if="activeFilterCount > 0" class="bg-blue-600 text-white text-xs px-1.5 py-0.5 rounded-full">{{ activeFilterCount }}</span>
+              </button>
+              
+              <!-- Sort Dropdown -->
+              <div class="relative">
+                  <button 
+                      @click="showSortMenu = !showSortMenu"
+                      class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                  >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path></svg>
+                      Sort
+                  </button>
+                  <div 
+                      v-if="showSortMenu" 
+                      v-click-outside="() => showSortMenu = false"
+                      class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20"
+                  >
+                      <button
+                          v-for="option in sortOptions"
+                          :key="option.value"
+                          @click="setSort(option.value)"
+                          class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center justify-between"
+                          :class="sortBy === option.value ? 'bg-blue-50 text-blue-700' : 'text-gray-700'"
+                      >
+                          <span>{{ option.label }}</span>
+                          <svg v-if="sortBy === option.value" class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                      </button>
+                  </div>
+              </div>
+          </div>
+          
+          <!-- Filter Panel -->
+          <div v-if="showFilters" class="bg-white border border-gray-200 rounded-lg p-4 space-y-4">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <!-- Read Status Filter -->
+                  <div>
+                      <label class="block text-xs font-medium text-gray-700 mb-2">Read Status</label>
+                      <select v-model="filters.readStatus" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none">
+                          <option value="all">All</option>
+                          <option value="unread">Unread</option>
+                          <option value="read">Read</option>
+                      </select>
+                  </div>
+                  
+                  <!-- Date Range Filter -->
+                  <div>
+                      <label class="block text-xs font-medium text-gray-700 mb-2">Date Range</label>
+                      <select v-model="filters.dateRange" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none">
+                          <option value="all">All Time</option>
+                          <option value="today">Today</option>
+                          <option value="week">This Week</option>
+                          <option value="month">This Month</option>
+                          <option value="year">This Year</option>
+                      </select>
+                  </div>
+                  
+                  <!-- Attachments Filter -->
+                  <div>
+                      <label class="block text-xs font-medium text-gray-700 mb-2">Attachments</label>
+                      <select v-model="filters.hasAttachments" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none">
+                          <option value="all">All</option>
+                          <option value="yes">With Attachments</option>
+                          <option value="no">Without Attachments</option>
+                      </select>
+                  </div>
+              </div>
+              
+              <!-- Sender Filter -->
+              <div>
+                  <label class="block text-xs font-medium text-gray-700 mb-2">From</label>
+                  <input 
+                      v-model="filters.sender"
+                      type="text" 
+                      placeholder="Filter by sender email..."
+                      class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none"
+                  >
+              </div>
+              
+              <!-- Clear Filters Button -->
+              <div class="flex justify-end">
+                  <button 
+                      @click="clearFilters"
+                      class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors"
+                      :disabled="!hasActiveFilters"
+                  >
+                      Clear Filters
+                  </button>
+              </div>
           </div>
       </header>
       
@@ -216,6 +316,26 @@ const selectedEmails = ref([]);
 const currentPage = ref(1);
 const totalPages = ref(1);
 const totalEmails = ref(0);
+const showFilters = ref(false);
+const showSortMenu = ref(false);
+const sortBy = ref('date-desc');
+const sortOrder = ref('desc');
+
+const filters = ref({
+    readStatus: 'all',
+    dateRange: 'all',
+    hasAttachments: 'all',
+    sender: ''
+});
+
+const sortOptions = [
+    { label: 'Date (Newest)', value: 'date-desc' },
+    { label: 'Date (Oldest)', value: 'date-asc' },
+    { label: 'Sender (A-Z)', value: 'sender-asc' },
+    { label: 'Sender (Z-A)', value: 'sender-desc' },
+    { label: 'Subject (A-Z)', value: 'subject-asc' },
+    { label: 'Subject (Z-A)', value: 'subject-desc' }
+];
 
 const fetchEmails = async (page = 1) => {
     loading.value = true;
@@ -258,19 +378,136 @@ const unreadCount = computed(() => {
     return emails.value.filter(email => !email.is_read).length;
 });
 
-const filteredEmails = computed(() => {
-    if (!searchQuery.value.trim()) {
-        return emails.value;
-    }
-    const query = searchQuery.value.toLowerCase();
-    return emails.value.filter(email => {
-        return (
-            email.subject?.toLowerCase().includes(query) ||
-            email.sender?.toLowerCase().includes(query) ||
-            email.body?.toLowerCase().includes(query)
-        );
-    });
+const hasActiveFilters = computed(() => {
+    return filters.value.readStatus !== 'all' ||
+           filters.value.dateRange !== 'all' ||
+           filters.value.hasAttachments !== 'all' ||
+           filters.value.sender.trim() !== '';
 });
+
+const activeFilterCount = computed(() => {
+    let count = 0;
+    if (filters.value.readStatus !== 'all') count++;
+    if (filters.value.dateRange !== 'all') count++;
+    if (filters.value.hasAttachments !== 'all') count++;
+    if (filters.value.sender.trim() !== '') count++;
+    return count;
+});
+
+const filteredEmails = computed(() => {
+    let result = [...emails.value];
+    
+    // Apply search query
+    if (searchQuery.value.trim()) {
+        const query = searchQuery.value.toLowerCase();
+        result = result.filter(email => {
+            return (
+                email.subject?.toLowerCase().includes(query) ||
+                email.sender?.toLowerCase().includes(query) ||
+                email.body?.toLowerCase().includes(query)
+            );
+        });
+    }
+    
+    // Apply read status filter
+    if (filters.value.readStatus === 'read') {
+        result = result.filter(email => email.is_read);
+    } else if (filters.value.readStatus === 'unread') {
+        result = result.filter(email => !email.is_read);
+    }
+    
+    // Apply date range filter
+    if (filters.value.dateRange !== 'all') {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        result = result.filter(email => {
+            const emailDate = new Date(email.created_at);
+            switch (filters.value.dateRange) {
+                case 'today':
+                    return emailDate >= today;
+                case 'week':
+                    const weekAgo = new Date(today);
+                    weekAgo.setDate(weekAgo.getDate() - 7);
+                    return emailDate >= weekAgo;
+                case 'month':
+                    const monthAgo = new Date(today);
+                    monthAgo.setMonth(monthAgo.getMonth() - 1);
+                    return emailDate >= monthAgo;
+                case 'year':
+                    const yearAgo = new Date(today);
+                    yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+                    return emailDate >= yearAgo;
+                default:
+                    return true;
+            }
+        });
+    }
+    
+    // Apply attachments filter
+    if (filters.value.hasAttachments === 'yes') {
+        result = result.filter(email => {
+            try {
+                const atts = email.attachments ? JSON.parse(email.attachments) : [];
+                return Array.isArray(atts) && atts.length > 0;
+            } catch (e) {
+                return false;
+            }
+        });
+    } else if (filters.value.hasAttachments === 'no') {
+        result = result.filter(email => {
+            try {
+                const atts = email.attachments ? JSON.parse(email.attachments) : [];
+                return !Array.isArray(atts) || atts.length === 0;
+            } catch (e) {
+                return true;
+            }
+        });
+    }
+    
+    // Apply sender filter
+    if (filters.value.sender.trim()) {
+        const senderQuery = filters.value.sender.toLowerCase().trim();
+        result = result.filter(email => 
+            email.sender?.toLowerCase().includes(senderQuery)
+        );
+    }
+    
+    // Apply sorting
+    result.sort((a, b) => {
+        switch (sortBy.value) {
+            case 'date-desc':
+                return new Date(b.created_at) - new Date(a.created_at);
+            case 'date-asc':
+                return new Date(a.created_at) - new Date(b.created_at);
+            case 'sender-asc':
+                return (a.sender || '').localeCompare(b.sender || '');
+            case 'sender-desc':
+                return (b.sender || '').localeCompare(a.sender || '');
+            case 'subject-asc':
+                return (a.subject || '').localeCompare(b.subject || '');
+            case 'subject-desc':
+                return (b.subject || '').localeCompare(a.subject || '');
+            default:
+                return 0;
+        }
+    });
+    
+    return result;
+});
+
+const setSort = (value) => {
+    sortBy.value = value;
+    showSortMenu.value = false;
+};
+
+const clearFilters = () => {
+    filters.value = {
+        readStatus: 'all',
+        dateRange: 'all',
+        hasAttachments: 'all',
+        sender: ''
+    };
+};
 
 const formatRelativeDate = (dateString) => {
     const date = new Date(dateString);
