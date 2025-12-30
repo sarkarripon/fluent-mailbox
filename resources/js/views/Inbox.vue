@@ -1,9 +1,9 @@
 <template>
   <div class="h-full flex flex-col">
-      <header class="py-4 border-b border-gray-200 flex flex-col gap-3 bg-white/50 backdrop-blur-sm sticky top-0 z-10 transition-all duration-300" :class="store.isCompact ? 'pl-16 pr-8' : 'px-8'">
+      <header class="py-2 border-b border-gray-200 flex flex-col gap-2 bg-white/50 backdrop-blur-sm sticky top-0 z-10 transition-all duration-300" :class="store.isCompact ? 'pl-16 pr-8' : 'px-8'">
           <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-4">
-                   <div v-if="isSelectionMode" class="flex items-center gap-3">
+          <div class="flex items-center space-x-3">
+                   <div v-if="isSelectionMode" class="flex items-center gap-2">
                        <input 
                            type="checkbox"
                            :checked="selectedEmails.length === filteredEmails.length && filteredEmails.length > 0"
@@ -11,79 +11,79 @@
                            @change="toggleSelectAll"
                            class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
                        >
-                       <span class="text-sm text-gray-700 font-medium">
+                       <span class="text-xs text-gray-700 font-medium">
                            {{ selectedEmails.length }} selected
                        </span>
                    </div>
-                   <div v-else class="flex items-center space-x-4">
-                       <h1 class="text-xl font-semibold text-gray-800">Inbox</h1>
-                       <div class="text-sm text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full" v-if="emails.length">
+                   <div v-else class="flex items-center space-x-3">
+                       <h1 class="text-lg font-semibold text-gray-800">Inbox</h1>
+                       <div class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full" v-if="emails.length">
                            {{ unreadCount }} of {{ emails.length }}
                        </div>
                    </div>
               </div>
 
-              <div class="flex items-center space-x-2">
-                  <div v-if="isSelectionMode" class="flex items-center gap-2">
+              <div class="flex items-center space-x-1.5">
+                  <div v-if="isSelectionMode" class="flex items-center gap-1.5">
                       <Tooltip text="Mark all selected emails as read">
-                          <button @click="bulkMarkAsRead" :disabled="selectedEmails.length === 0" class="px-3 py-1.5 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                          <button @click="bulkMarkAsRead" :disabled="selectedEmails.length === 0" class="px-2.5 py-1 text-xs text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                               Mark as read
                           </button>
                       </Tooltip>
                       <Tooltip text="Move all selected emails to trash">
-                          <button @click="bulkDelete" :disabled="selectedEmails.length === 0" class="px-3 py-1.5 text-sm text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                          <button @click="bulkDelete" :disabled="selectedEmails.length === 0" class="px-2.5 py-1 text-xs text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                               Delete
                           </button>
                       </Tooltip>
-                      <button @click="exitSelectionMode" class="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-all">
+                      <button @click="exitSelectionMode" class="px-2.5 py-1 text-xs text-gray-700 hover:bg-gray-100 rounded-lg transition-all">
                           Cancel
                       </button>
                   </div>
                   <template v-else>
                       <Tooltip text="Select multiple emails to perform bulk actions">
-                          <button @click="enterSelectionMode" class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
-                              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                          <button @click="enterSelectionMode" class="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
+                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
                           </button>
                       </Tooltip>
                   </template>
                   <Tooltip text="Sync emails from S3 bucket. This fetches any new emails that have been received.">
-                      <button @click="handleRefresh" :disabled="isRefreshing" class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
-                          <svg :class="{'animate-spin': isRefreshing}" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                      <button @click="handleRefresh" :disabled="isRefreshing" class="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
+                          <svg :class="{'animate-spin': isRefreshing}" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                       </button>
                   </Tooltip>
               </div>
           </div>
           
           <!-- Search and Filters -->
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2">
               <!-- Search Bar -->
               <div class="relative flex-1">
                   <input 
                       v-model="searchQuery"
                       type="text" 
                       placeholder="Search emails..." 
-                      class="w-[300px] float-right pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all"
+                      class="w-[300px] float-right pl-9 pr-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all"
                   >
               </div>
               
               <!-- Filter Toggle Button -->
               <button 
                   @click="showFilters = !showFilters"
-                  class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                  class="px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-1.5"
                   :class="hasActiveFilters ? 'border-blue-500 bg-blue-50' : ''"
               >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
                   Filters
-                  <span v-if="activeFilterCount > 0" class="bg-blue-600 text-white text-xs px-1.5 py-0.5 rounded-full">{{ activeFilterCount }}</span>
+                  <span v-if="activeFilterCount > 0" class="bg-blue-600 text-white text-xs px-1 py-0.5 rounded-full">{{ activeFilterCount }}</span>
               </button>
               
               <!-- Sort Dropdown -->
               <div class="relative">
                   <button 
                       @click="showSortMenu = !showSortMenu"
-                      class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                      class="px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-1.5"
                   >
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path></svg>
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path></svg>
                       Sort
                   </button>
                   <div 
@@ -106,12 +106,12 @@
           </div>
           
           <!-- Filter Panel -->
-          <div v-if="showFilters" class="bg-white border border-gray-200 rounded-lg p-4 space-y-4">
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div v-if="showFilters" class="bg-white border border-gray-200 rounded-lg p-3 space-y-3">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <!-- Read Status Filter -->
                   <div>
-                      <label class="block text-xs font-medium text-gray-700 mb-2">Read Status</label>
-                      <select v-model="filters.readStatus" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none">
+                      <label class="block text-xs font-medium text-gray-700 mb-1.5">Read Status</label>
+                      <select v-model="filters.readStatus" class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none">
                           <option value="all">All</option>
                           <option value="unread">Unread</option>
                           <option value="read">Read</option>
@@ -120,8 +120,8 @@
                   
                   <!-- Date Range Filter -->
                   <div>
-                      <label class="block text-xs font-medium text-gray-700 mb-2">Date Range</label>
-                      <select v-model="filters.dateRange" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none">
+                      <label class="block text-xs font-medium text-gray-700 mb-1.5">Date Range</label>
+                      <select v-model="filters.dateRange" class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none">
                           <option value="all">All Time</option>
                           <option value="today">Today</option>
                           <option value="week">This Week</option>
@@ -132,8 +132,8 @@
                   
                   <!-- Attachments Filter -->
                   <div>
-                      <label class="block text-xs font-medium text-gray-700 mb-2">Attachments</label>
-                      <select v-model="filters.hasAttachments" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none">
+                      <label class="block text-xs font-medium text-gray-700 mb-1.5">Attachments</label>
+                      <select v-model="filters.hasAttachments" class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none">
                           <option value="all">All</option>
                           <option value="yes">With Attachments</option>
                           <option value="no">Without Attachments</option>
@@ -143,12 +143,12 @@
               
               <!-- Sender Filter -->
               <div>
-                  <label class="block text-xs font-medium text-gray-700 mb-2">From</label>
+                  <label class="block text-xs font-medium text-gray-700 mb-1.5">From</label>
                   <input 
                       v-model="filters.sender"
                       type="text" 
                       placeholder="Filter by sender email..."
-                      class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none"
+                      class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none"
                   >
               </div>
               
@@ -156,11 +156,11 @@
               <div class="flex justify-end">
                   <button 
                       @click="clearFilters"
-                      class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors"
+                      class="px-3 py-1.5 text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors"
                       :disabled="!hasActiveFilters"
                   >
                       Clear Filters
-                  </button>
+          </button>
               </div>
           </div>
       </header>
