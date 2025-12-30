@@ -85,5 +85,14 @@ export default {
     },
     deleteTemplate(id) {
         return api.delete(`/templates/${id}`);
+    },
+    simulateWebhook(type = 'content') {
+        return api.post('/settings/simulate-webhook', { type });
+    },
+    getDebugLog() {
+        return api.get('/settings/debug-log');
+    },
+    cleanDebugLog() {
+        return api.post('/settings/debug-log/clean');
     }
 };

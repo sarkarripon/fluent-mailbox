@@ -9,12 +9,13 @@ class WebhookController
     public function handle($request)
     {
         $body = $request->get_body();
-        error_log('FluentMailbox Webhook Body: ' . $body);
+        // error_log('FluentMailbox Webhook Body: ' . $body);
+        \FluentMailbox\Services\Logger::log('Webhook Received', ['body_length' => strlen($body)]);
         
         $payload = json_decode($body, true);
 
         if (!$payload) {
-             error_log('FluentMailbox Webhook Error: Invalid JSON payload');
+             \FluentMailbox\Services\Logger::log('Error: Invalid JSON payload');
              return rest_ensure_response(['message' => 'Invalid JSON'], 400);
         }
 
@@ -22,7 +23,7 @@ class WebhookController
         if (isset($payload['Type']) && $payload['Type'] === 'SubscriptionConfirmation') {
             // Auto-confirm the subscription
             $subscribeUrl = $payload['SubscribeURL'];
-            error_log('FluentMailbox SES Subscription URL: ' . $subscribeUrl);
+            \FluentMailbox\Services\Logger::log('Subscription Confirmation Request', ['url' => $subscribeUrl]);
             
             wp_remote_get($subscribeUrl);
             
@@ -30,7 +31,7 @@ class WebhookController
         }
 
         if (isset($payload['Type']) && $payload['Type'] === 'Notification') {
-            error_log('FluentMailbox SNS Notification Received');
+            \FluentMailbox\Services\Logger::log('SNS Notification Received', ['message_id' => $payload['MessageId'] ?? 'unknown']);
             $message = json_decode($payload['Message'], true);
 
             // Check if it's a receipt notification
@@ -43,28 +44,28 @@ class WebhookController
                     $bucket = $receipt['action']['bucketName'];
                     $key = $receipt['action']['objectKey'];
 
-                    error_log("FluentMailbox Processing from S3. Bucket: $bucket, Key: $key");
+                    \FluentMailbox\Services\Logger::log("Processing from S3", ['bucket' => $bucket, 'key' => $key]);
 
                     $service = new \FluentMailbox\Services\InboundService();
                     // Pass true for checkDuplicate
                     $result = $service->processFromS3($bucket, $key, true);
 
                     if (is_wp_error($result)) {
-                        error_log('FluentMailbox Error processing inbound: ' . $result->get_error_message());
+                        \FluentMailbox\Services\Logger::log('Error processing inbound S3', ['error' => $result->get_error_message()]);
                         return rest_ensure_response(['message' => 'Error processing inbound: ' . $result->get_error_message()], 500);
                     }
                     
                     if ($result === false) {
-                        error_log('FluentMailbox Email already exists (Duplicate skipped)');
+                        \FluentMailbox\Services\Logger::log('Duplicate Email (Skipped)');
                         return rest_ensure_response(['message' => 'Email already exists']);
                     }
 
-                    error_log('FluentMailbox Email processed successfully from S3');
+                    \FluentMailbox\Services\Logger::log('Email processed successfully from S3');
                     return rest_ensure_response(['message' => 'Email processed successfully']);
                 } elseif (isset($message['content'])) {
                     // Fallback to Direct SNS Content (approx < 150KB safe limit)
                     // Note: This is less reliable for large emails than S3 action
-                    error_log("FluentMailbox Processing direct SNS content");
+                    \FluentMailbox\Services\Logger::log("Processing direct SNS content");
 
                     $service = new \FluentMailbox\Services\InboundService();
                     // Use SES message ID as fallback if email doesn't have Message-ID header
@@ -74,20 +75,20 @@ class WebhookController
                     $result = $service->processFromContent($message['content'], $fallbackId, true);
 
                     if (is_wp_error($result)) {
-                         error_log('FluentMailbox Error processing SNS content: ' . $result->get_error_message());
+                         \FluentMailbox\Services\Logger::log('Error processing SNS content', ['error' => $result->get_error_message()]);
                          return rest_ensure_response(['message' => 'Error processing content'], 500);
                     }
                     
                     if ($result === false) {
-                        error_log('FluentMailbox Email already exists (Duplicate skipped)');
+                        \FluentMailbox\Services\Logger::log('Duplicate Email (Skipped)');
                         return rest_ensure_response(['message' => 'Email already exists']);
                     }
 
-                    error_log('FluentMailbox Email processed successfully from SNS content');
+                    \FluentMailbox\Services\Logger::log('Email processed successfully from SNS content');
                     return rest_ensure_response(['message' => 'Email processed successfully']);
                 }
                 
-                error_log('FluentMailbox Webhook: Unsupported action type or missing content');
+                \FluentMailbox\Services\Logger::log('Unsupported action type or missing content', $message);
                 return rest_ensure_response(['message' => 'Unsupported action type or missing content'], 200);
             }
         }
@@ -95,7 +96,7 @@ class WebhookController
         // Allow direct posting for simple testing/integration (e.g. from a custom form or other service)
         $params = $request->get_params();
         if (!empty($params['subject']) && !empty($params['sender'])) {
-             error_log('FluentMailbox Webhook: Direct Post Received');
+             \FluentMailbox\Services\Logger::log('Direct Post Received', $params);
              Email::create([
                 'message_id' => uniqid('ext_'),
                 'subject' => $params['subject'],

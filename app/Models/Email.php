@@ -48,6 +48,11 @@ class Email
             $wpdb->prepare("SELECT * FROM $table $where ORDER BY created_at DESC LIMIT %d OFFSET %d", $perPage, $offset)
         );
 
+        foreach ($items as $item) {
+            $item->is_read = (int) $item->is_read;
+            $item->is_draft = (int) $item->is_draft;
+        }
+
         $total = $wpdb->get_var("SELECT COUNT(*) FROM $table $where");
 
         return [
@@ -63,7 +68,12 @@ class Email
     {
         global $wpdb;
         $table = self::getTable();
-        return $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE id = %d", $id));
+        $item = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE id = %d", $id));
+        if ($item) {
+            $item->is_read = (int) $item->is_read;
+            $item->is_draft = (int) $item->is_draft;
+        }
+        return $item;
     }
 
     public static function update($id, $data)
@@ -89,6 +99,11 @@ class Email
         $items = $wpdb->get_results(
             $wpdb->prepare("SELECT * FROM $table WHERE is_draft = 1 AND status = 'draft' ORDER BY updated_at DESC LIMIT %d OFFSET %d", $perPage, $offset)
         );
+
+        foreach ($items as $item) {
+            $item->is_read = (int) $item->is_read;
+            $item->is_draft = (int) $item->is_draft;
+        }
 
         $total = $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE is_draft = 1 AND status = 'draft'");
 

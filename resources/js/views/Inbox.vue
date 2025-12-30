@@ -196,7 +196,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '../utils/api';
 import { useAppStore } from '../stores/useAppStore';
@@ -216,9 +216,12 @@ const selectedEmails = ref([]);
 const currentPage = ref(1);
 const totalPages = ref(1);
 const totalEmails = ref(0);
+const pollingInterval = ref(null);
 
-const fetchEmails = async (page = 1) => {
-    loading.value = true;
+const fetchEmails = async (page = 1, silent = false) => {
+    if (!silent) {
+        loading.value = true;
+    }
     try {
         // Get inbox emails (status = 'inbox' or not 'sent' and not 'trash')
         const response = await api.getEmails(page, 'all'); 
@@ -238,7 +241,9 @@ const fetchEmails = async (page = 1) => {
     } catch (e) {
         console.error(e);
     } finally {
-        loading.value = false;
+        if (!silent) {
+            loading.value = false;
+        }
     }
 };
 
@@ -398,9 +403,23 @@ const initializeStars = () => {
 };
 
 onMounted(() => {
-    fetchEmails().then(() => {
+    fetchEmails(1, false).then(() => {
         initializeStars();
     });
+
+    // Auto-refresh every 15 seconds
+    pollingInterval.value = setInterval(() => {
+        // Only refresh if not already loading and valid page
+        if (!loading.value && !isRefreshing.value) {
+            fetchEmails(currentPage.value, true);
+        }
+    }, 15000);
+});
+
+onUnmounted(() => {
+    if (pollingInterval.value) {
+        clearInterval(pollingInterval.value);
+    }
 });
 
 // Watch for route changes to exit selection mode

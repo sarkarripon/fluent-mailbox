@@ -239,4 +239,67 @@ class SettingsController
         update_option('fluent_mailbox_templates', array_values($templates));
         return rest_ensure_response(['message' => 'Template deleted']);
     }
+
+    public function simulateWebhook($request)
+    {
+        $type = $request->get_param('type'); // 's3' or 'content'
+
+        // Construct a fake payload similar to what AWS SES/SNS sends
+        $payload = [
+            'Type' => 'Notification',
+            'MessageId' => 'sim_' . uniqid(),
+            'Message' => ''
+        ];
+
+        $messageData = [
+            'notificationType' => 'Received',
+            'mail' => [
+                'messageId' => 'sim_msg_' . uniqid(),
+                'source' => 'sender@example.com',
+                'commonHeaders' => [
+                    'subject' => 'Test Simulation Email',
+                    'from' => ['sender@example.com'],
+                    'to' => ['recipient@example.com']
+                ]
+            ],
+            'receipt' => [
+                'action' => []
+            ]
+        ];
+
+        if ($type === 's3') {
+            // We need a real bucket/key for this to work fully, which is hard to simulate without uploading.
+            // So for S3 simulation, we might fail unless we mock the S3 call or upload a test file first.
+            // For now, let's simulates 'content' type primarily as it doesn't require S3 access.
+            return new \WP_Error('not_implemented', 'S3 Simulation requires uploading a file first. Use "content" type.', ['status' => 501]);
+        } else {
+            // Simulate Direct Content
+            $messageData['content'] = "Subject: Simulation Test\r\nFrom: sender@example.com\r\nTo: recipient@example.com\r\n\r\nThis is a simulated email body.";
+        }
+
+        $payload['Message'] = json_encode($messageData);
+        
+        // We need to call the WebhookController logic. 
+        // We can instantiate it and call handle, wrapping our payload in a WP_REST_Request mock or just passing what it needs.
+        // But WebhookController expects a request object.
+        
+        $simRequest = new \WP_REST_Request('POST', '/fluent-mailbox/v1/webhook');
+        $simRequest->set_body(json_encode($payload));
+        $simRequest->set_header('Content-Type', 'text/plain; charset=UTF-8');
+
+        $controller = new \FluentMailbox\Http\Controllers\WebhookController();
+        return $controller->handle($simRequest);
+    }
+
+    public function getDebugLog($request)
+    {
+        $log = \FluentMailbox\Services\Logger::getLog();
+        return rest_ensure_response(['log' => $log]);
+    }
+
+    public function cleanDebugLog($request)
+    {
+        \FluentMailbox\Services\Logger::clean();
+        return rest_ensure_response(['message' => 'Log cleaned']);
+    }
 }

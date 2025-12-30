@@ -77,11 +77,12 @@ class InboundService
                 'status' => 'inbox',
                 'is_read' => 0
             ]);
-
+            
+            \FluentMailbox\Services\Logger::log('Email Saved to DB', ['id' => $emailId, 'subject' => $subject]);
             return $emailId;
 
         } catch (\Exception $e) {
-            error_log('FluentMailbox Parse Error: ' . $e->getMessage());
+            \FluentMailbox\Services\Logger::log('Parse/Save Error', ['error' => $e->getMessage()]);
             return new \WP_Error('parse_error', $e->getMessage());
         }
     }
@@ -89,13 +90,14 @@ class InboundService
     public function processFromS3($bucket, $key, $checkDuplicate = false)
     {
         if (!$this->s3Config) {
+            \FluentMailbox\Services\Logger::log('Error: AWS Credentials missing in InboundService');
             return new \WP_Error('config_error', 'AWS Credentials not configured');
         }
 
         try {
             $s3 = new S3Client($this->s3Config);
             
-            error_log("FluentMailbox Inbound: Fetching from S3. Bucket: $bucket, Key: $key");
+            \FluentMailbox\Services\Logger::log("Fetching from S3 via InboundService", ['bucket' => $bucket, 'key' => $key]);
 
             // 1. Get object from S3
             $result = $s3->getObject([
@@ -109,7 +111,7 @@ class InboundService
             return $this->processFromContent($rawContent, $key, $checkDuplicate);
 
         } catch (AwsException $e) {
-            error_log('FluentMailbox S3 Error: ' . $e->getMessage());
+            \FluentMailbox\Services\Logger::log('S3 Fetch Error', ['error' => $e->getMessage()]);
             return new \WP_Error('s3_error', $e->getMessage());
         }
     }
