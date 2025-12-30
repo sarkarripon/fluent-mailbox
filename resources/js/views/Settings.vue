@@ -21,7 +21,12 @@
 
                   <form @submit.prevent="verifyCredentials" class="space-y-3">
                        <div>
-                          <label class="block text-sm font-medium text-gray-700 mb-1.5">AWS Region</label>
+                          <label class="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
+                              AWS Region
+                              <Tooltip text="Select the AWS region where your SES service is configured. This should match the region where you verified your email/domain.">
+                                  <svg class="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                              </Tooltip>
+                          </label>
                           <select v-model="form.region" class="w-full px-3 py-2.5 bg-white border border-gray-200/70 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all hover:border-blue-300">
                               <option value="us-east-1">US East (N. Virginia)</option>
                               <option value="us-west-2">US West (Oregon)</option>
@@ -31,12 +36,22 @@
                       </div>
 
                       <div>
-                          <label class="block text-sm font-medium text-gray-700 mb-1.5">Access Key ID</label>
+                          <label class="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
+                              Access Key ID
+                              <Tooltip text="Your AWS IAM user's Access Key ID. Create one in AWS Console > IAM > Users > Security credentials. The user needs SES, SNS, and S3 permissions.">
+                                  <svg class="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                              </Tooltip>
+                          </label>
                           <input v-model="form.key" type="text" required class="w-full px-3 py-2.5 bg-white border border-gray-200/70 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all font-mono hover:border-blue-300" placeholder="AKIA...">
                       </div>
 
                       <div>
-                          <label class="block text-sm font-medium text-gray-700 mb-1.5">Secret Access Key</label>
+                          <label class="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
+                              Secret Access Key
+                              <Tooltip text="The secret key paired with your Access Key ID. Keep this secure and never share it. It's only shown once when created in AWS Console.">
+                                  <svg class="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                              </Tooltip>
+                          </label>
                           <input v-model="form.secret" type="password" required class="w-full px-3 py-2.5 bg-white border border-gray-200/70 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all font-mono hover:border-blue-300" placeholder="********">
                       </div>
 
@@ -68,7 +83,12 @@
 
                    <form @submit.prevent="saveIdentity" class="space-y-3">
                        <div>
-                          <label class="block text-sm font-medium text-gray-700 mb-1.5">Verify Identity</label>
+                          <label class="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
+                              Verify Identity
+                              <Tooltip text="Select a verified email address or domain from AWS SES. You must verify identities in AWS Console first. This will be used as the 'From' address for outgoing emails.">
+                                  <svg class="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                              </Tooltip>
+                          </label>
                           <select v-model="form.from_email" required class="w-full px-3 py-2.5 bg-white border border-gray-200/70 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all hover:border-blue-300">
                               <option value="" disabled>Select an identity</option>
                               <option v-for="id in identities" :key="id" :value="id">{{ id }}</option>
@@ -79,14 +99,24 @@
                       <div v-if="form.from_email && !form.from_email.includes('@')" class="space-y-3 p-4 bg-gray-50/80 rounded-xl">
                            <!-- Sender Name -->
                           <div>
-                              <label class="block text-sm font-medium text-gray-700 mb-1.5">Sender Name (Optional)</label>
+                              <label class="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
+                                  Sender Name (Optional)
+                                  <Tooltip text="The display name that recipients will see in their email client. If left empty, only the email address will be shown.">
+                                      <svg class="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                  </Tooltip>
+                              </label>
                               <input v-model="form.sender_name" type="text" class="w-full px-3 py-2.5 bg-white border border-gray-200/70 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all hover:border-blue-300" placeholder="e.g. Sarkar Ripon">
                               <p class="text-xs text-gray-500 mt-1.5">This name will be displayed to recipients.</p>
                           </div>
 
                           <!-- Email Prefix -->
                           <div>
-                              <label class="block text-sm font-medium text-gray-700 mb-1.5">Email Username</label>
+                              <label class="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
+                                  Email Username
+                                  <Tooltip text="When using a verified domain, specify the local part (username) of the email address. For example, 'contact' will create 'contact@yourdomain.com'.">
+                                      <svg class="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                  </Tooltip>
+                              </label>
                               <div class="flex">
                                   <input v-model="form.email_username" type="text" required class="flex-1 px-3 py-2.5 bg-white border border-gray-200/70 rounded-l-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all hover:border-blue-300" placeholder="e.g. self">
                                   <span class="inline-flex items-center px-3 rounded-r-xl border border-l-0 border-gray-200/70 bg-gray-100/80 text-gray-600 font-medium text-sm">
@@ -163,10 +193,12 @@
                              <h4 class="text-base font-bold text-gray-800 mb-1">Incoming message is not configured</h4>
                              <p class="text-sm text-gray-500 max-w-md mx-auto mb-4">Setup now to get a full featured mailbox. This will automatically create the necessary S3 Bucket, SNS Topic, and SES Rules for you.</p>
 
-                             <button @click="setupInbound" :disabled="loading" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2.5 rounded-2xl font-bold transition-all inline-flex items-center disabled:opacity-70 disabled:cursor-not-allowed hover:-translate-y-0.5 active:translate-y-0 text-sm">
-                                 <svg v-if="loading" class="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                 {{ loading ? 'Configuring...' : 'Setup Now' }}
-                             </button>
+                             <Tooltip text="This will automatically create an S3 bucket for storing emails, an SNS topic for notifications, and configure SES rules to forward incoming emails to your S3 bucket. All resources will be created in your selected AWS region.">
+                                 <button @click="setupInbound" :disabled="loading" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2.5 rounded-2xl font-bold transition-all inline-flex items-center disabled:opacity-70 disabled:cursor-not-allowed hover:-translate-y-0.5 active:translate-y-0 text-sm">
+                                     <svg v-if="loading" class="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                     {{ loading ? 'Configuring...' : 'Setup Now' }}
+                                 </button>
+                             </Tooltip>
                              <div v-if="error" class="mt-3 bg-red-50/80 backdrop-blur-sm text-red-600 p-3 rounded-xl max-w-lg mx-auto border border-red-200/50 text-xs">{{ error }}</div>
                         </div>
 
@@ -193,6 +225,8 @@
 import { ref, reactive, onMounted } from 'vue';
 import api from '../utils/api';
 import { useAppStore } from '../stores/useAppStore';
+import Tooltip from '../components/Tooltip.vue';
+import { triggerConfetti } from '../utils/confetti';
 
 const store = useAppStore();
 const step = ref('credentials'); // credentials, identity, dashboard
@@ -271,6 +305,9 @@ const saveIdentity = async () => {
         form.from_email = payload.from_email;
         store.setConfigured(true);
         step.value = 'dashboard';
+        
+        // Trigger confetti celebration!
+        triggerConfetti();
     } catch (e) {
         error.value = 'Failed to save configuration.';
     } finally {

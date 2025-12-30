@@ -10,10 +10,12 @@
       </div>
       
       <div class="px-3 mb-3">
-          <button v-if="store.isConfigured" @click="store.openCompose('new')" class="w-full flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors">
-             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-             <span>Compose</span>
-          </button>
+          <Tooltip text="Create and send a new email message" position="right">
+              <button v-if="store.isConfigured" @click="store.openCompose('new')" class="w-full flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors">
+                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                 <span>Compose</span>
+              </button>
+          </Tooltip>
       </div>
 
       <nav class="flex-1 px-2 space-y-0.5">
@@ -77,6 +79,7 @@ import { ref, onMounted, onBeforeUnmount } from 'vue';
 import ComposeModal from './components/ComposeModal.vue';
 import { useAppStore } from './stores/useAppStore';
 import { useEmailCounts } from './composables/useEmailCounts';
+import Tooltip from './components/Tooltip.vue';
 
 const store = useAppStore();
 const emailCounts = useEmailCounts();

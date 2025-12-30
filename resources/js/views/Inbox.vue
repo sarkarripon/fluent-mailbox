@@ -25,22 +25,32 @@
 
               <div class="flex items-center space-x-2">
                   <div v-if="isSelectionMode" class="flex items-center gap-2">
-                      <button @click="bulkMarkAsRead" :disabled="selectedEmails.length === 0" class="px-3 py-1.5 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                          Mark as read
-                      </button>
-                      <button @click="bulkDelete" :disabled="selectedEmails.length === 0" class="px-3 py-1.5 text-sm text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                          Delete
-                      </button>
+                      <Tooltip text="Mark all selected emails as read">
+                          <button @click="bulkMarkAsRead" :disabled="selectedEmails.length === 0" class="px-3 py-1.5 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                              Mark as read
+                          </button>
+                      </Tooltip>
+                      <Tooltip text="Move all selected emails to trash">
+                          <button @click="bulkDelete" :disabled="selectedEmails.length === 0" class="px-3 py-1.5 text-sm text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                              Delete
+                          </button>
+                      </Tooltip>
                       <button @click="exitSelectionMode" class="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-all">
                           Cancel
                       </button>
                   </div>
-                  <button v-else @click="enterSelectionMode" class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Select emails">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                  </button>
-                  <button @click="handleRefresh" :disabled="isRefreshing" class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Sync from S3">
-                      <svg :class="{'animate-spin': isRefreshing}" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                  </button>
+                  <template v-else>
+                      <Tooltip text="Select multiple emails to perform bulk actions">
+                          <button @click="enterSelectionMode" class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
+                              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                          </button>
+                      </Tooltip>
+                  </template>
+                  <Tooltip text="Sync emails from S3 bucket. This fetches any new emails that have been received.">
+                      <button @click="handleRefresh" :disabled="isRefreshing" class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
+                          <svg :class="{'animate-spin': isRefreshing}" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                      </button>
+                  </Tooltip>
               </div>
           </div>
 
@@ -165,6 +175,7 @@ import { useRouter } from 'vue-router';
 import api from '../utils/api';
 import { useAppStore } from '../stores/useAppStore';
 import { useEmailCounts } from '../composables/useEmailCounts';
+import Tooltip from '../components/Tooltip.vue';
 
 const store = useAppStore();
 const router = useRouter();
