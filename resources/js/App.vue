@@ -7,7 +7,7 @@
             <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
         </div>
         <div class="flex items-center space-x-2 flex-1">
-          <span class="text-base font-semibold text-gray-800">Mailbox</span>
+          <span class="text-base text-sm font-semibold text-gray-800">Fluent Mailbox</span>
           <Tooltip v-if="store.isConfigured" text="Mailbox is connected and ready" position="right">
             <div class="relative">
               <div class="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse"></div>

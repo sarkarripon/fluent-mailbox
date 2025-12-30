@@ -57,14 +57,20 @@ class MailController
         }
 
         // Store in DB as 'sent'
+        // Ensure body is a string, not empty
+        $bodyContent = is_string($body) ? $body : (string)$body;
+        if (empty($bodyContent)) {
+            $bodyContent = ''; // Set to empty string if null/empty
+        }
+        
         $emailId = Email::create([
             'message_id' => $messageId,
-            'subject' => $subject,
-            'sender' => get_option('fluent_mailbox_from_email', get_bloginfo('admin_email')),
+            'subject' => sanitize_text_field($subject),
+            'sender' => sanitize_email(get_option('fluent_mailbox_from_email', get_bloginfo('admin_email'))),
             'recipients' => json_encode(is_array($to) ? $to : explode(',', $to)),
             'cc' => $cc ? json_encode(is_array($cc) ? $cc : explode(',', $cc)) : null,
             'bcc' => $bcc ? json_encode(is_array($bcc) ? $bcc : explode(',', $bcc)) : null,
-            'body' => $body,
+            'body' => wp_kses_post($bodyContent), // Sanitize HTML but preserve formatting
             'attachments' => $attachments ? json_encode($attachments) : null,
             'status' => 'sent',
             'is_read' => 1,
@@ -183,13 +189,16 @@ class MailController
         $attachments = $request->get_param('attachments');
         $draftId = $request->get_param('draft_id'); // For updating existing draft
 
+        // Ensure body is a string
+        $bodyContent = is_string($body) ? $body : (string)($body ?: '');
+        
         $data = [
             'subject' => $subject ?: '(No Subject)',
             'sender' => get_option('fluent_mailbox_from_email', get_bloginfo('admin_email')),
             'recipients' => $to ? json_encode(is_array($to) ? $to : explode(',', $to)) : json_encode([]),
             'cc' => $cc ? json_encode(is_array($cc) ? $cc : explode(',', $cc)) : null,
             'bcc' => $bcc ? json_encode(is_array($bcc) ? $bcc : explode(',', $bcc)) : null,
-            'body' => $body ?: '',
+            'body' => wp_kses_post($bodyContent), // Sanitize HTML but preserve formatting
             'attachments' => $attachments ? json_encode($attachments) : null,
             'status' => 'draft',
             'is_draft' => 1,

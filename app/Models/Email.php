@@ -16,17 +16,15 @@ class Email
         $data['created_at'] = current_time('mysql');
         $data['updated_at'] = current_time('mysql');
         
-        $format = [
-            '%s', // message_id
-            '%s', // subject
-            '%s', // sender
-            '%s', // recipients
-            '%s', // body
-            '%s', // status
-            '%d', // is_read
-            '%s', // created_at
-            '%s'  // updated_at
-        ];
+        // Build format array dynamically based on data keys
+        $format = [];
+        foreach ($data as $key => $value) {
+            if (in_array($key, ['is_read', 'is_draft'])) {
+                $format[] = '%d'; // Integer
+            } else {
+                $format[] = '%s'; // String
+            }
+        }
 
         $wpdb->insert(self::getTable(), $data, $format);
         return $wpdb->insert_id;

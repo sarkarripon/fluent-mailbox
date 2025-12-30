@@ -60,20 +60,39 @@ class AttachmentController
     public function download($request)
     {
         $id = (int) $request->get_param('id');
-        $file_path = get_attached_file($id);
         
-        if (!$file_path || !file_exists($file_path)) {
+        // Get attachment URL instead of downloading directly
+        $attachment_url = wp_get_attachment_url($id);
+        
+        if (!$attachment_url) {
             return new \WP_Error('not_found', 'File not found', ['status' => 404]);
         }
 
-        $mime_type = get_post_mime_type($id);
-        $filename = basename($file_path);
-
-        header('Content-Type: ' . $mime_type);
-        header('Content-Disposition: attachment; filename="' . $filename . '"');
-        header('Content-Length: ' . filesize($file_path));
-        readfile($file_path);
-        exit;
+        // Return the URL for frontend to handle
+        return rest_ensure_response([
+            'url' => $attachment_url,
+            'id' => $id
+        ]);
+    }
+    
+    public function getAttachmentInfo($request)
+    {
+        $id = (int) $request->get_param('id');
+        $attachment = get_post($id);
+        
+        if (!$attachment || $attachment->post_type !== 'attachment') {
+            return new \WP_Error('not_found', 'Attachment not found', ['status' => 404]);
+        }
+        
+        $attachment_data = wp_prepare_attachment_for_js($id);
+        
+        return rest_ensure_response([
+            'id' => $attachment_data['id'],
+            'url' => $attachment_data['url'],
+            'filename' => $attachment_data['filename'],
+            'filesize' => $attachment_data['filesizeHumanReadable'],
+            'mime' => $attachment_data['mime']
+        ]);
     }
 }
 

@@ -73,7 +73,10 @@
           </div>
 
           <!-- Body -->
-          <div class="bg-white rounded-lg p-6 border border-gray-200 prose prose-sm max-w-none text-gray-800" v-html="email.body"></div>
+          <div class="bg-white rounded-lg p-6 border border-gray-200">
+              <div v-if="email.body && email.body.trim()" class="prose prose-sm max-w-none text-gray-800" v-html="email.body"></div>
+              <div v-else class="text-sm text-gray-500 italic">No message content</div>
+          </div>
       </div>
       
       <div v-else-if="loading" class="flex-1 flex justify-center items-center">
@@ -104,6 +107,8 @@ onMounted(async () => {
         const { data } = await api.getEmail(route.params.id);
         email.value = data;
         // Email is automatically marked as read when fetched (in backend)
+        // Load attachments if any
+        await loadAttachments();
         // Refresh counts
         emailCounts.fetchCounts();
     } catch (e) {
@@ -167,18 +172,61 @@ const getRecipients = (json) => {
     }
 };
 
+const attachments = ref([]);
+
 const emailAttachments = computed(() => {
-    if (!email.value || !email.value.attachments) return [];
-    try {
-        const attIds = JSON.parse(email.value.attachments);
-        return attIds.map(id => ({ id, filename: `Attachment ${id}` }));
-    } catch (e) {
-        return [];
-    }
+    return attachments.value;
 });
 
+const loadAttachments = async () => {
+    if (!email.value || !email.value.attachments) {
+        attachments.value = [];
+        return;
+    }
+    
+    try {
+        const attIds = JSON.parse(email.value.attachments);
+        if (!Array.isArray(attIds) || attIds.length === 0) {
+            attachments.value = [];
+            return;
+        }
+        
+        // Fetch attachment details for each ID
+        const attachmentPromises = attIds.map(async (id) => {
+            try {
+                const response = await api.get(`/attachments/${id}`);
+                const data = response.data;
+                return {
+                    id: data.id,
+                    url: data.url || wp_get_attachment_url(id),
+                    filename: data.filename || `Attachment ${id}`,
+                    filesize: data.filesize || '',
+                    mime: data.mime || ''
+                };
+            } catch (e) {
+                // Fallback: use WordPress function to get URL
+                console.warn(`Failed to load attachment ${id}:`, e);
+                return {
+                    id: id,
+                    url: '#',
+                    filename: `Attachment ${id}`
+                };
+            }
+        });
+        
+        attachments.value = await Promise.all(attachmentPromises);
+    } catch (e) {
+        console.error('Failed to load attachments', e);
+        attachments.value = [];
+    }
+};
+
 const getAttachmentUrl = (attachment) => {
-    // Get WordPress attachment URL via REST API
-    return `${window.FluentMailbox?.root || ''}/attachments/${attachment.id}/download` || '#';
+    if (attachment.url && attachment.url !== '#') {
+        return attachment.url;
+    }
+    // Fallback: try to construct URL from WordPress
+    const root = window.FluentMailbox?.root || '';
+    return `${root}/attachments/${attachment.id}/download`;
 };
 </script>

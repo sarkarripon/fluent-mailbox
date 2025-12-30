@@ -188,6 +188,14 @@ class Router
                 'permission_callback' => [$this, 'checkPermission']
             ]
         ]);
+
+        register_rest_route($namespace, '/attachments/(?P<id>\d+)', [
+            [
+                'methods' => \WP_REST_Server::READABLE,
+                'callback' => [new \FluentMailbox\Http\Controllers\AttachmentController(), 'getAttachmentInfo'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
     }
 
     public function checkPermission()

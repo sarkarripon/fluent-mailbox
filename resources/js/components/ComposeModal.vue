@@ -542,6 +542,36 @@ const insertTemplate = (template) => {
   hasChanges.value = true;
 };
 
+const showNotification = (message, type = 'success') => {
+  const notification = document.createElement('div');
+  const bgColor = type === 'success' ? 'bg-green-600' : 'bg-red-600';
+  
+  notification.className = `fixed bottom-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-[9999] text-sm flex items-center gap-2 animate-fade-in-up max-w-sm`;
+  notification.innerHTML = `
+    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      ${type === 'success' 
+        ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
+        : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
+      }
+    </svg>
+    <span>${message}</span>
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // Remove after 3 seconds with fade out
+  setTimeout(() => {
+    notification.style.opacity = '0';
+    notification.style.transform = 'translateY(20px)';
+    notification.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
+    setTimeout(() => {
+      if (notification.parentNode) {
+        document.body.removeChild(notification);
+      }
+    }, 300);
+  }, 3000);
+};
+
 const saveDraft = async (silent = false) => {
   if (!silent) {
     savingDraft.value = true;
@@ -561,19 +591,12 @@ const saveDraft = async (silent = false) => {
     draftId.value = data.draft_id;
     hasChanges.value = false;
     
-    if (!silent) {
-      // Show brief success message
-      const successMsg = document.createElement('div');
-      successMsg.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 text-sm';
-      successMsg.textContent = 'Draft saved';
-      document.body.appendChild(successMsg);
-      setTimeout(() => {
-        document.body.removeChild(successMsg);
-      }, 2000);
-    }
+    // Show notification for both silent and manual saves
+    showNotification('Draft saved successfully', 'success');
   } catch (e) {
     if (!silent) {
       error.value = 'Failed to save draft';
+      showNotification('Failed to save draft', 'error');
     }
   } finally {
     if (!silent) {
