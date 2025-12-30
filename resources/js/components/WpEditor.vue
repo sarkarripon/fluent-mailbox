@@ -12,9 +12,9 @@
       class="wp_vue_editor wp_vue_editor_plain w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all font-sans resize-none text-sm"
       rows="6"
     ></textarea>
-    
+
     <!-- Resize Handle -->
-    <div 
+    <div
       class="resize-handle"
       @mousedown="startResize"
       :class="{ 'resizing': isResizing }"
@@ -59,7 +59,7 @@ onMounted(() => {
   // Wait for WordPress editor to be available
   let retryCount = 0;
   const maxRetries = 50; // 5 seconds max wait time
-  
+
   const checkWpEditor = () => {
     if (window.wp && window.wp.editor && typeof window.wp.editor.initialize === 'function' && window.jQuery) {
       hasWpEditor.value = true;
@@ -78,7 +78,7 @@ onMounted(() => {
       hasWpEditor.value = false;
     }
   };
-  
+
   checkWpEditor();
 });
 
@@ -90,24 +90,24 @@ onBeforeUnmount(() => {
 
 const initEditor = () => {
   if (!window.wp || !window.wp.editor || !window.jQuery) return;
-  
+
   // Check if textarea exists in DOM
   const textarea = document.getElementById(props.editorId);
   if (!textarea) {
     console.warn('Textarea element not found for editor:', props.editorId);
     return;
   }
-  
+
   // Remove existing editor if any
   try {
     window.wp.editor.remove(props.editorId);
   } catch (e) {
     // Editor might not exist yet, that's okay
   }
-  
+
   // Determine height - use 'auto' for flexible height, or specific value
   const editorHeight = props.height === 'auto' || props.height === 'flex' ? undefined : props.height;
-  
+
   // Initialize WordPress editor
   try {
     const editorConfig = {
@@ -126,15 +126,15 @@ const initEditor = () => {
               }
             }
           });
-          
+
           ed.on('input cut paste ExecCommand', () => {
             updateEditorValue();
           });
-          
+
           ed.on('keyup', () => {
             updateEditorValue();
           });
-          
+
           // Auto-resize functionality
           if (props.height === 'auto' || props.height === 'flex') {
             ed.on('init', () => {
@@ -145,19 +145,19 @@ const initEditor = () => {
       },
       quicktags: true
     };
-    
+
     // Add height only if specified
     if (editorHeight) {
       editorConfig.height = editorHeight;
     }
-    
+
     window.wp.editor.initialize(props.editorId, editorConfig);
-    
+
     // Handle link dialog when switching to text tab
     if (window.jQuery) {
       const $textarea = window.jQuery(`#${props.editorId}`);
       const container = $textarea.parents('.wp-editor-container');
-      
+
       if (container.length) {
         const buttons = container.find('.ed_button.button.button-small');
         buttons.on('click', function() {
@@ -209,7 +209,7 @@ const startResize = (e) => {
   if (wrapper) {
     resizeStartHeight.value = wrapper.offsetHeight;
   }
-  
+
   document.addEventListener('mousemove', handleResize);
   document.addEventListener('mouseup', stopResize);
   document.body.style.cursor = 'ns-resize';
@@ -218,11 +218,11 @@ const startResize = (e) => {
 
 const handleResize = (e) => {
   if (!isResizing.value) return;
-  
+
   const deltaY = e.clientY - resizeStartY.value;
   const newHeight = Math.max(props.minHeight, resizeStartHeight.value + deltaY);
   editorHeight.value = newHeight;
-  
+
   // Update TinyMCE iframe height if editor is initialized
   if (hasWpEditor.value && window.wp && window.wp.editor) {
     const iframe = document.querySelector(`#${props.editorId}_ifr`);
@@ -243,7 +243,7 @@ const stopResize = () => {
   document.removeEventListener('mouseup', stopResize);
   document.body.style.cursor = '';
   document.body.style.userSelect = '';
-  
+
   // Save height preference to localStorage
   if (editorHeight.value) {
     localStorage.setItem(`wp-editor-height-${props.editorId}`, editorHeight.value.toString());
