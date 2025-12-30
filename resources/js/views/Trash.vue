@@ -19,8 +19,7 @@
               <div 
                   v-for="email in emails" 
                   :key="email.id" 
-                  @click="$router.push(`/emails/${email.id}`)"
-                  class="px-6 py-3 bg-white hover:bg-gray-50 cursor-pointer group transition-colors"
+                  class="px-6 py-3 bg-white hover:bg-gray-50 group transition-colors"
               >
                   <div class="flex items-start gap-4">
                       <div class="flex-shrink-0">
@@ -31,16 +30,25 @@
                       <div class="flex-1 min-w-0">
                           <div class="flex items-center justify-between gap-3 mb-1">
                               <div class="flex items-center gap-2 min-w-0 flex-1">
-                                  <span class="text-sm font-medium text-gray-900 truncate">
+                                  <span @click="$router.push(`/emails/${email.id}`)" class="text-sm font-medium text-gray-900 truncate cursor-pointer">
                                       {{ email.sender }}
                                   </span>
                               </div>
-                              <span class="text-xs text-gray-500 flex-shrink-0">{{ formatRelativeDate(email.created_at) }}</span>
+                              <div class="flex items-center gap-2 flex-shrink-0">
+                                  <span class="text-xs text-gray-500">{{ formatRelativeDate(email.created_at) }}</span>
+                                  <button 
+                                      @click.stop="deleteEmail(email)"
+                                      class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                                      title="Permanently delete"
+                                  >
+                                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                  </button>
+                              </div>
                           </div>
-                          <h4 class="text-sm font-medium text-gray-900 mb-1 truncate">
+                          <h4 @click="$router.push(`/emails/${email.id}`)" class="text-sm font-medium text-gray-900 mb-1 truncate cursor-pointer">
                               {{ email.subject || '(No Subject)' }}
                           </h4>
-                          <p class="text-sm text-gray-500 truncate line-clamp-1">
+                          <p @click="$router.push(`/emails/${email.id}`)" class="text-sm text-gray-500 truncate line-clamp-1 cursor-pointer">
                               {{ getEmailSnippet(email.body) }}
                           </p>
                       </div>
@@ -82,8 +90,18 @@ const fetchEmails = async () => {
     }
 };
 
+const deleteEmail = async (email) => {
+    if (!confirm('Are you sure you want to permanently delete this email? This action cannot be undone.')) return;
+    try {
+        await api.deleteEmail(email.id, { permanent: true });
+        await fetchEmails();
+    } catch (e) {
+        alert('Failed to delete email');
+    }
+};
+
 const emptyTrash = async () => {
-    if(!confirm('Are you sure you want to permanently delete all items in Trash?')) return;
+    if(!confirm('Are you sure you want to permanently delete all items in Trash? This action cannot be undone.')) return;
     try {
         await api.emptyTrash();
         await fetchEmails();

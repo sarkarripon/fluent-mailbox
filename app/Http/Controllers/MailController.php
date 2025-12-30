@@ -135,14 +135,27 @@ class MailController
             return new \WP_Error('not_found', 'Email not found', ['status' => 404]);
         }
 
-        if ($email->status === 'trash') {
-            // Permanent delete? For now just soft delete logic again or ignore
-            // In a real app we might delete row
+        // Check for permanent delete parameter from query string or body
+        $permanent = $request->get_param('permanent');
+        if ($permanent === null) {
+            // Try getting from query params
+            $permanent = isset($_GET['permanent']) ? filter_var($_GET['permanent'], FILTER_VALIDATE_BOOLEAN) : false;
         } else {
-             Email::update($id, ['status' => 'trash']);
+            $permanent = filter_var($permanent, FILTER_VALIDATE_BOOLEAN);
         }
 
-        return rest_ensure_response(['message' => 'Email moved to trash']);
+        // If email is already in trash OR permanent flag is set, permanently delete
+        if ($email->status === 'trash' || $permanent) {
+            // Permanent delete - remove from database
+            global $wpdb;
+            $table = Email::getTable();
+            $wpdb->delete($table, ['id' => $id], ['%d']);
+            return rest_ensure_response(['message' => 'Email permanently deleted']);
+        } else {
+            // Soft delete - move to trash
+            Email::update($id, ['status' => 'trash']);
+            return rest_ensure_response(['message' => 'Email moved to trash']);
+        }
     }
 
     public function fetchEmails($request)

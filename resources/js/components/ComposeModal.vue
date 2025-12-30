@@ -114,10 +114,11 @@
                        </div>
                    </div>
                    
-                   <div class="flex-1 px-4 py-2 overflow-y-auto relative">
+                   <div class="flex-1 px-4 py-2 overflow-y-auto relative flex flex-col min-h-0">
                        <WpEditor
                            v-model="form.body"
-                           :height="isExpanded ? 400 : 300"
+                           height="auto"
+                           :min-height="isExpanded ? 400 : 250"
                            @update="(val) => {
                                form.body = val;
                            }"

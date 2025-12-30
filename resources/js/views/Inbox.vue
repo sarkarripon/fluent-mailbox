@@ -165,7 +165,7 @@
           </div>
       </header>
       
-      <div class="flex-1 overflow-auto p-0">
+      <div class="flex-1 overflow-auto p-0 scrollbar-hide">
           <div v-if="loading" class="flex justify-center items-center h-64">
               <div class="relative">
                   <div class="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>

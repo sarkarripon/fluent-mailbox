@@ -41,8 +41,8 @@ export default {
     getEmail(id) {
         return api.get(`/emails/${id}`);
     },
-    deleteEmail(id) {
-        return api.delete(`/emails/${id}`);
+    deleteEmail(id, params = {}) {
+        return api.delete(`/emails/${id}`, { params });
     },
     updateEmail(id, data) {
         return api.put(`/emails/${id}`, data);
