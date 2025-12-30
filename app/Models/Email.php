@@ -81,4 +81,25 @@ class Email
         $table = self::getTable();
         return $wpdb->query("DELETE FROM $table WHERE status = 'trash'");
     }
+
+    public static function getDrafts($page = 1, $perPage = 20)
+    {
+        global $wpdb;
+        $table = self::getTable();
+        $offset = ($page - 1) * $perPage;
+        
+        $items = $wpdb->get_results(
+            $wpdb->prepare("SELECT * FROM $table WHERE is_draft = 1 AND status = 'draft' ORDER BY updated_at DESC LIMIT %d OFFSET %d", $perPage, $offset)
+        );
+
+        $total = $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE is_draft = 1 AND status = 'draft'");
+
+        return [
+            'data' => $items,
+            'total' => (int)$total,
+            'per_page' => $perPage,
+            'current_page' => $page,
+            'last_page' => ceil($total / $perPage)
+        ];
+    }
 }

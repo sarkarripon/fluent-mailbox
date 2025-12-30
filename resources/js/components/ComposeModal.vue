@@ -31,10 +31,10 @@
                    </button>
                    <button @click="$emit('close')" class="text-gray-500 hover:text-gray-700 hover:bg-gray-200 p-1.5 rounded transition-colors" title="Close">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                   </button>
+               </button>
                </div>
            </div>
-
+           
            <div class="flex-1 overflow-y-auto">
                <form @submit.prevent="send" class="flex flex-col h-full">
                    <div class="px-4 py-2 border-b border-gray-200">
@@ -50,20 +50,71 @@
                        </div>
                    </div>
 
-                   <div class="px-4 py-2 border-b border-gray-200">
+                   <div v-if="showCcBcc" class="px-4 py-2 border-b border-gray-200 space-y-2">
                        <div class="flex items-center">
-                           <span class="text-sm text-gray-600 w-16 flex-shrink-0">Subject</span>
+                           <span class="text-sm text-gray-600 w-16 flex-shrink-0">Cc</span>
                            <input 
-                               v-model="form.subject" 
+                               v-model="form.cc" 
                                type="text" 
-                               required 
                                class="flex-1 px-2 py-1.5 bg-transparent border-none focus:ring-0 focus:outline-none text-sm" 
-                               placeholder="Subject"
+                               placeholder="Cc (comma-separated)"
+                           >
+                       </div>
+                       <div class="flex items-center">
+                           <span class="text-sm text-gray-600 w-16 flex-shrink-0">Bcc</span>
+                           <input 
+                               v-model="form.bcc" 
+                               type="text" 
+                               class="flex-1 px-2 py-1.5 bg-transparent border-none focus:ring-0 focus:outline-none text-sm" 
+                               placeholder="Bcc (comma-separated)"
                            >
                        </div>
                    </div>
 
-                   <div class="flex-1 px-4 py-2 overflow-y-auto">
+                   <div class="px-4 py-2 border-b border-gray-200">
+                       <div class="flex items-center justify-between">
+                           <div class="flex items-center flex-1">
+                               <span class="text-sm text-gray-600 w-16 flex-shrink-0">Subject</span>
+                               <input 
+                                   v-model="form.subject" 
+                                   type="text" 
+                                   required 
+                                   class="flex-1 px-2 py-1.5 bg-transparent border-none focus:ring-0 focus:outline-none text-sm" 
+                                   placeholder="Subject"
+                               >
+                           </div>
+                           <button 
+                               type="button"
+                               @click="showCcBcc = !showCcBcc"
+                               class="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded hover:bg-gray-100 transition-colors"
+                           >
+                               {{ showCcBcc ? 'Hide' : 'Cc/Bcc' }}
+                           </button>
+                       </div>
+                   </div>
+                   
+                   <!-- Attachments Display -->
+                   <div v-if="attachments.length > 0" class="px-4 py-2 border-b border-gray-200 bg-gray-50">
+                       <div class="flex flex-wrap gap-2">
+                           <div 
+                               v-for="(attachment, index) in attachments" 
+                               :key="attachment.id || index"
+                               class="flex items-center gap-2 bg-white px-2 py-1.5 rounded border border-gray-200 text-xs"
+                           >
+                               <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                               <span class="text-gray-700 max-w-[150px] truncate">{{ attachment.filename || attachment.name }}</span>
+                               <button 
+                                   type="button"
+                                   @click="removeAttachment(index)"
+                                   class="text-gray-400 hover:text-red-600"
+                               >
+                                   <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                               </button>
+                           </div>
+                       </div>
+                   </div>
+                   
+                   <div class="flex-1 px-4 py-2 overflow-y-auto relative">
                        <WpEditor
                            v-model="form.body"
                            :height="isExpanded ? 400 : 300"
@@ -71,6 +122,44 @@
                                form.body = val;
                            }"
                        />
+                       <!-- Signature/Template Insert -->
+                       <div class="absolute bottom-2 right-2 flex gap-2 z-10">
+                           <div class="relative">
+                               <button 
+                                   type="button"
+                                   @click.stop="showTemplates = !showTemplates"
+                                   class="text-xs text-gray-600 hover:text-gray-800 px-2 py-1 bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors shadow-sm"
+                                   title="Insert template"
+                               >
+                                   Template
+                               </button>
+                               <!-- Templates Dropdown -->
+                               <div 
+                                   v-if="showTemplates" 
+                                   v-click-outside="() => showTemplates = false"
+                                   class="absolute bottom-full right-0 mb-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto z-20"
+                               >
+                                   <div v-if="templates.length === 0" class="p-3 text-sm text-gray-500 text-center">No templates available</div>
+                                   <button
+                                       v-for="template in templates"
+                                       :key="template.id"
+                                       @click="insertTemplate(template)"
+                                       class="w-full text-left px-3 py-2 hover:bg-gray-50 border-b border-gray-100 last:border-0 transition-colors"
+                                   >
+                                       <div class="font-medium text-sm text-gray-900">{{ template.name }}</div>
+                                       <div class="text-xs text-gray-500 truncate mt-0.5">{{ template.subject || 'No subject' }}</div>
+                                   </button>
+                               </div>
+                           </div>
+                           <button 
+                               type="button"
+                               @click="insertSignature"
+                               class="text-xs text-gray-600 hover:text-gray-800 px-2 py-1 bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors shadow-sm"
+                               title="Insert signature"
+                           >
+                               Signature
+                           </button>
+                       </div>
                    </div>
 
                    <div v-if="error" class="px-4 py-2 bg-red-50 text-red-600 text-sm border-b border-red-200 flex items-center">
@@ -91,12 +180,25 @@
                            >
                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
                            </button>
-                           <button 
-                               type="button"
-                               class="text-sm text-gray-600 hover:text-gray-800 px-3 py-1.5 rounded hover:bg-gray-200 transition-colors"
-                               title="Attach files"
-                           >
+                           <label class="text-sm text-gray-600 hover:text-gray-800 px-3 py-1.5 rounded hover:bg-gray-200 transition-colors cursor-pointer">
+                               <input 
+                                   type="file" 
+                                   multiple 
+                                   @change="handleFileUpload"
+                                   class="hidden"
+                               >
                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                           </label>
+                           <button 
+                               v-if="draftId || hasChanges"
+                               type="button"
+                               @click="saveDraft"
+                               :disabled="savingDraft"
+                               class="text-sm text-gray-600 hover:text-gray-800 px-3 py-1.5 rounded hover:bg-gray-200 transition-colors disabled:opacity-50"
+                               title="Save draft"
+                           >
+                               <svg v-if="savingDraft" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                               <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
                            </button>
                        </div>
                        <div class="flex items-center space-x-2">
@@ -112,10 +214,10 @@
                                :disabled="loading" 
                                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-1.5 rounded text-sm font-medium transition-colors flex items-center disabled:opacity-70 disabled:cursor-not-allowed"
                            >
-                               <svg v-if="loading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                           <svg v-if="loading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                                <svg v-else class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                                {{ loading ? 'Sending...' : 'Send' }}
-                           </button>
+                       </button>
                        </div>
                    </div>
                </form>
@@ -125,7 +227,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch, onUnmounted } from 'vue';
+import { ref, reactive, watch, onMounted, onBeforeUnmount, onUnmounted } from 'vue';
 import api from '../utils/api';
 import WpEditor from './WpEditor.vue';
 
@@ -155,9 +257,21 @@ const adminBarHeight = ref(32); // Default WordPress admin bar height
 
 const form = reactive({
   to: '',
+  cc: '',
+  bcc: '',
   subject: '',
   body: ''
 });
+
+const attachments = ref([]);
+const showCcBcc = ref(false);
+const draftId = ref(null);
+const savingDraft = ref(false);
+const autoSaveTimer = ref(null);
+const hasChanges = ref(false);
+const showTemplates = ref(false);
+const signatures = ref([]);
+const templates = ref([]);
 
 const getSidebarWidth = () => {
   // Detect WordPress admin sidebar width
@@ -261,9 +375,29 @@ watch(() => props.isOpen, (newValue) => {
     sidebarWidth.value = getSidebarWidth();
     adminBarHeight.value = getAdminBarHeight();
     
-    // Pre-fill form for reply/forward
+    // Pre-fill form for reply/forward or draft
     if (props.emailData) {
-      if (props.mode === 'reply') {
+      if (props.emailData.is_draft) {
+        // Loading a draft
+        form.to = getRecipientsString(props.emailData.recipients);
+        form.cc = getRecipientsString(props.emailData.cc);
+        form.bcc = getRecipientsString(props.emailData.bcc);
+        form.subject = props.emailData.subject || '';
+        form.body = props.emailData.body || '';
+        draftId.value = props.emailData.id;
+        
+        // Load attachments if any
+        if (props.emailData.attachments) {
+          try {
+            const attIds = JSON.parse(props.emailData.attachments);
+            // Fetch attachment details (simplified - in production, you'd fetch from API)
+            attachments.value = attIds.map(id => ({ id, filename: `Attachment ${id}` }));
+          } catch (e) {
+            attachments.value = [];
+          }
+        }
+        hasChanges.value = false;
+      } else if (props.mode === 'reply') {
         form.to = props.emailData.sender || '';
         form.subject = props.emailData.subject?.startsWith('Re:') 
           ? props.emailData.subject 
@@ -285,18 +419,168 @@ watch(() => props.isOpen, (newValue) => {
     } else {
       // Reset form for new message
       form.to = '';
+      form.cc = '';
+      form.bcc = '';
       form.subject = '';
       form.body = '';
+      attachments.value = [];
+      draftId.value = null;
+      hasChanges.value = false;
     }
   } else {
     // Reset form when closing
     form.to = '';
+    form.cc = '';
+    form.bcc = '';
     form.subject = '';
     form.body = '';
+    attachments.value = [];
+    draftId.value = null;
+    hasChanges.value = false;
+    showCcBcc.value = false;
     error.value = '';
     success.value = false;
+    if (autoSaveTimer.value) {
+      clearTimeout(autoSaveTimer.value);
+      autoSaveTimer.value = null;
+    }
   }
 });
+
+// Auto-save draft functionality
+watch([() => form.to, () => form.cc, () => form.bcc, () => form.subject, () => form.body, () => attachments.value], () => {
+  if (props.isOpen && (form.to || form.subject || form.body)) {
+    hasChanges.value = true;
+    
+    // Clear existing timer
+    if (autoSaveTimer.value) {
+      clearTimeout(autoSaveTimer.value);
+    }
+    
+    // Auto-save after 2 seconds of inactivity
+    autoSaveTimer.value = setTimeout(() => {
+      saveDraft(true); // Silent save
+    }, 2000);
+  }
+}, { deep: true });
+
+const handleFileUpload = async (event) => {
+  const files = Array.from(event.target.files);
+  if (files.length === 0) return;
+
+  for (const file of files) {
+    try {
+      const { data } = await api.uploadAttachment(file);
+      attachments.value.push({
+        id: data.id,
+        url: data.url,
+        filename: data.filename,
+        filesize: data.filesize,
+        mime: data.mime
+      });
+      hasChanges.value = true;
+    } catch (e) {
+      error.value = `Failed to upload ${file.name}: ${e.response?.data?.message || 'Upload error'}`;
+    }
+  }
+  
+  // Reset file input
+  event.target.value = '';
+};
+
+const removeAttachment = (index) => {
+  attachments.value.splice(index, 1);
+  hasChanges.value = true;
+};
+
+const getRecipientsString = (json) => {
+  if (!json) return '';
+  try {
+    const parsed = JSON.parse(json);
+    if (Array.isArray(parsed)) return parsed.join(', ');
+    return json;
+  } catch (e) {
+    return json;
+  }
+};
+
+const loadSignaturesAndTemplates = async () => {
+  try {
+    const [sigRes, tplRes] = await Promise.all([
+      api.getSignatures(),
+      api.getTemplates()
+    ]);
+    signatures.value = sigRes.data || [];
+    templates.value = tplRes.data || [];
+  } catch (e) {
+    console.error('Failed to load signatures/templates', e);
+  }
+};
+
+const insertSignature = () => {
+  if (signatures.value.length === 0) {
+    error.value = 'No signatures available. Please create a signature in settings.';
+    return;
+  }
+  
+  const defaultSig = signatures.value.find(s => s.is_default);
+  if (defaultSig) {
+    form.body += '<br><br>' + defaultSig.content;
+    hasChanges.value = true;
+  } else if (signatures.value.length > 0) {
+    form.body += '<br><br>' + signatures.value[0].content;
+    hasChanges.value = true;
+  }
+};
+
+const insertTemplate = (template) => {
+  if (template.subject) {
+    form.subject = template.subject;
+  }
+  form.body = template.body || '';
+  showTemplates.value = false;
+  hasChanges.value = true;
+};
+
+const saveDraft = async (silent = false) => {
+  if (!silent) {
+    savingDraft.value = true;
+  }
+  
+  try {
+    const { data } = await api.saveDraft({
+      to: form.to,
+      cc: form.cc,
+      bcc: form.bcc,
+      subject: form.subject,
+      body: form.body,
+      attachments: attachments.value.map(a => a.id),
+      draft_id: draftId.value
+    });
+    
+    draftId.value = data.draft_id;
+    hasChanges.value = false;
+    
+    if (!silent) {
+      // Show brief success message
+      const successMsg = document.createElement('div');
+      successMsg.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 text-sm';
+      successMsg.textContent = 'Draft saved';
+      document.body.appendChild(successMsg);
+      setTimeout(() => {
+        document.body.removeChild(successMsg);
+      }, 2000);
+    }
+  } catch (e) {
+    if (!silent) {
+      error.value = 'Failed to save draft';
+    }
+  } finally {
+    if (!silent) {
+      savingDraft.value = false;
+    }
+  }
+};
 
 // Watch for sidebar collapse/expand and admin bar changes
 let sidebarObserver = null;
@@ -349,6 +633,16 @@ if (typeof window !== 'undefined' && document.body) {
   window._fluentMailboxResizeHandler = handleResize;
 }
 
+onMounted(() => {
+  loadSignaturesAndTemplates();
+});
+
+onBeforeUnmount(() => {
+  if (autoSaveTimer.value) {
+    clearTimeout(autoSaveTimer.value);
+  }
+});
+
 onUnmounted(() => {
   document.removeEventListener('mousemove', onDrag);
   document.removeEventListener('mouseup', stopDrag);
@@ -358,6 +652,9 @@ onUnmounted(() => {
   if (typeof window !== 'undefined' && window._fluentMailboxResizeHandler) {
     window.removeEventListener('resize', window._fluentMailboxResizeHandler);
     delete window._fluentMailboxResizeHandler;
+  }
+  if (autoSaveTimer.value) {
+    clearTimeout(autoSaveTimer.value);
   }
 });
 
@@ -380,11 +677,34 @@ const send = async () => {
   loading.value = true;
 
   try {
-      await api.sendEmail(form);
+      const emailData = {
+        to: form.to,
+        subject: form.subject,
+        body: form.body,
+        cc: form.cc || null,
+        bcc: form.bcc || null,
+        attachments: attachments.value.map(a => a.id),
+        draft_id: draftId.value || null
+      };
+      
+      await api.sendEmail(emailData);
       success.value = true;
+      
+      // Clear form
       form.to = '';
+      form.cc = '';
+      form.bcc = '';
       form.subject = '';
       form.body = '';
+      attachments.value = [];
+      draftId.value = null;
+      hasChanges.value = false;
+      
+      if (autoSaveTimer.value) {
+        clearTimeout(autoSaveTimer.value);
+        autoSaveTimer.value = null;
+      }
+      
       emit('sent');
       setTimeout(() => {
           success.value = false;

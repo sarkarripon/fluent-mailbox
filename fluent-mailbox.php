@@ -33,8 +33,21 @@ final class FluentMailbox
     private function initHooks()
     {
         register_activation_hook(__FILE__, [__CLASS__, 'activate']);
+        register_deactivation_hook(__FILE__, [__CLASS__, 'deactivate']);
         add_action('admin_menu', [$this, 'registerMenu']);
         add_action('admin_enqueue_scripts', [$this, 'enqueueAssets']);
+        // Run migration check on admin init to ensure columns exist
+        add_action('admin_init', [__CLASS__, 'checkMigration']);
+    }
+    
+    public static function checkMigration()
+    {
+        // Check if we need to run migration (for existing installations)
+        $version = get_option('fluent_mailbox_db_version', '0');
+        if (version_compare($version, FLUENT_MAILBOX_VERSION, '<')) {
+            \FluentMailbox\Common\DatabaseMigration::migrate();
+            update_option('fluent_mailbox_db_version', FLUENT_MAILBOX_VERSION);
+        }
     }
 
     public static function activate()
@@ -43,6 +56,12 @@ final class FluentMailbox
             require_once FLUENT_MAILBOX_PATH . 'vendor/autoload.php';
         }
         \FluentMailbox\Common\DatabaseMigration::migrate();
+        update_option('fluent_mailbox_db_version', FLUENT_MAILBOX_VERSION);
+    }
+    
+    public static function deactivate()
+    {
+        // Cleanup if needed
     }
 
     public function registerMenu()
@@ -80,6 +99,15 @@ final class FluentMailbox
 
         add_submenu_page(
             $menu_slug,
+            __('Drafts', 'fluent-mailbox'),
+            __('Drafts', 'fluent-mailbox'),
+            'manage_options',
+            $menu_slug . '-drafts',
+            [$this, 'renderApp']
+        );
+
+        add_submenu_page(
+            $menu_slug,
             __('Trash', 'fluent-mailbox'),
             __('Trash', 'fluent-mailbox'),
             'manage_options',
@@ -107,6 +135,8 @@ final class FluentMailbox
             $route = '/inbox';
         } elseif (strpos($current_page, '-sent') !== false) {
             $route = '/sent';
+        } elseif (strpos($current_page, '-drafts') !== false) {
+            $route = '/drafts';
         } elseif (strpos($current_page, '-trash') !== false) {
             $route = '/trash';
         } elseif (strpos($current_page, '-settings') !== false) {
@@ -140,9 +170,9 @@ final class FluentMailbox
 
         // Development mode check
         if (defined('WP_ENV') && WP_ENV === 'development') {
-             $scriptLocation = 'http://localhost:4002/resources/js/main.js';
+             $scriptLocation = 'http://localhost:4005/resources/js/main.js';
              // Vite handles CSS injection in dev
-             wp_enqueue_script('fluent-mailbox-vite-client', 'http://localhost:4002/@vite/client', [], null, false);
+             wp_enqueue_script('fluent-mailbox-vite-client', 'http://localhost:4005/@vite/client', [], null, false);
         }
 
         wp_enqueue_script('fluent-mailbox-app', $scriptLocation, ['jquery'], FLUENT_MAILBOX_VERSION, true);

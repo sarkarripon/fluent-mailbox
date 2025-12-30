@@ -7,7 +7,7 @@
               </button>
               <h1 class="text-lg font-semibold text-gray-800 truncate max-w-xl">{{ email ? email.subject : 'Loading...' }}</h1>
           </div>
-
+          
           <div class="flex items-center space-x-1" v-if="email">
                <button @click="handleReply" class="px-3 py-1.5 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all flex items-center gap-1.5">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
@@ -31,13 +31,21 @@
           <!-- Metadata -->
           <div class="bg-white rounded-lg p-5 mb-4 border border-gray-200">
               <div class="flex justify-between items-start mb-4">
-                  <div class="flex items-center space-x-3">
+              <div class="flex items-center space-x-3">
                       <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-lg">
-                          {{ email.sender ? email.sender[0].toUpperCase() : '?' }}
-                      </div>
-                      <div>
+                      {{ email.sender ? email.sender[0].toUpperCase() : '?' }}
+                  </div>
+                  <div>
                           <div class="font-semibold text-gray-900">{{ email.sender }}</div>
-                          <div class="text-sm text-gray-500 mt-0.5">To: <span class="text-gray-700">{{ getRecipients(email.recipients) }}</span></div>
+                          <div class="text-sm text-gray-500 mt-0.5 space-y-0.5">
+                              <div>To: <span class="text-gray-700">{{ getRecipients(email.recipients) }}</span></div>
+                              <div v-if="getRecipients(email.cc)">
+                                  Cc: <span class="text-gray-700">{{ getRecipients(email.cc) }}</span>
+                              </div>
+                              <div v-if="getRecipients(email.bcc)">
+                                  Bcc: <span class="text-gray-700">{{ getRecipients(email.bcc) }}</span>
+                              </div>
+                          </div>
                       </div>
                   </div>
                   <div class="text-xs text-gray-500">
@@ -46,10 +54,28 @@
               </div>
           </div>
 
+          <!-- Attachments -->
+          <div v-if="emailAttachments.length > 0" class="bg-white rounded-lg p-4 mb-4 border border-gray-200">
+              <h3 class="text-sm font-semibold text-gray-700 mb-3">Attachments</h3>
+              <div class="flex flex-wrap gap-2">
+                  <a 
+                      v-for="(attachment, index) in emailAttachments" 
+                      :key="index"
+                      :href="getAttachmentUrl(attachment)"
+                      target="_blank"
+                      class="flex items-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 text-sm text-gray-700 transition-colors"
+                  >
+                      <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                      <span>{{ attachment.filename || `Attachment ${index + 1}` }}</span>
+                      <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                  </a>
+              </div>
+          </div>
+
           <!-- Body -->
           <div class="bg-white rounded-lg p-6 border border-gray-200 prose prose-sm max-w-none text-gray-800" v-html="email.body"></div>
       </div>
-
+      
       <div v-else-if="loading" class="flex-1 flex justify-center items-center">
            <div class="relative">
                <div class="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
@@ -59,7 +85,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '../utils/api';
 import { useAppStore } from '../stores/useAppStore';
@@ -131,6 +157,7 @@ const handleForward = () => {
 };
 
 const getRecipients = (json) => {
+    if (!json) return '';
     try {
         const parsed = JSON.parse(json);
         if (Array.isArray(parsed)) return parsed.join(', ');
@@ -138,5 +165,20 @@ const getRecipients = (json) => {
     } catch (e) {
         return json;
     }
+};
+
+const emailAttachments = computed(() => {
+    if (!email.value || !email.value.attachments) return [];
+    try {
+        const attIds = JSON.parse(email.value.attachments);
+        return attIds.map(id => ({ id, filename: `Attachment ${id}` }));
+    } catch (e) {
+        return [];
+    }
+});
+
+const getAttachmentUrl = (attachment) => {
+    // Get WordPress attachment URL via REST API
+    return `${window.FluentMailbox?.root || ''}/attachments/${attachment.id}/download` || '#';
 };
 </script>

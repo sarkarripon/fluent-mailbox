@@ -2,7 +2,7 @@
   <div class="h-full flex flex-col">
       <header class="py-4 border-b border-gray-200 flex flex-col gap-3 bg-white/50 backdrop-blur-sm sticky top-0 z-10 transition-all duration-300" :class="store.isCompact ? 'pl-16 pr-8' : 'px-8'">
           <div class="flex items-center justify-between">
-              <div class="flex items-center space-x-4">
+          <div class="flex items-center space-x-4">
                    <div v-if="isSelectionMode" class="flex items-center gap-3">
                        <input 
                            type="checkbox"
@@ -42,7 +42,7 @@
                   <template v-else>
                       <Tooltip text="Select multiple emails to perform bulk actions">
                           <button @click="enterSelectionMode" class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
-                              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
                           </button>
                       </Tooltip>
                   </template>
@@ -53,7 +53,7 @@
                   </Tooltip>
               </div>
           </div>
-
+          
           <!-- Search Bar -->
           <div class="relative">
               <input 
@@ -149,6 +149,32 @@
               </div>
           </div>
 
+          <!-- Pagination -->
+          <div v-if="filteredEmails.length > 0 && totalPages > 1" class="px-6 py-4 border-t border-gray-200 flex items-center justify-between bg-white">
+              <div class="text-sm text-gray-600">
+                  Showing {{ (currentPage - 1) * 20 + 1 }} to {{ Math.min(currentPage * 20, totalEmails) }} of {{ totalEmails }} emails
+              </div>
+              <div class="flex items-center gap-2">
+                  <button 
+                      @click="fetchEmails(currentPage - 1)"
+                      :disabled="currentPage === 1"
+                      class="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                      Previous
+                  </button>
+                  <span class="text-sm text-gray-600 px-2">
+                      Page {{ currentPage }} of {{ totalPages }}
+                  </span>
+                  <button 
+                      @click="fetchEmails(currentPage + 1)"
+                      :disabled="currentPage >= totalPages"
+                      class="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                      Next
+                  </button>
+              </div>
+          </div>
+
           <!-- Empty State -->
           <div v-else class="flex flex-col items-center justify-center h-full py-12">
               <div class="w-32 h-32 mb-6 rounded-full bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
@@ -158,7 +184,7 @@
               <p class="text-sm text-gray-500 mb-6 max-w-sm text-center">No emails here yet. New messages will appear in your inbox.</p>
               <button 
                   v-if="store.isConfigured"
-                  @click="router.push('/inbox')"
+                  @click="store.openCompose('new')"
                   class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
               >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -187,17 +213,26 @@ const searchQuery = ref('');
 const isRefreshing = ref(false);
 const isSelectionMode = ref(false);
 const selectedEmails = ref([]);
+const currentPage = ref(1);
+const totalPages = ref(1);
+const totalEmails = ref(0);
 
-const fetchEmails = async () => {
+const fetchEmails = async (page = 1) => {
     loading.value = true;
     try {
         // Get inbox emails (status = 'inbox' or not 'sent' and not 'trash')
-        const response = await api.getEmails(1, 'all'); 
+        const response = await api.getEmails(page, 'all'); 
         const allEmails = response.data.data || [];
         // Filter for inbox emails
         emails.value = allEmails.filter(email => 
-            email.status === 'inbox' || (email.status !== 'sent' && email.status !== 'trash')
+            email.status === 'inbox' || (email.status !== 'sent' && email.status !== 'trash' && email.status !== 'draft')
         );
+        
+        // Update pagination info
+        currentPage.value = response.data.current_page || 1;
+        totalPages.value = response.data.last_page || 1;
+        totalEmails.value = response.data.total || 0;
+        
         // Refresh counts
         emailCounts.fetchCounts();
     } catch (e) {

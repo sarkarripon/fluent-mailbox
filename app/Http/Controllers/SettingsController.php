@@ -144,4 +144,99 @@ class SettingsController
     {
         return strpos($string, '********') !== false;
     }
+
+    public function getSignatures($request)
+    {
+        $signatures = get_option('fluent_mailbox_signatures', []);
+        return rest_ensure_response($signatures);
+    }
+
+    public function saveSignature($request)
+    {
+        $name = $request->get_param('name');
+        $content = $request->get_param('content');
+        $is_default = $request->get_param('is_default');
+
+        if (empty($name) || empty($content)) {
+            return new \WP_Error('missing_params', 'Name and content are required', ['status' => 400]);
+        }
+
+        $signatures = get_option('fluent_mailbox_signatures', []);
+        $id = count($signatures) + 1;
+
+        $signature = [
+            'id' => $id,
+            'name' => sanitize_text_field($name),
+            'content' => wp_kses_post($content),
+            'is_default' => (bool) $is_default,
+            'created_at' => current_time('mysql')
+        ];
+
+        // If this is default, unset others
+        if ($is_default) {
+            foreach ($signatures as &$sig) {
+                $sig['is_default'] = false;
+            }
+        }
+
+        $signatures[] = $signature;
+        update_option('fluent_mailbox_signatures', $signatures);
+
+        return rest_ensure_response($signature);
+    }
+
+    public function deleteSignature($request)
+    {
+        $id = (int) $request->get_param('id');
+        $signatures = get_option('fluent_mailbox_signatures', []);
+        $signatures = array_filter($signatures, function($sig) use ($id) {
+            return $sig['id'] != $id;
+        });
+        update_option('fluent_mailbox_signatures', array_values($signatures));
+        return rest_ensure_response(['message' => 'Signature deleted']);
+    }
+
+    public function getTemplates($request)
+    {
+        $templates = get_option('fluent_mailbox_templates', []);
+        return rest_ensure_response($templates);
+    }
+
+    public function saveTemplate($request)
+    {
+        $name = $request->get_param('name');
+        $subject = $request->get_param('subject');
+        $body = $request->get_param('body');
+
+        if (empty($name) || empty($body)) {
+            return new \WP_Error('missing_params', 'Name and body are required', ['status' => 400]);
+        }
+
+        $templates = get_option('fluent_mailbox_templates', []);
+        $id = count($templates) + 1;
+
+        $template = [
+            'id' => $id,
+            'name' => sanitize_text_field($name),
+            'subject' => sanitize_text_field($subject),
+            'body' => wp_kses_post($body),
+            'created_at' => current_time('mysql')
+        ];
+
+        $templates[] = $template;
+        update_option('fluent_mailbox_templates', $templates);
+
+        return rest_ensure_response($template);
+    }
+
+    public function deleteTemplate($request)
+    {
+        $id = (int) $request->get_param('id');
+        $templates = get_option('fluent_mailbox_templates', []);
+        $templates = array_filter($templates, function($tpl) use ($id) {
+            return $tpl['id'] != $id;
+        });
+        update_option('fluent_mailbox_templates', array_values($templates));
+        return rest_ensure_response(['message' => 'Template deleted']);
+    }
 }

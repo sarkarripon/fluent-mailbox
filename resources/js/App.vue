@@ -6,7 +6,18 @@
         <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
             <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
         </div>
-        <span class="text-base font-semibold text-gray-800">Mailbox</span>
+        <div class="flex items-center space-x-2 flex-1">
+          <span class="text-base font-semibold text-gray-800">Mailbox</span>
+          <Tooltip v-if="store.isConfigured" text="Mailbox is connected and ready" position="right">
+            <div class="relative">
+              <div class="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse"></div>
+              <div class="absolute inset-0 w-2.5 h-2.5 bg-green-500 rounded-full animate-ping opacity-75"></div>
+            </div>
+          </Tooltip>
+          <Tooltip v-else text="Mailbox is not connected. Go to Settings to configure." position="right">
+            <div class="w-2.5 h-2.5 bg-gray-400 rounded-full"></div>
+          </Tooltip>
+        </div>
       </div>
       
       <div class="px-3 mb-3">
@@ -30,6 +41,11 @@
             <router-link to="/sent" class="flex items-center px-3 py-2 rounded-lg transition-colors group" :class="$route.path.includes('sent') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'">
                 <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                 <span class="text-sm font-medium">Sent</span>
+            </router-link>
+
+            <router-link to="/drafts" class="flex items-center px-3 py-2 rounded-lg transition-colors group" :class="$route.path.includes('drafts') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'">
+                <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                <span class="text-sm font-medium">Drafts</span>
             </router-link>
 
             <router-link to="/trash" class="flex items-center px-3 py-2 rounded-lg transition-colors group" :class="$route.path.includes('trash') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'">
@@ -79,11 +95,15 @@ import { ref, onMounted, onBeforeUnmount } from 'vue';
 import ComposeModal from './components/ComposeModal.vue';
 import { useAppStore } from './stores/useAppStore';
 import { useEmailCounts } from './composables/useEmailCounts';
+import { useKeyboardShortcuts } from './composables/useKeyboardShortcuts';
 import Tooltip from './components/Tooltip.vue';
 
 const store = useAppStore();
 const emailCounts = useEmailCounts();
 const adminBarHeight = ref(0);
+
+// Enable keyboard shortcuts
+useKeyboardShortcuts();
 
 const getAdminBarHeight = () => {
   const adminBar = document.getElementById('wpadminbar');

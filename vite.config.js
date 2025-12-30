@@ -23,7 +23,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 4002,
+    port: 4005,
     strictPort: true,
     hmr: {
       host: 'localhost',

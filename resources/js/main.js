@@ -11,11 +11,13 @@ import Sent from './views/Sent.vue';
 import Settings from './views/Settings.vue';
 import EmailDetail from './views/EmailDetail.vue';
 import Trash from './views/Trash.vue';
+import Drafts from './views/Drafts.vue';
 
 const routes = [
     { path: '/', redirect: '/inbox' },
     { path: '/inbox', component: Inbox, name: 'Inbox' },
     { path: '/sent', component: Sent, name: 'Sent' },
+    { path: '/drafts', component: Drafts, name: 'Drafts' },
     { path: '/trash', component: Trash, name: 'Trash' },
     { path: '/settings', component: Settings, name: 'Settings' },
     { path: '/emails/:id', component: EmailDetail, name: 'EmailDetail' },
@@ -29,6 +31,10 @@ const router = createRouter({
 const app = createApp(App);
 const pinia = createPinia();
 app.use(pinia);
+
+// Register global directives
+import clickOutside from './directives/clickOutside';
+app.directive('click-outside', clickOutside);
 
 router.beforeEach((to, from, next) => {
     const store = useAppStore();
