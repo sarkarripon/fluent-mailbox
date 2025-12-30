@@ -1,7 +1,7 @@
 <template>
   <div class="flex h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 font-sans text-gray-900">
     <!-- Sidebar -->
-    <aside class="w-48 bg-white border-r border-gray-200 flex flex-col">
+    <aside v-show="!store.isCompact" class="w-48 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out">
       <div class="p-4 flex items-center space-x-2">
         <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
             <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
@@ -40,10 +40,23 @@
             </router-link>
         </div>
       </nav>
+      
+      <!-- Compact Mode Toggle Button -->
+      <div class="p-3 border-t border-gray-200">
+          <button @click="toggleCompact" class="w-full flex items-center px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors group">
+              <svg v-if="!store.isCompact" class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V5l12 7-12 7z"></path></svg>
+              <svg v-else class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+              <span class="text-sm font-medium">{{ store.isCompact ? 'Show Sidebar' : 'Compact' }}</span>
+          </button>
+      </div>
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 flex flex-col overflow-hidden bg-white/70 backdrop-blur-xl m-2 rounded-3xl border border-white/50">
+    <main class="flex-1 flex flex-col overflow-hidden bg-white/70 backdrop-blur-xl m-2 rounded-3xl border border-white/50 relative">
+      <!-- Expand Sidebar Button (shown when compact) -->
+      <button v-if="store.isCompact" @click="toggleCompact" class="absolute top-4 left-4 z-20 p-2.5 bg-white hover:bg-gray-50 rounded-lg shadow-sm border border-gray-200 transition-colors flex items-center justify-center">
+          <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+      </button>
       <router-view></router-view>
     </main>
 
@@ -58,4 +71,8 @@ import { useAppStore } from './stores/useAppStore';
 
 const store = useAppStore();
 const showCompose = ref(false);
+
+const toggleCompact = () => {
+  store.toggleCompact();
+};
 </script>

@@ -1,6 +1,6 @@
 <template>
   <div class="h-full flex flex-col">
-      <header class="px-8 py-6 border-b border-gray-100/50 flex justify-between items-center bg-white/50 backdrop-blur-sm">
+      <header class="py-6 border-b border-gray-100/50 flex justify-between items-center bg-white/50 backdrop-blur-sm transition-all duration-300" :class="store.isCompact ? 'pl-16 pr-8' : 'px-8'">
           <h1 class="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Trash</h1>
           <button v-if="emails.length" @click="emptyTrash" class="text-red-600 text-sm font-medium hover:text-red-700 hover:bg-red-50 px-4 py-2 rounded-xl transition-all duration-300">Empty Trash</button>
       </header>
@@ -45,6 +45,9 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import api from '../utils/api';
+import { useAppStore } from '../stores/useAppStore';
+
+const store = useAppStore();
 
 const emails = ref([]);
 const loading = ref(true);

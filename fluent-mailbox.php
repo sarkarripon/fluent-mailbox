@@ -47,25 +47,87 @@ final class FluentMailbox
 
     public function registerMenu()
     {
+        $menu_slug = 'fluent-mailbox';
+        
         add_menu_page(
             __('Fluent Mailbox', 'fluent-mailbox'),
             __('Fluent Mailbox', 'fluent-mailbox'),
             'manage_options',
-            'fluent-mailbox',
+            $menu_slug,
             [$this, 'renderApp'],
             'dashicons-email',
             25
+        );
+
+        // Submenu items - all use same slug since Vue router handles navigation
+        add_submenu_page(
+            $menu_slug,
+            __('Inbox', 'fluent-mailbox'),
+            __('Inbox', 'fluent-mailbox'),
+            'manage_options',
+            $menu_slug . '-inbox',
+            [$this, 'renderApp']
+        );
+
+        add_submenu_page(
+            $menu_slug,
+            __('Sent', 'fluent-mailbox'),
+            __('Sent', 'fluent-mailbox'),
+            'manage_options',
+            $menu_slug . '-sent',
+            [$this, 'renderApp']
+        );
+
+        add_submenu_page(
+            $menu_slug,
+            __('Trash', 'fluent-mailbox'),
+            __('Trash', 'fluent-mailbox'),
+            'manage_options',
+            $menu_slug . '-trash',
+            [$this, 'renderApp']
+        );
+
+        add_submenu_page(
+            $menu_slug,
+            __('Settings', 'fluent-mailbox'),
+            __('Settings', 'fluent-mailbox'),
+            'manage_options',
+            $menu_slug . '-settings',
+            [$this, 'renderApp']
         );
     }
 
     public function renderApp()
     {
-        echo '<div id="fluent-mailbox-app"></div>';
+        // Detect which route to navigate to based on current page
+        $current_page = isset($_GET['page']) ? sanitize_text_field($_GET['page']) : 'fluent-mailbox';
+        $route = '/inbox'; // Default route
+        
+        if (strpos($current_page, '-inbox') !== false) {
+            $route = '/inbox';
+        } elseif (strpos($current_page, '-sent') !== false) {
+            $route = '/sent';
+        } elseif (strpos($current_page, '-trash') !== false) {
+            $route = '/trash';
+        } elseif (strpos($current_page, '-settings') !== false) {
+            $route = '/settings';
+        }
+        
+        echo '<div id="fluent-mailbox-app" data-initial-route="' . esc_attr($route) . '"></div>';
     }
 
     public function enqueueAssets($hook)
     {
-        if ($hook !== 'toplevel_page_fluent-mailbox') {
+        // Check if this is any of the Fluent Mailbox pages (main menu or submenu)
+        $mailbox_pages = [
+            'toplevel_page_fluent-mailbox',
+            'fluent-mailbox_page_fluent-mailbox-inbox',
+            'fluent-mailbox_page_fluent-mailbox-sent',
+            'fluent-mailbox_page_fluent-mailbox-trash',
+            'fluent-mailbox_page_fluent-mailbox-settings'
+        ];
+
+        if (!in_array($hook, $mailbox_pages, true)) {
             return;
         }
 

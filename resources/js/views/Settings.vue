@@ -1,6 +1,6 @@
 <template>
   <div class="h-full flex flex-col">
-      <header class="px-6 py-4 border-b border-gray-100/50 flex justify-between items-center bg-white/50 backdrop-blur-sm">
+      <header class="py-4 border-b border-gray-100/50 flex justify-between items-center bg-white/50 backdrop-blur-sm transition-all duration-300" :class="store.isCompact ? 'pl-16 pr-6' : 'px-6'">
           <h1 class="text-xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Settings</h1>
       </header>
 

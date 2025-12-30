@@ -41,4 +41,19 @@ router.beforeEach((to, from, next) => {
 });
 
 app.use(router);
+
+// Check for initial route from data attribute and navigate if needed
+const appElement = document.getElementById('fluent-mailbox-app');
+if (appElement) {
+    const initialRoute = appElement.getAttribute('data-initial-route');
+    if (initialRoute) {
+        // Navigate to the initial route after a short delay to ensure router is ready
+        router.isReady().then(() => {
+            if (router.currentRoute.value.path !== initialRoute) {
+                router.push(initialRoute);
+            }
+        });
+    }
+}
+
 app.mount('#fluent-mailbox-app');

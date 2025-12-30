@@ -1,6 +1,6 @@
 <template>
   <div class="h-full flex flex-col">
-      <header class="px-8 py-6 border-b border-gray-100/50 flex justify-between items-center bg-white/50 backdrop-blur-sm sticky top-0 z-10">
+      <header class="py-6 border-b border-gray-100/50 flex justify-between items-center bg-white/50 backdrop-blur-sm sticky top-0 z-10 transition-all duration-300" :class="store.isCompact ? 'pl-16 pr-8' : 'px-8'">
           <div class="flex items-center space-x-4">
               <button @click="$router.back()" class="p-2.5 hover:bg-gray-100/70 rounded-xl text-gray-600 hover:text-blue-600 transition-all duration-300">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
@@ -50,6 +50,9 @@
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '../utils/api';
+import { useAppStore } from '../stores/useAppStore';
+
+const store = useAppStore();
 
 const route = useRoute();
 const router = useRouter();
