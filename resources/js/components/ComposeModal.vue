@@ -16,7 +16,9 @@
                @mousedown="startDrag"
            >
                <div class="flex items-center space-x-3 flex-1">
-                   <h3 class="font-medium text-sm text-gray-700">New Message</h3>
+                   <h3 class="font-medium text-sm text-gray-700">
+                       {{ props.mode === 'reply' ? 'Reply' : props.mode === 'forward' ? 'Forward' : 'New Message' }}
+                   </h3>
                </div>
                <div class="flex items-center space-x-1">
                    <button 
@@ -40,10 +42,10 @@
                            <span class="text-sm text-gray-600 w-16 flex-shrink-0">To</span>
                            <input 
                                v-model="form.to" 
-                               type="email" 
+                               type="text" 
                                required 
                                class="flex-1 px-2 py-1.5 bg-transparent border-none focus:ring-0 focus:outline-none text-sm" 
-                               placeholder="Recipients"
+                               placeholder="Recipients (comma-separated)"
                            >
                        </div>
                    </div>
@@ -128,7 +130,15 @@ import api from '../utils/api';
 import WpEditor from './WpEditor.vue';
 
 const props = defineProps({
-  isOpen: Boolean
+  isOpen: Boolean,
+  mode: {
+    type: String,
+    default: 'new' // 'new', 'reply', 'forward'
+  },
+  emailData: {
+    type: Object,
+    default: null
+  }
 });
 
 const emit = defineEmits(['close', 'sent']);
@@ -250,6 +260,41 @@ watch(() => props.isOpen, (newValue) => {
     isExpanded.value = false;
     sidebarWidth.value = getSidebarWidth();
     adminBarHeight.value = getAdminBarHeight();
+    
+    // Pre-fill form for reply/forward
+    if (props.emailData) {
+      if (props.mode === 'reply') {
+        form.to = props.emailData.sender || '';
+        form.subject = props.emailData.subject?.startsWith('Re:') 
+          ? props.emailData.subject 
+          : `Re: ${props.emailData.subject || ''}`;
+        // Add quoted original message
+        const originalBody = props.emailData.body || '';
+        const quotedBody = `<br><br><hr style="border: none; border-top: 1px solid #e5e7eb; margin: 1em 0;"><div style="color: #6b7280; font-size: 0.875em;"><strong>From:</strong> ${props.emailData.sender || ''}<br><strong>Date:</strong> ${new Date(props.emailData.created_at).toLocaleString()}<br><strong>Subject:</strong> ${props.emailData.subject || ''}</div><div style="margin-top: 1em;">${originalBody}</div>`;
+        form.body = quotedBody;
+      } else if (props.mode === 'forward') {
+        form.to = '';
+        form.subject = props.emailData.subject?.startsWith('Fwd:') 
+          ? props.emailData.subject 
+          : `Fwd: ${props.emailData.subject || ''}`;
+        // Add forwarded message
+        const originalBody = props.emailData.body || '';
+        const forwardedBody = `<br><br><hr style="border: none; border-top: 1px solid #e5e7eb; margin: 1em 0;"><div style="color: #6b7280; font-size: 0.875em;"><strong>From:</strong> ${props.emailData.sender || ''}<br><strong>Date:</strong> ${new Date(props.emailData.created_at).toLocaleString()}<br><strong>Subject:</strong> ${props.emailData.subject || ''}</div><div style="margin-top: 1em;">${originalBody}</div>`;
+        form.body = forwardedBody;
+      }
+    } else {
+      // Reset form for new message
+      form.to = '';
+      form.subject = '';
+      form.body = '';
+    }
+  } else {
+    // Reset form when closing
+    form.to = '';
+    form.subject = '';
+    form.body = '';
+    error.value = '';
+    success.value = false;
   }
 });
 

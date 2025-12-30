@@ -123,16 +123,11 @@ const formatRelativeDate = (dateString) => {
 };
 
 const handleReply = () => {
-    // Open compose modal with reply pre-filled
-    // For now, just open compose - can be enhanced later
-    router.push('/inbox');
-    // TODO: Open compose modal with reply data
+    store.openCompose('reply', email.value);
 };
 
 const handleForward = () => {
-    // Open compose modal with forward pre-filled
-    router.push('/inbox');
-    // TODO: Open compose modal with forward data
+    store.openCompose('forward', email.value);
 };
 
 const getRecipients = (json) => {

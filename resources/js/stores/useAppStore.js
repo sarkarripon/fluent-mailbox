@@ -13,6 +13,11 @@ export const useAppStore = defineStore('app', () => {
 
     const isCompact = ref(loadCompactState());
 
+    // Compose modal state
+    const showCompose = ref(false);
+    const composeMode = ref('new'); // 'new', 'reply', 'forward'
+    const composeEmailData = ref(null);
+
     function setConfigured(status) {
         isConfigured.value = status;
     }
@@ -27,11 +32,28 @@ export const useAppStore = defineStore('app', () => {
         localStorage.setItem(STORAGE_KEY, value.toString());
     }
 
+    function openCompose(mode = 'new', emailData = null) {
+        composeMode.value = mode;
+        composeEmailData.value = emailData;
+        showCompose.value = true;
+    }
+
+    function closeCompose() {
+        showCompose.value = false;
+        composeMode.value = 'new';
+        composeEmailData.value = null;
+    }
+
     return {
         isConfigured,
         isCompact,
+        showCompose,
+        composeMode,
+        composeEmailData,
         setConfigured,
         toggleCompact,
-        setCompact
+        setCompact,
+        openCompose,
+        closeCompose
     };
 });

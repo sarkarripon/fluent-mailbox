@@ -10,7 +10,7 @@
       </div>
       
       <div class="px-3 mb-3">
-          <button v-if="store.isConfigured" @click="showCompose = true" class="w-full flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors">
+          <button v-if="store.isConfigured" @click="store.openCompose('new')" class="w-full flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors">
              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
              <span>Compose</span>
           </button>
@@ -63,7 +63,12 @@
       <router-view></router-view>
     </main>
 
-    <ComposeModal :is-open="showCompose" @close="showCompose = false" />
+    <ComposeModal 
+        :is-open="store.showCompose" 
+        :mode="store.composeMode"
+        :email-data="store.composeEmailData"
+        @close="store.closeCompose" 
+    />
   </div>
 </template>
 
@@ -74,7 +79,6 @@ import { useAppStore } from './stores/useAppStore';
 import { useEmailCounts } from './composables/useEmailCounts';
 
 const store = useAppStore();
-const showCompose = ref(false);
 const emailCounts = useEmailCounts();
 const adminBarHeight = ref(0);
 
