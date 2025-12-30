@@ -51,6 +51,11 @@ class Router
                 'permission_callback' => [$this, 'checkPermission']
             ],
             [
+                'methods' => \WP_REST_Server::EDITABLE,
+                'callback' => [new MailController(), 'update'],
+                'permission_callback' => [$this, 'checkPermission']
+            ],
+            [
                 'methods' => \WP_REST_Server::DELETABLE,
                 'callback' => [new MailController(), 'delete'],
                 'permission_callback' => [$this, 'checkPermission']

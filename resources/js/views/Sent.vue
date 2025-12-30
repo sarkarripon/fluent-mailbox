@@ -1,8 +1,10 @@
 <template>
   <div class="h-full flex flex-col">
-      <header class="py-6 border-b border-gray-100/50 flex justify-between items-center bg-white/50 backdrop-blur-sm transition-all duration-300" :class="store.isCompact ? 'pl-16 pr-8' : 'px-8'">
-          <h1 class="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Sent Items</h1>
-          <div class="text-sm text-gray-500 bg-gray-100/70 px-3 py-1 rounded-full" v-if="emails.length">{{ emails.length }} messages</div>
+      <header class="py-4 border-b border-gray-200 flex justify-between items-center bg-white/50 backdrop-blur-sm transition-all duration-300" :class="store.isCompact ? 'pl-16 pr-8' : 'px-8'">
+          <div class="flex items-center space-x-4">
+              <h1 class="text-xl font-semibold text-gray-800">Sent</h1>
+              <div class="text-sm text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full" v-if="emails.length">{{ emails.length }} messages</div>
+          </div>
       </header>
 
       <div class="flex-1 overflow-auto p-0">
@@ -12,31 +14,46 @@
               </div>
           </div>
 
-          <div v-else-if="emails.length > 0" class="p-6 space-y-3">
-              <div v-for="email in emails" :key="email.id" @click="$router.push(`/emails/${email.id}`)" class="px-6 py-4 bg-white/60 backdrop-blur-sm hover:bg-gradient-to-r hover:from-white hover:to-emerald-50/30 border border-gray-100/50 hover:border-emerald-200/50 rounded-2xl transition-all duration-300 cursor-pointer group hover:-translate-y-0.5">
-                  <div class="flex justify-between items-start mb-2">
-                      <div class="flex items-center space-x-3">
-                          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white font-bold text-sm">
+          <div v-else-if="emails.length > 0" class="divide-y divide-gray-100">
+              <div 
+                  v-for="email in emails" 
+                  :key="email.id" 
+                  @click="$router.push(`/emails/${email.id}`)"
+                  class="px-6 py-3 bg-white hover:bg-gray-50 cursor-pointer group transition-colors"
+              >
+                  <div class="flex items-start gap-4">
+                      <div class="flex-shrink-0">
+                          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white font-semibold text-sm">
                               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                           </div>
-                          <div>
-                              <span class="font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors">To: <span class="font-normal text-gray-600">{{ getRecipients(email.recipients) }}</span></span>
-                          </div>
                       </div>
-                      <span class="text-xs text-gray-400 group-hover:text-emerald-500 transition-colors">{{ formatDate(email.created_at) }}</span>
+                      <div class="flex-1 min-w-0">
+                          <div class="flex items-center justify-between gap-3 mb-1">
+                              <div class="flex items-center gap-2 min-w-0 flex-1">
+                                  <span class="text-sm font-medium text-gray-900 truncate">
+                                      To: {{ getRecipients(email.recipients) }}
+                                  </span>
+                              </div>
+                              <span class="text-xs text-gray-500 flex-shrink-0">{{ formatRelativeDate(email.created_at) }}</span>
+                          </div>
+                          <h4 class="text-sm font-medium text-gray-900 mb-1 truncate">
+                              {{ email.subject || '(No Subject)' }}
+                          </h4>
+                          <p class="text-sm text-gray-500 truncate line-clamp-1">
+                              {{ getEmailSnippet(email.body) }}
+                          </p>
+                      </div>
                   </div>
-                  <h4 class="font-semibold text-gray-800 mb-1 group-hover:text-emerald-900 transition-colors">{{ email.subject }}</h4>
-                  <p class="text-sm text-gray-500 truncate group-hover:text-gray-600 transition-colors">{{ email.body.replace(/<[^>]*>?/gm, '') }}</p>
               </div>
           </div>
 
           <!-- Empty State -->
-          <div v-else class="flex flex-col items-center justify-center h-full text-gray-400">
-              <div class="w-24 h-24 mb-6 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                  <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+          <div v-else class="flex flex-col items-center justify-center h-full py-12">
+              <div class="w-32 h-32 mb-6 rounded-full bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center">
+                  <svg class="w-16 h-16 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
               </div>
-              <p class="text-lg font-medium text-gray-500">No sent messages</p>
-              <p class="text-sm text-gray-400 mt-1">Messages you send will appear here</p>
+              <h3 class="text-xl font-semibold text-gray-700 mb-2">No sent messages</h3>
+              <p class="text-sm text-gray-500 mb-6 max-w-sm text-center">Messages you send will appear here.</p>
           </div>
       </div>
   </div>
@@ -64,8 +81,23 @@ const fetchEmails = async () => {
     }
 };
 
-const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+const formatRelativeDate = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+};
+
+const getEmailSnippet = (body) => {
+    if (!body) return '';
+    const text = body.replace(/<[^>]*>?/gm, '').trim();
+    return text.length > 100 ? text.substring(0, 100) + '...' : text;
 };
 
 const getRecipients = (json) => {

@@ -1,41 +1,53 @@
 <template>
   <div class="h-full flex flex-col">
-      <header class="py-6 border-b border-gray-100/50 flex justify-between items-center bg-white/50 backdrop-blur-sm sticky top-0 z-10 transition-all duration-300" :class="store.isCompact ? 'pl-16 pr-8' : 'px-8'">
-          <div class="flex items-center space-x-4">
-              <button @click="$router.back()" class="p-2.5 hover:bg-gray-100/70 rounded-xl text-gray-600 hover:text-blue-600 transition-all duration-300">
+      <header class="py-4 border-b border-gray-200 flex justify-between items-center bg-white/50 backdrop-blur-sm sticky top-0 z-10 transition-all duration-300" :class="store.isCompact ? 'pl-16 pr-8' : 'px-8'">
+          <div class="flex items-center space-x-3">
+              <button @click="$router.back()" class="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-900 transition-all">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
               </button>
-              <h1 class="text-xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent truncate max-w-xl">{{ email ? email.subject : 'Loading...' }}</h1>
+              <h1 class="text-lg font-semibold text-gray-800 truncate max-w-xl">{{ email ? email.subject : 'Loading...' }}</h1>
           </div>
 
-          <div class="flex items-center space-x-2" v-if="email">
-               <button @click="deleteEmail" class="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-300" title="Delete">
-                  <svg class="w-5 h-5 transition-transform hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+          <div class="flex items-center space-x-1" v-if="email">
+               <button @click="handleReply" class="px-3 py-1.5 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all flex items-center gap-1.5">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
+                  Reply
+               </button>
+               <button @click="handleForward" class="px-3 py-1.5 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all flex items-center gap-1.5">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                  Forward
+               </button>
+               <button @click="toggleRead" class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" :title="email.is_read ? 'Mark as unread' : 'Mark as read'">
+                  <svg v-if="email.is_read" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                  <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+               </button>
+               <button @click="deleteEmail" class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Delete">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                </button>
           </div>
       </header>
 
-      <div class="flex-1 overflow-auto p-8 bg-white/50" v-if="!loading && email">
+      <div class="flex-1 overflow-auto p-6 bg-white/50" v-if="!loading && email">
           <!-- Metadata -->
-          <div class="bg-white/70 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-gray-100/50">
-              <div class="flex justify-between items-start">
-                  <div class="flex items-center space-x-4">
-                      <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xl">
+          <div class="bg-white rounded-lg p-5 mb-4 border border-gray-200">
+              <div class="flex justify-between items-start mb-4">
+                  <div class="flex items-center space-x-3">
+                      <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-lg">
                           {{ email.sender ? email.sender[0].toUpperCase() : '?' }}
                       </div>
                       <div>
-                          <div class="font-bold text-gray-900 text-lg">{{ email.sender }}</div>
-                          <div class="text-sm text-gray-500 mt-1">To: <span class="text-gray-700">{{ getRecipients(email.recipients) }}</span></div>
+                          <div class="font-semibold text-gray-900">{{ email.sender }}</div>
+                          <div class="text-sm text-gray-500 mt-0.5">To: <span class="text-gray-700">{{ getRecipients(email.recipients) }}</span></div>
                       </div>
                   </div>
-                  <div class="text-sm text-gray-500 bg-gray-100/70 px-4 py-2 rounded-full">
-                      {{ formatDate(email.created_at) }}
+                  <div class="text-xs text-gray-500">
+                      {{ formatRelativeDate(email.created_at) }}
                   </div>
               </div>
           </div>
 
           <!-- Body -->
-          <div class="bg-white/70 backdrop-blur-sm rounded-2xl p-8 border border-gray-100/50 prose max-w-none text-gray-800" v-html="email.body"></div>
+          <div class="bg-white rounded-lg p-6 border border-gray-200 prose prose-sm max-w-none text-gray-800" v-html="email.body"></div>
       </div>
 
       <div v-else-if="loading" class="flex-1 flex justify-center items-center">
@@ -51,8 +63,10 @@ import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '../utils/api';
 import { useAppStore } from '../stores/useAppStore';
+import { useEmailCounts } from '../composables/useEmailCounts';
 
 const store = useAppStore();
+const emailCounts = useEmailCounts();
 
 const route = useRoute();
 const router = useRouter();
@@ -63,6 +77,9 @@ onMounted(async () => {
     try {
         const { data } = await api.getEmail(route.params.id);
         email.value = data;
+        // Email is automatically marked as read when fetched (in backend)
+        // Refresh counts
+        emailCounts.fetchCounts();
     } catch (e) {
         console.error(e);
     } finally {
@@ -70,18 +87,52 @@ onMounted(async () => {
     }
 });
 
+const toggleRead = async () => {
+    try {
+        const newStatus = email.value.is_read ? 0 : 1;
+        await api.updateEmail(email.value.id, { is_read: newStatus });
+        email.value.is_read = newStatus;
+        emailCounts.fetchCounts();
+    } catch (e) {
+        console.error('Failed to update read status', e);
+    }
+};
+
 const deleteEmail = async () => {
     if (!confirm('Are you sure you want to delete this email?')) return;
     try {
         await api.deleteEmail(email.value.id);
+        emailCounts.fetchCounts();
         router.back();
     } catch (e) {
         alert('Failed to delete email');
     }
 };
 
-const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString();
+const formatRelativeDate = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+};
+
+const handleReply = () => {
+    // Open compose modal with reply pre-filled
+    // For now, just open compose - can be enhanced later
+    router.push('/inbox');
+    // TODO: Open compose modal with reply data
+};
+
+const handleForward = () => {
+    // Open compose modal with forward pre-filled
+    router.push('/inbox');
+    // TODO: Open compose modal with forward data
 };
 
 const getRecipients = (json) => {

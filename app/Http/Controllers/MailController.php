@@ -62,7 +62,37 @@ class MailController
              return new \WP_Error('not_found', 'Email not found', ['status' => 404]);
         }
 
+        // Mark as read when viewing
+        if (!$email->is_read) {
+            Email::update($id, ['is_read' => 1]);
+        }
+
         return rest_ensure_response($email);
+    }
+
+    public function update($request)
+    {
+        $id = $request->get_param('id');
+        $email = Email::find($id);
+        
+        if (!$email) {
+            return new \WP_Error('not_found', 'Email not found', ['status' => 404]);
+        }
+
+        $data = [];
+        $is_read = $request->get_param('is_read');
+        if ($is_read !== null) {
+            $data['is_read'] = (int) $is_read;
+        }
+
+        if (empty($data)) {
+            return new \WP_Error('invalid_data', 'No valid fields to update', ['status' => 400]);
+        }
+
+        Email::update($id, $data);
+        $updated = Email::find($id);
+
+        return rest_ensure_response($updated);
     }
 
     public function delete($request)

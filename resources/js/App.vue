@@ -1,7 +1,7 @@
 <template>
-  <div class="flex h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 font-sans text-gray-900">
+  <div class="flex bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 font-sans text-gray-900" :style="{ height: `calc(100vh - ${adminBarHeight}px)`, marginTop: adminBarHeight + 'px' }">
     <!-- Sidebar -->
-    <aside v-show="!store.isCompact" class="w-48 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out">
+    <aside v-show="!store.isCompact" class="w-48 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out" :style="{ maxHeight: `calc(100vh - ${adminBarHeight + 16}px)` }">
       <div class="p-4 flex items-center space-x-2">
         <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
             <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
@@ -18,9 +18,12 @@
 
       <nav class="flex-1 px-2 space-y-0.5">
         <template v-if="store.isConfigured">
-            <router-link to="/inbox" class="flex items-center px-3 py-2 rounded-lg transition-colors group" :class="$route.path.includes('inbox') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'">
-                <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
-                <span class="text-sm font-medium">Inbox</span>
+            <router-link to="/inbox" class="flex items-center justify-between px-3 py-2 rounded-lg transition-colors group" :class="$route.path.includes('inbox') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'">
+                <div class="flex items-center">
+                    <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+                    <span class="text-sm font-medium">Inbox</span>
+                </div>
+                <span v-if="emailCounts.inboxUnreadCount > 0" class="text-xs font-semibold bg-blue-600 text-white px-2 py-0.5 rounded-full min-w-[20px] text-center">{{ emailCounts.inboxUnreadCount }}</span>
             </router-link>
             <router-link to="/sent" class="flex items-center px-3 py-2 rounded-lg transition-colors group" :class="$route.path.includes('sent') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'">
                 <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
@@ -52,10 +55,10 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 flex flex-col overflow-hidden bg-white/70 backdrop-blur-xl m-2 rounded-3xl border border-white/50 relative">
+    <main class="flex-1 flex flex-col overflow-hidden bg-white/70 backdrop-blur-xl m-2 mb-2 rounded-3xl border border-white/50 relative" :style="{ maxHeight: `calc(100vh - ${adminBarHeight + 16}px)` }">
       <!-- Expand Sidebar Button (shown when compact) -->
-      <button v-if="store.isCompact" @click="toggleCompact" class="absolute top-4 left-4 z-20 p-2.5 bg-white hover:bg-gray-50 rounded-lg shadow-sm border border-gray-200 transition-colors flex items-center justify-center">
-          <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+      <button v-if="store.isCompact" @click="toggleCompact" class="absolute top-3 left-3 z-20 p-1.5 bg-white/90 hover:bg-white rounded-md border border-gray-200/50 shadow-sm hover:shadow transition-all flex items-center justify-center backdrop-blur-sm">
+          <svg class="w-4 h-4 text-gray-600 hover:text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
       </button>
       <router-view></router-view>
     </main>
@@ -65,14 +68,93 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import ComposeModal from './components/ComposeModal.vue';
 import { useAppStore } from './stores/useAppStore';
+import { useEmailCounts } from './composables/useEmailCounts';
 
 const store = useAppStore();
 const showCompose = ref(false);
+const emailCounts = useEmailCounts();
+const adminBarHeight = ref(0);
+
+const getAdminBarHeight = () => {
+  const adminBar = document.getElementById('wpadminbar');
+  if (adminBar) {
+    const height = adminBar.offsetHeight;
+    if (height > 0) {
+      return height;
+    }
+  }
+  
+  // Check if admin bar is visible (body has admin-bar class)
+  const body = document.body;
+  if (body && body.classList.contains('admin-bar')) {
+    // Check viewport width for mobile (admin bar is taller on mobile)
+    if (window.innerWidth <= 782) {
+      return 46; // Mobile admin bar height
+    }
+    return 32; // Desktop admin bar height
+  }
+  
+  return 0; // No admin bar
+};
+
+const updateAdminBarHeight = () => {
+  adminBarHeight.value = getAdminBarHeight();
+};
 
 const toggleCompact = () => {
   store.toggleCompact();
 };
+
+let adminBarObserver = null;
+let resizeHandler = null;
+
+onMounted(() => {
+  updateAdminBarHeight();
+  emailCounts.fetchCounts();
+  
+  // Refresh counts every 30 seconds
+  setInterval(() => {
+    emailCounts.fetchCounts();
+  }, 30000);
+
+  // Watch for admin bar changes
+  if (typeof window !== 'undefined' && document.body) {
+    adminBarObserver = new MutationObserver(() => {
+      updateAdminBarHeight();
+    });
+
+    // Observe admin bar
+    const adminBar = document.getElementById('wpadminbar');
+    if (adminBar) {
+      adminBarObserver.observe(adminBar, {
+        attributes: true,
+        attributeFilter: ['style', 'class']
+      });
+    }
+
+    // Watch body class changes for admin-bar class
+    adminBarObserver.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+
+    // Watch for window resize (admin bar height changes on mobile/desktop)
+    resizeHandler = () => {
+      updateAdminBarHeight();
+    };
+    window.addEventListener('resize', resizeHandler);
+  }
+});
+
+onBeforeUnmount(() => {
+  if (adminBarObserver) {
+    adminBarObserver.disconnect();
+  }
+  if (resizeHandler) {
+    window.removeEventListener('resize', resizeHandler);
+  }
+});
 </script>

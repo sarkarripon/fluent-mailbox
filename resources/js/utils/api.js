@@ -43,5 +43,11 @@ export default {
     },
     deleteEmail(id) {
         return api.delete(`/emails/${id}`);
+    },
+    updateEmail(id, data) {
+        return api.put(`/emails/${id}`, data);
+    },
+    emptyTrash() {
+        return api.delete('/emails/trash');
     }
 };
