@@ -29,34 +29,18 @@ class InboundService
         }
     }
 
-    public function processFromS3($bucket, $key, $checkDuplicate = false)
+    public function processFromContent($rawContent, $fallbackId = null, $checkDuplicate = false)
     {
-        if (!$this->s3Config) {
-            return new \WP_Error('config_error', 'AWS Credentials not configured');
-        }
-
         try {
-            $s3 = new S3Client($this->s3Config);
-            
-            error_log("FluentMailbox Inbound: Fetching from S3. Bucket: $bucket, Key: $key");
-
-            // 1. Get object from S3
-            $result = $s3->getObject([
-                'Bucket' => $bucket,
-                'Key'    => $key
-            ]);
-
-            $rawContent = $result['Body'];
-
             // 2. Parse MIME
             $parser = new MailMimeParser();
             // Convert stream to string to ensure compatibility, pass false for attached
             $message = $parser->parse((string) $rawContent, false);
             
-            // Use S3 key as fallback ID to ensure idempotency (prevent duplicates on re-fetch)
-            $messageId = $message->getHeaderValue('message-id') ?: $key;
+            // Use fallback ID if header is missing
+            $messageId = $message->getHeaderValue('message-id') ?: $fallbackId;
 
-            if ($checkDuplicate) {
+            if ($checkDuplicate && $messageId) {
                 global $wpdb;
                 $table = $wpdb->prefix . 'fluent_mailbox_emails';
                 // Check if already exists
@@ -96,12 +80,37 @@ class InboundService
 
             return $emailId;
 
-        } catch (AwsException $e) {
-            error_log('FluentMailbox S3 Error: ' . $e->getMessage());
-            return new \WP_Error('s3_error', $e->getMessage());
         } catch (\Exception $e) {
             error_log('FluentMailbox Parse Error: ' . $e->getMessage());
             return new \WP_Error('parse_error', $e->getMessage());
+        }
+    }
+
+    public function processFromS3($bucket, $key, $checkDuplicate = false)
+    {
+        if (!$this->s3Config) {
+            return new \WP_Error('config_error', 'AWS Credentials not configured');
+        }
+
+        try {
+            $s3 = new S3Client($this->s3Config);
+            
+            error_log("FluentMailbox Inbound: Fetching from S3. Bucket: $bucket, Key: $key");
+
+            // 1. Get object from S3
+            $result = $s3->getObject([
+                'Bucket' => $bucket,
+                'Key'    => $key
+            ]);
+
+            $rawContent = $result['Body'];
+
+            // Use S3 key as fallback ID
+            return $this->processFromContent($rawContent, $key, $checkDuplicate);
+
+        } catch (AwsException $e) {
+            error_log('FluentMailbox S3 Error: ' . $e->getMessage());
+            return new \WP_Error('s3_error', $e->getMessage());
         }
     }
 

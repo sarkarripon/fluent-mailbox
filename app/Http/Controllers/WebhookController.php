@@ -46,20 +46,49 @@ class WebhookController
                     error_log("FluentMailbox Processing from S3. Bucket: $bucket, Key: $key");
 
                     $service = new \FluentMailbox\Services\InboundService();
-                    $result = $service->processFromS3($bucket, $key);
+                    // Pass true for checkDuplicate
+                    $result = $service->processFromS3($bucket, $key, true);
 
                     if (is_wp_error($result)) {
                         error_log('FluentMailbox Error processing inbound: ' . $result->get_error_message());
                         return rest_ensure_response(['message' => 'Error processing inbound: ' . $result->get_error_message()], 500);
                     }
                     
-                    error_log('FluentMailbox Email processed successfully');
+                    if ($result === false) {
+                        error_log('FluentMailbox Email already exists (Duplicate skipped)');
+                        return rest_ensure_response(['message' => 'Email already exists']);
+                    }
+
+                    error_log('FluentMailbox Email processed successfully from S3');
+                    return rest_ensure_response(['message' => 'Email processed successfully']);
+                } elseif (isset($message['content'])) {
+                    // Fallback to Direct SNS Content (approx < 150KB safe limit)
+                    // Note: This is less reliable for large emails than S3 action
+                    error_log("FluentMailbox Processing direct SNS content");
+
+                    $service = new \FluentMailbox\Services\InboundService();
+                    // Use SES message ID as fallback if email doesn't have Message-ID header
+                    $fallbackId = $message['mail']['messageId'] ?? uniqid('sns_');
+                    
+                    // Pass true for checkDuplicate
+                    $result = $service->processFromContent($message['content'], $fallbackId, true);
+
+                    if (is_wp_error($result)) {
+                         error_log('FluentMailbox Error processing SNS content: ' . $result->get_error_message());
+                         return rest_ensure_response(['message' => 'Error processing content'], 500);
+                    }
+                    
+                    if ($result === false) {
+                        error_log('FluentMailbox Email already exists (Duplicate skipped)');
+                        return rest_ensure_response(['message' => 'Email already exists']);
+                    }
+
+                    error_log('FluentMailbox Email processed successfully from SNS content');
                     return rest_ensure_response(['message' => 'Email processed successfully']);
                 }
                 
-                error_log('FluentMailbox Webhook: Unsupported action type or missing S3 info');
-                // Fallback (no S3 info?)
-                return rest_ensure_response(['message' => 'Unsupported action type'], 200);
+                error_log('FluentMailbox Webhook: Unsupported action type or missing content');
+                return rest_ensure_response(['message' => 'Unsupported action type or missing content'], 200);
             }
         }
 
