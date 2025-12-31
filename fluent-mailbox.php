@@ -8,7 +8,7 @@
  */
 
 defined('ABSPATH') || exit;
-defined('WP_ENV') || define('WP_ENV', 'production');
+defined('WP_ENV') || define('WP_ENV', 'development');
 
 define('FLUENT_MAILBOX_VERSION', '1.0.0');
 define('FLUENT_MAILBOX_PATH', plugin_dir_path(__FILE__));
@@ -36,15 +36,25 @@ final class FluentMailbox
         register_deactivation_hook(__FILE__, [__CLASS__, 'deactivate']);
         add_action('admin_menu', [$this, 'registerMenu']);
         add_action('admin_enqueue_scripts', [$this, 'enqueueAssets']);
-        // Run migration check on admin init to ensure columns exist
-        add_action('admin_init', [__CLASS__, 'checkMigration']);
+        // Run migration check on init so REST requests are covered too
+        add_action('init', [__CLASS__, 'checkMigration']);
     }
-    
+
     public static function checkMigration()
     {
+        global $wpdb;
+
         // Check if we need to run migration (for existing installations)
         $version = get_option('fluent_mailbox_db_version', '0');
-        if (version_compare($version, FLUENT_MAILBOX_VERSION, '<')) {
+
+        $emailsTable = $wpdb->prefix . 'fluent_mailbox_emails';
+        $notesTable = $wpdb->prefix . 'fluent_mailbox_email_notes';
+
+        $emailsTableExists = ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $emailsTable)) === $emailsTable);
+        $notesTableExists = ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $notesTable)) === $notesTable);
+
+        $needsMigration = version_compare($version, FLUENT_MAILBOX_VERSION, '<') || !$emailsTableExists || !$notesTableExists;
+        if ($needsMigration) {
             \FluentMailbox\Common\DatabaseMigration::migrate();
             update_option('fluent_mailbox_db_version', FLUENT_MAILBOX_VERSION);
         }
@@ -58,7 +68,7 @@ final class FluentMailbox
         \FluentMailbox\Common\DatabaseMigration::migrate();
         update_option('fluent_mailbox_db_version', FLUENT_MAILBOX_VERSION);
     }
-    
+
     public static function deactivate()
     {
         // Cleanup if needed
@@ -67,7 +77,7 @@ final class FluentMailbox
     public function registerMenu()
     {
         $menu_slug = 'fluent-mailbox';
-        
+
         add_menu_page(
             __('Fluent Mailbox', 'fluent-mailbox'),
             __('Fluent Mailbox', 'fluent-mailbox'),
@@ -130,7 +140,7 @@ final class FluentMailbox
         // Detect which route to navigate to based on current page
         $current_page = isset($_GET['page']) ? sanitize_text_field($_GET['page']) : 'fluent-mailbox';
         $route = '/inbox'; // Default route
-        
+
         if (strpos($current_page, '-inbox') !== false) {
             $route = '/inbox';
         } elseif (strpos($current_page, '-sent') !== false) {
@@ -142,7 +152,7 @@ final class FluentMailbox
         } elseif (strpos($current_page, '-settings') !== false) {
             $route = '/settings';
         }
-        
+
         echo '<div id="fluent-mailbox-app" data-initial-route="' . esc_attr($route) . '"></div>';
     }
 
@@ -176,7 +186,7 @@ final class FluentMailbox
         }
 
         wp_enqueue_script('fluent-mailbox-app', $scriptLocation, ['jquery'], FLUENT_MAILBOX_VERSION, true);
-        
+
         if (!defined('WP_ENV') || WP_ENV !== 'development') {
              wp_enqueue_style('fluent-mailbox-style', $styleLocation, [], FLUENT_MAILBOX_VERSION);
         }

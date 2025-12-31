@@ -276,7 +276,7 @@
           </div>
 
           <!-- Empty State -->
-          <div v-else class="flex flex-col items-center justify-center h-full py-12">
+          <div v-if="filteredEmails.length === 0" class="flex flex-col items-center justify-center h-full py-12">
               <div class="w-32 h-32 mb-6 rounded-full bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
                   <svg class="w-16 h-16 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
               </div>
@@ -343,13 +343,37 @@ const fetchEmails = async (page = 1, silent = false) => {
         loading.value = true;
     }
     try {
-        // Get inbox emails (status = 'inbox' or not 'sent' and not 'trash')
-        const response = await api.getEmails(page, 'all');
-        const allEmails = response.data.data || [];
-        // Filter for inbox emails
-        emails.value = allEmails.filter(email =>
-            email.status === 'inbox' || (email.status !== 'sent' && email.status !== 'trash' && email.status !== 'draft')
-        );
+        // Get inbox emails - request with 'inbox' status
+        let response = await api.getEmails(page, 'inbox');
+        let allEmails = response.data.data || [];
+        
+        // Debug logging
+        console.log('Inbox fetch response (inbox status):', {
+            total: response.data.total,
+            currentPage: response.data.current_page,
+            lastPage: response.data.last_page,
+            emailsCount: allEmails.length,
+            firstEmail: allEmails[0] ? { id: allEmails[0].id, status: allEmails[0].status, subject: allEmails[0].subject } : null
+        });
+        
+        // If no emails found with 'inbox' status, try 'all' and filter manually
+        if (allEmails.length === 0 && page === 1) {
+            console.log('No emails with inbox status, trying all status...');
+            response = await api.getEmails(page, 'all');
+            const allStatusEmails = response.data.data || [];
+            console.log('All status emails:', allStatusEmails.length, allStatusEmails.map(e => ({ id: e.id, status: e.status, subject: e.subject })));
+            
+            // Filter for inbox: status = 'inbox', null, empty, or not sent/trash/draft
+            allEmails = allStatusEmails.filter(email => {
+                const status = email.status;
+                return status === 'inbox' || !status || status === '' || 
+                       (status !== 'sent' && status !== 'trash' && status !== 'draft');
+            });
+            console.log('Filtered inbox emails:', allEmails.length);
+        }
+        
+        // Use all emails returned (backend already filtered for inbox)
+        emails.value = allEmails;
 
         // Update pagination info
         currentPage.value = response.data.current_page || 1;
@@ -359,7 +383,7 @@ const fetchEmails = async (page = 1, silent = false) => {
         // Refresh counts
         emailCounts.fetchCounts();
     } catch (e) {
-        console.error(e);
+        console.error('Error fetching emails:', e);
     } finally {
         if (!silent) {
             loading.value = false;

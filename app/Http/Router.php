@@ -15,6 +15,14 @@ class Router
     {
         $namespace = 'fluent-mailbox/v1';
 
+        register_rest_route($namespace, '/users', [
+            [
+                'methods' => \WP_REST_Server::READABLE,
+                'callback' => [new MailController(), 'getUsers'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
         register_rest_route($namespace, '/emails', [
             [
                 'methods' => \WP_REST_Server::READABLE,
@@ -62,6 +70,40 @@ class Router
             ]
         ]);
 
+        register_rest_route($namespace, '/emails/(?P<id>\d+)/workflow', [
+            [
+                'methods' => \WP_REST_Server::READABLE,
+                'callback' => [new MailController(), 'getWorkflow'],
+                'permission_callback' => [$this, 'checkPermission']
+            ],
+            [
+                'methods' => \WP_REST_Server::EDITABLE,
+                'callback' => [new MailController(), 'updateWorkflow'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
+        register_rest_route($namespace, '/emails/(?P<id>\d+)/notes', [
+            [
+                'methods' => \WP_REST_Server::READABLE,
+                'callback' => [new MailController(), 'getNotes'],
+                'permission_callback' => [$this, 'checkPermission']
+            ],
+            [
+                'methods' => \WP_REST_Server::CREATABLE,
+                'callback' => [new MailController(), 'addNote'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
+        register_rest_route($namespace, '/notes/(?P<id>\d+)', [
+            [
+                'methods' => \WP_REST_Server::DELETABLE,
+                'callback' => [new MailController(), 'deleteNote'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
         register_rest_route($namespace, '/webhook', [
             [
                 'methods' => \WP_REST_Server::CREATABLE,
@@ -93,7 +135,7 @@ class Router
                 'permission_callback' => [$this, 'checkPermission']
             ]
         ]);
-        
+
         register_rest_route($namespace, '/settings', [
             [
                 'methods' => \WP_REST_Server::READABLE,
