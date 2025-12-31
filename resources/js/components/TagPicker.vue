@@ -87,6 +87,10 @@ const props = defineProps({
     emailId: {
         type: [Number, String],
         required: true
+    },
+    initialTags: {
+        type: Array,
+        default: null // If provided, use these instead of loading
     }
 });
 
@@ -106,7 +110,13 @@ const availableTags = computed(() => {
 });
 
 onMounted(async () => {
-    await loadEmailTags();
+    // Use initial tags if provided, otherwise load them
+    if (props.initialTags) {
+        emailTags.value = props.initialTags;
+    } else {
+        await loadEmailTags();
+    }
+    
     if (!appStore.tagsLoaded) {
         await appStore.loadTags();
     }

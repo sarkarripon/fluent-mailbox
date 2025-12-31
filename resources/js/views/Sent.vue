@@ -6,7 +6,7 @@
               <div class="text-sm text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full" v-if="emails.length">{{ emails.length }} messages</div>
           </div>
       </header>
-
+      
       <div class="flex-1 overflow-auto p-0">
           <div v-if="loading" class="flex justify-center items-center h-64">
               <div class="relative">

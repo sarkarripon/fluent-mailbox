@@ -109,7 +109,7 @@
                   </div>
               </div>
           </div>
-
+          
           <!-- Filter Panel -->
           <div v-if="showFilters" class="bg-white border border-gray-200 rounded-lg p-3 space-y-3">
               <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -200,7 +200,7 @@
               </div>
           </div>
       </header>
-
+      
       <div class="flex-1 overflow-auto p-0 scrollbar-hide">
           <div v-if="loading" class="flex justify-center items-center h-64">
               <div class="relative">
@@ -449,6 +449,7 @@ const filters = ref({
 const showTagManager = ref(false);
 const emailTags = ref({});
 const showBulkTagMenu = ref(false);
+const loadedEmailTagIds = ref(new Set()); // Track which email IDs we've loaded tags for
 
 const sortOptions = [
     { label: 'Date (Newest)', value: 'date-desc' },
@@ -462,7 +463,7 @@ const pollingInterval = ref(null);
 
 const fetchEmails = async (page = 1, silent = false) => {
     if (!silent) {
-        loading.value = true;
+    loading.value = true;
     }
     try {
         // Get inbox emails - request with 'inbox' status
@@ -490,13 +491,17 @@ const fetchEmails = async (page = 1, silent = false) => {
         totalPages.value = response.data.last_page || 1;
         totalEmails.value = response.data.total || 0;
 
-        // Refresh counts
-        emailCounts.fetchCounts();
+        // Update counts from current emails (no need to fetch all emails again)
+        // Only fetch counts if we're on page 1 and it's not a silent refresh
+        // Use debounced version to avoid multiple rapid calls
+        if (page === 1 && !silent) {
+            emailCounts.fetchCounts(); // This is now debounced internally
+        }
     } catch (e) {
         console.error('Error fetching emails:', e);
     } finally {
         if (!silent) {
-            loading.value = false;
+        loading.value = false;
         }
     }
 };
@@ -688,7 +693,7 @@ const toggleRead = async (email) => {
         const newStatus = email.is_read ? 0 : 1;
         await api.updateEmail(email.id, { is_read: newStatus });
         email.is_read = newStatus;
-        // Refresh counts after toggling read status
+        // fetchCounts is already debounced internally
         emailCounts.fetchCounts();
     } catch (e) {
         console.error('Failed to update read status', e);
@@ -699,8 +704,7 @@ const deleteEmail = async (email) => {
     if (!confirm('Are you sure you want to delete this email?')) return;
     try {
         await api.deleteEmail(email.id);
-        await fetchEmails();
-        emailCounts.fetchCounts();
+        await fetchEmails(); // fetchEmails will handle counts refresh if on page 1
     } catch (e) {
         alert('Failed to delete email');
     }
@@ -744,8 +748,7 @@ const bulkMarkAsRead = async () => {
             api.updateEmail(email.id, { is_read: 1 })
         );
         await Promise.all(promises);
-        await fetchEmails();
-        emailCounts.fetchCounts();
+        await fetchEmails(); // fetchEmails will handle counts refresh if on page 1
         exitSelectionMode();
     } catch (e) {
         alert('Failed to mark emails as read');
@@ -759,8 +762,7 @@ const bulkDelete = async () => {
             api.deleteEmail(email.id)
         );
         await Promise.all(promises);
-        await fetchEmails();
-        emailCounts.fetchCounts();
+        await fetchEmails(); // fetchEmails will handle counts refresh if on page 1
         exitSelectionMode();
     } catch (e) {
         alert('Failed to delete emails');
@@ -787,11 +789,20 @@ const initializeStars = () => {
 
 // Tag functionality
 const loadEmailTags = async (emailIds) => {
+    // Filter out email IDs we've already loaded tags for
+    const newEmailIds = emailIds.filter(id => !loadedEmailTagIds.value.has(id));
+    
+    if (newEmailIds.length === 0) {
+        return; // All tags already loaded
+    }
+    
     try {
-        const promises = emailIds.map(id => api.getEmailTags(id));
+        const promises = newEmailIds.map(id => api.getEmailTags(id));
         const responses = await Promise.all(promises);
         responses.forEach((response, index) => {
-            emailTags.value[emailIds[index]] = response.data || [];
+            const emailId = newEmailIds[index];
+            emailTags.value[emailId] = response.data || [];
+            loadedEmailTagIds.value.add(emailId); // Mark as loaded
         });
     } catch (error) {
         console.error('Failed to load email tags:', error);
@@ -818,8 +829,9 @@ const bulkAddTag = async (tagId) => {
         );
         await Promise.all(promises);
 
-        // Reload tags for affected emails
+        // Reload tags for affected emails (clear cache first)
         const emailIds = selectedEmails.value.map(e => e.id);
+        emailIds.forEach(id => loadedEmailTagIds.value.delete(id)); // Clear cache
         await loadEmailTags(emailIds);
 
         showBulkTagMenu.value = false;
@@ -829,15 +841,15 @@ const bulkAddTag = async (tagId) => {
 };
 
 onMounted(async () => {
-    await fetchEmails(1, false);
-    initializeStars();
-
-    // Load tags
+    // Load global tags first if not loaded
     if (!store.tagsLoaded) {
         await store.loadTags();
     }
+    
+    await fetchEmails(1, false);
+    initializeStars();
 
-    // Load tags for current emails
+    // Load tags for current emails (only new ones)
     const emailIds = emails.value.map(e => e.id);
     if (emailIds.length > 0) {
         await loadEmailTags(emailIds);
@@ -865,11 +877,15 @@ watch(() => router.currentRoute.value.path, () => {
     }
 });
 
-// Watch for emails changes to load tags
-watch(() => emails.value, async (newEmails) => {
-    const emailIds = newEmails.map(e => e.id);
-    if (emailIds.length > 0) {
-        await loadEmailTags(emailIds);
+// Watch for emails changes to load tags - only when email IDs change, not deep watching
+// Only load tags for new emails that we haven't loaded yet
+watch(() => emails.value.map(e => e.id).join(','), async (newEmailIdsStr, oldEmailIdsStr) => {
+    if (newEmailIdsStr !== oldEmailIdsStr && oldEmailIdsStr !== undefined) {
+        // Only load if emails actually changed (not initial mount)
+        const emailIds = emails.value.map(e => e.id);
+        if (emailIds.length > 0) {
+            await loadEmailTags(emailIds); // loadEmailTags now filters out already-loaded IDs
+        }
     }
-}, { deep: true });
+}, { immediate: false });
 </script>

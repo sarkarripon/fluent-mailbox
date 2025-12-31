@@ -7,7 +7,7 @@
               </button>
               <h1 class="text-lg font-semibold text-gray-800 truncate max-w-xl">{{ email ? email.subject : 'Loading...' }}</h1>
           </div>
-
+          
           <div class="flex items-center space-x-1" v-if="email">
                <button @click="handleReply" class="px-3 py-1.5 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all flex items-center gap-1.5">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
@@ -53,8 +53,9 @@
                                 <div class="p-3">
                                     <TagPicker
                                         :email-id="email.id"
+                                        :initial-tags="emailTags"
                                         @manage-tags="showTagManager = true; showTagDropdown = false"
-                                        @tags-updated="loadEmailTags"
+                                        @tags-updated="(tags) => { emailTags.value = tags; }"
                                     />
                                 </div>
                             </div>
@@ -257,7 +258,7 @@
               </div>
           </div>
       </div>
-
+      
       <div v-else-if="loading" class="flex-1 flex justify-center items-center">
            <div class="relative">
                <div class="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
@@ -325,8 +326,8 @@ onMounted(async () => {
         if (!store.tagsLoaded) {
             await store.loadTags();
         }
-        // Refresh counts
-        emailCounts.fetchCounts();
+        // Refresh counts only if email was marked as read (status changed)
+        // Don't fetch on initial load to avoid duplicate calls
     } catch (e) {
         console.error(e);
     } finally {
@@ -516,6 +517,7 @@ const toggleRead = async () => {
         const newStatus = email.value.is_read ? 0 : 1;
         await api.updateEmail(email.value.id, { is_read: newStatus });
         email.value.is_read = newStatus;
+        // fetchCounts is already debounced internally
         emailCounts.fetchCounts();
     } catch (e) {
         console.error('Failed to update read status', e);
@@ -526,7 +528,7 @@ const deleteEmail = async () => {
     if (!confirm('Are you sure you want to delete this email?')) return;
     try {
         await api.deleteEmail(email.value.id);
-        emailCounts.fetchCounts();
+        // Refresh counts after navigation back (Inbox will handle it)
         router.back();
     } catch (e) {
         alert('Failed to delete email');
