@@ -110,6 +110,30 @@ class Router
             ]
         ]);
 
+        register_rest_route($namespace, '/settings/simulate-webhook', [
+            [
+                'methods' => \WP_REST_Server::CREATABLE,
+                'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'simulateWebhook'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
+        register_rest_route($namespace, '/settings/debug-log', [
+            [
+                'methods' => \WP_REST_Server::READABLE,
+                'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'getDebugLog'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
+        register_rest_route($namespace, '/settings/debug-log/clean', [
+            [
+                'methods' => \WP_REST_Server::CREATABLE,
+                'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'cleanDebugLog'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
         register_rest_route($namespace, '/attachments/upload', [
             [
                 'methods' => \WP_REST_Server::CREATABLE,

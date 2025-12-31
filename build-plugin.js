@@ -63,3 +63,7 @@ console.log('Cleaning up...');
 fs.rmSync(destDir, { recursive: true, force: true });
 
 console.log('Build completed successfully.');
+console.log('');
+console.log('----------------------------------------------------------------');
+console.log(`Build Artifact: ${buildDir}/`);
+console.log('----------------------------------------------------------------');

@@ -4,7 +4,7 @@
           <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
                    <div v-if="isSelectionMode" class="flex items-center gap-2">
-                       <input 
+                       <input
                            type="checkbox"
                            :checked="selectedEmails.length === filteredEmails.length && filteredEmails.length > 0"
                            :indeterminate="selectedEmails.length > 0 && selectedEmails.length < filteredEmails.length"
@@ -53,21 +53,21 @@
                   </Tooltip>
               </div>
           </div>
-          
+
           <!-- Search and Filters -->
           <div class="flex items-center gap-2">
               <!-- Search Bar -->
               <div class="relative flex-1">
-                  <input 
+                  <input
                       v-model="searchQuery"
-                      type="text" 
-                      placeholder="Search emails..." 
+                      type="text"
+                      placeholder="Search emails..."
                       class="w-[300px] float-right pl-9 pr-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all"
                   >
               </div>
-              
+
               <!-- Filter Toggle Button -->
-              <button 
+              <button
                   @click="showFilters = !showFilters"
                   class="px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-1.5"
                   :class="hasActiveFilters ? 'border-blue-500 bg-blue-50' : ''"
@@ -76,18 +76,18 @@
                   Filters
                   <span v-if="activeFilterCount > 0" class="bg-blue-600 text-white text-xs px-1 py-0.5 rounded-full">{{ activeFilterCount }}</span>
               </button>
-              
+
               <!-- Sort Dropdown -->
               <div class="relative">
-                  <button 
+                  <button
                       @click="showSortMenu = !showSortMenu"
                       class="px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-1.5"
                   >
                       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path></svg>
                       Sort
                   </button>
-                  <div 
-                      v-if="showSortMenu" 
+                  <div
+                      v-if="showSortMenu"
                       v-click-outside="() => showSortMenu = false"
                       class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20"
                   >
@@ -104,7 +104,7 @@
                   </div>
               </div>
           </div>
-          
+
           <!-- Filter Panel -->
           <div v-if="showFilters" class="bg-white border border-gray-200 rounded-lg p-3 space-y-3">
               <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -117,7 +117,7 @@
                           <option value="read">Read</option>
                       </select>
                   </div>
-                  
+
                   <!-- Date Range Filter -->
                   <div>
                       <label class="block text-xs font-medium text-gray-700 mb-1.5">Date Range</label>
@@ -129,7 +129,7 @@
                           <option value="year">This Year</option>
                       </select>
                   </div>
-                  
+
                   <!-- Attachments Filter -->
                   <div>
                       <label class="block text-xs font-medium text-gray-700 mb-1.5">Attachments</label>
@@ -140,21 +140,21 @@
                       </select>
                   </div>
               </div>
-              
+
               <!-- Sender Filter -->
               <div>
                   <label class="block text-xs font-medium text-gray-700 mb-1.5">From</label>
-                  <input 
+                  <input
                       v-model="filters.sender"
-                      type="text" 
+                      type="text"
                       placeholder="Filter by sender email..."
                       class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none"
                   >
               </div>
-              
+
               <!-- Clear Filters Button -->
               <div class="flex justify-end">
-                  <button 
+                  <button
                       @click="clearFilters"
                       class="px-3 py-1.5 text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors"
                       :disabled="!hasActiveFilters"
@@ -164,7 +164,7 @@
               </div>
           </div>
       </header>
-      
+
       <div class="flex-1 overflow-auto p-0 scrollbar-hide">
           <div v-if="loading" class="flex justify-center items-center h-64">
               <div class="relative">
@@ -173,9 +173,9 @@
           </div>
 
           <div v-else-if="filteredEmails.length > 0" class="divide-y divide-gray-100">
-              <div 
-                  v-for="email in filteredEmails" 
-                  :key="email.id" 
+              <div
+                  v-for="email in filteredEmails"
+                  :key="email.id"
                   @click="isSelectionMode ? toggleSelect(email) : openEmail(email.id)"
                   class="px-6 py-3 bg-white hover:bg-gray-50 cursor-pointer group transition-colors relative"
                   :class="!email.is_read ? 'bg-blue-50/30' : '', isSelected(email.id) ? 'bg-blue-100/50' : ''"
@@ -183,7 +183,7 @@
                   <div class="flex items-start gap-4">
                       <!-- Selection Checkbox or Unread Indicator -->
                       <div class="flex-shrink-0 pt-1">
-                          <input 
+                          <input
                               v-if="isSelectionMode"
                               type="checkbox"
                               :checked="isSelected(email.id)"
@@ -221,7 +221,7 @@
 
                       <!-- Quick Actions (shown on hover) -->
                       <div v-if="!isSelectionMode" class="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button 
+                          <button
                               @click.stop="toggleStar(email)"
                               class="p-1.5 text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 rounded transition-colors"
                               :title="email.is_starred ? 'Unstar' : 'Star'"
@@ -229,7 +229,7 @@
                               <svg v-if="email.is_starred" class="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
                               <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>
                           </button>
-                          <button 
+                          <button
                               @click.stop="toggleRead(email)"
                               class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                               :title="email.is_read ? 'Mark as unread' : 'Mark as read'"
@@ -237,7 +237,7 @@
                               <svg v-if="email.is_read" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                               <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                           </button>
-                          <button 
+                          <button
                               @click.stop="deleteEmail(email)"
                               class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                               title="Delete"
@@ -255,7 +255,7 @@
                   Showing {{ (currentPage - 1) * 20 + 1 }} to {{ Math.min(currentPage * 20, totalEmails) }} of {{ totalEmails }} emails
               </div>
               <div class="flex items-center gap-2">
-                  <button 
+                  <button
                       @click="fetchEmails(currentPage - 1)"
                       :disabled="currentPage === 1"
                       class="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -265,7 +265,7 @@
                   <span class="text-sm text-gray-600 px-2">
                       Page {{ currentPage }} of {{ totalPages }}
                   </span>
-                  <button 
+                  <button
                       @click="fetchEmails(currentPage + 1)"
                       :disabled="currentPage >= totalPages"
                       class="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -282,7 +282,7 @@
               </div>
               <h3 class="text-xl font-semibold text-gray-700 mb-2">Your inbox is empty</h3>
               <p class="text-sm text-gray-500 mb-6 max-w-sm text-center">No emails here yet. New messages will appear in your inbox.</p>
-              <button 
+              <button
                   v-if="store.isConfigured"
                   @click="store.openCompose('new')"
                   class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
@@ -296,7 +296,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '../utils/api';
 import { useAppStore } from '../stores/useAppStore';
@@ -336,29 +336,34 @@ const sortOptions = [
     { label: 'Subject (A-Z)', value: 'subject-asc' },
     { label: 'Subject (Z-A)', value: 'subject-desc' }
 ];
+const pollingInterval = ref(null);
 
-const fetchEmails = async (page = 1) => {
-    loading.value = true;
+const fetchEmails = async (page = 1, silent = false) => {
+    if (!silent) {
+        loading.value = true;
+    }
     try {
         // Get inbox emails (status = 'inbox' or not 'sent' and not 'trash')
-        const response = await api.getEmails(page, 'all'); 
+        const response = await api.getEmails(page, 'all');
         const allEmails = response.data.data || [];
         // Filter for inbox emails
-        emails.value = allEmails.filter(email => 
+        emails.value = allEmails.filter(email =>
             email.status === 'inbox' || (email.status !== 'sent' && email.status !== 'trash' && email.status !== 'draft')
         );
-        
+
         // Update pagination info
         currentPage.value = response.data.current_page || 1;
         totalPages.value = response.data.last_page || 1;
         totalEmails.value = response.data.total || 0;
-        
+
         // Refresh counts
         emailCounts.fetchCounts();
     } catch (e) {
         console.error(e);
     } finally {
-        loading.value = false;
+        if (!silent) {
+            loading.value = false;
+        }
     }
 };
 
@@ -396,7 +401,7 @@ const activeFilterCount = computed(() => {
 
 const filteredEmails = computed(() => {
     let result = [...emails.value];
-    
+
     // Apply search query
     if (searchQuery.value.trim()) {
         const query = searchQuery.value.toLowerCase();
@@ -408,14 +413,14 @@ const filteredEmails = computed(() => {
             );
         });
     }
-    
+
     // Apply read status filter
     if (filters.value.readStatus === 'read') {
         result = result.filter(email => email.is_read);
     } else if (filters.value.readStatus === 'unread') {
         result = result.filter(email => !email.is_read);
     }
-    
+
     // Apply date range filter
     if (filters.value.dateRange !== 'all') {
         const now = new Date();
@@ -442,7 +447,7 @@ const filteredEmails = computed(() => {
             }
         });
     }
-    
+
     // Apply attachments filter
     if (filters.value.hasAttachments === 'yes') {
         result = result.filter(email => {
@@ -463,15 +468,15 @@ const filteredEmails = computed(() => {
             }
         });
     }
-    
+
     // Apply sender filter
     if (filters.value.sender.trim()) {
         const senderQuery = filters.value.sender.toLowerCase().trim();
-        result = result.filter(email => 
+        result = result.filter(email =>
             email.sender?.toLowerCase().includes(senderQuery)
         );
     }
-    
+
     // Apply sorting
     result.sort((a, b) => {
         switch (sortBy.value) {
@@ -491,7 +496,7 @@ const filteredEmails = computed(() => {
                 return 0;
         }
     });
-    
+
     return result;
 });
 
@@ -513,12 +518,12 @@ const formatRelativeDate = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now - date) / 1000);
-    
+
     if (diffInSeconds < 60) return 'Just now';
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
     if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-    
+
     return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 };
 
@@ -589,7 +594,7 @@ const toggleSelectAll = (event) => {
 
 const bulkMarkAsRead = async () => {
     try {
-        const promises = selectedEmails.value.map(email => 
+        const promises = selectedEmails.value.map(email =>
             api.updateEmail(email.id, { is_read: 1 })
         );
         await Promise.all(promises);
@@ -604,7 +609,7 @@ const bulkMarkAsRead = async () => {
 const bulkDelete = async () => {
     if (!confirm(`Are you sure you want to delete ${selectedEmails.value.length} email(s)?`)) return;
     try {
-        const promises = selectedEmails.value.map(email => 
+        const promises = selectedEmails.value.map(email =>
             api.deleteEmail(email.id)
         );
         await Promise.all(promises);
@@ -635,9 +640,23 @@ const initializeStars = () => {
 };
 
 onMounted(() => {
-    fetchEmails().then(() => {
+    fetchEmails(1, false).then(() => {
         initializeStars();
     });
+
+    // Auto-refresh every 15 seconds
+    pollingInterval.value = setInterval(() => {
+        // Only refresh if not already loading and valid page
+        if (!loading.value && !isRefreshing.value) {
+            fetchEmails(currentPage.value, true);
+        }
+    }, 15000);
+});
+
+onUnmounted(() => {
+    if (pollingInterval.value) {
+        clearInterval(pollingInterval.value);
+    }
 });
 
 // Watch for route changes to exit selection mode
