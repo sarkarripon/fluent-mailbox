@@ -30,8 +30,36 @@ Instead of processing emails on the hosting server (which is slow and unreliable
 
 Inbound Engine: Uses AWS SES & S3 to receive and parse incoming emails instantly via Webhooks.
 Storage: Raw email data is stored securely in S3, keeping the WordPress database light.
-Frontend: A modern, Gmail-like Single Page Application (SPA) built with React/Vue, ensuring a fast, app-like experience within the WP Admin.
+Frontend: A modern, Gmail-like Single Page Application (SPA) built with Vue 3, ensuring a fast, app-like experience within the WP Admin.
 Cost: Utilizing AWS SES means sending/receiving 100,000 emails costs pennies, compared to hundreds of dollars for SaaS alternatives.
+
+Key Features:
+
+Email Management
+- Clean, modern inbox interface with real-time updates
+- Advanced search and filtering (by read status, date range, attachments, sender)
+- Bulk actions (mark as read, delete multiple emails)
+- Sorting options (date, sender, subject)
+- Attachment support with preview and download
+
+Workflow Management
+- Compact workflow controls accessible via header icon
+- Assign emails to team members
+- Track workflow status (Open, Pending, Resolved)
+- Quick access modal for status updates
+
+Internal Notes
+- Team collaboration through internal notes on emails
+- Compact single-line display for quick scanning
+- Modal-based note creation for clean UX
+- Full note text visible on hover
+- User attribution with timestamps
+
+Database & Performance
+- Automatic migration system ensures all tables exist
+- Intelligent table creation for new and existing installations
+- Runs on both admin and REST requests to prevent errors
+- Lightweight, optimized queries
 
 3. Future Scalability: The "AI-Native" Evolution
 The true power of Fluent Mailbox lies in its potential to become an AI-Native Support Agent. Because the data lives inside the WordPress database, we can leverage LLMs (Large Language Models) in ways SaaS tools cannot easily do.
