@@ -1,83 +1,375 @@
-Project Name: Fluent Mailbox - Business email inside business website.
+# Fluent Mailbox
 
-Key Points
+A modern, Gmail-like email client for WordPress powered by AWS SES. Send, receive, and manage emails directly from your WordPress admin panel.
 
-Unified Usability
-Business email lives directly inside the business website—no need to jump between multiple tools. Mailbox and SMTP work as a single system, so both newsletters and transactional emails have a mailbox. Customer replies are never lost.
+**Contributors:** fluentmailbox  
+**Tags:** email, mailbox, aws, ses, smtp, email-client, gmail-like  
+**Requires at least:** WordPress 5.8  
+**Tested up to:** WordPress 6.9  
+**Requires PHP:** 7.4+  
+**Stable tag:** 1.0.0  
+**License:** GPLv2 or later  
+**License URI:** https://www.gnu.org/licenses/gpl-2.0.html
 
-Effortless Scalability
-Built on AWS-inspired serverless principles (Lambda, S3, SES concepts applied to WordPress), the system scales automatically—from 10 emails per day to 10 million—without reconfiguration or infrastructure headaches.
+## Description
 
-Business-First Relevance
-Solves today’s real problems: rising email costs, vendor lock-in, and lack of data ownership. At the same time, it creates a foundation ready for AI-driven automation, insights, and customer intelligence.
+Fluent Mailbox is a powerful email management plugin that transforms your WordPress admin into a modern email client. Built with Vue.js and integrated with AWS SES (Simple Email Service), it provides a seamless email experience similar to Gmail.
 
-True Ecosystem Fit
-This isn’t another external SaaS. It becomes part of the business operating system by integrating natively with WordPress—where content, users, commerce, and communication already live.
+### Key Features
 
-1. The Problem
-In the modern web ecosystem, businesses especially those running on WordPress, face a critical problem regarding customer communication:
+* **Modern Email Interface**: Clean, intuitive Gmail-like interface built with Vue.js
+* **AWS SES Integration**: Send and receive emails using Amazon SES
+* **Email Management**:
+  * Inbox, Sent, Drafts, and Trash folders
+  * Read/unread status tracking
+  * Email starring/favorites
+  * Bulk actions (mark as read, delete)
+  * Email tags and filtering
+* **Compose & Send**:
+  * Rich text editor (WordPress TinyMCE)
+  * CC and BCC support
+  * File attachments
+  * Email signatures
+  * Email templates
+  * Auto-save drafts
+* **Advanced Features**:
+  * Real-time search with filters
+  * Date range filtering
+  * Sender filtering
+  * Attachment filtering
+  * Multiple sort options
+  * Keyboard shortcuts
+  * Responsive design
+* **Smart Organization**:
+  * Unread email badges
+  * Email snippets/previews
+  * Relative date formatting
+  * Quick actions on hover
+* **User Experience**:
+  * Compact mode toggle
+  * Drag-to-resize editor
+  * Flexible editor height
+  * Hidden scrollbars for clean UI
+  * Celebration animations
+  * Contextual tooltips
 
-Data Fragmentation: Customer data lives in the website (fluentCart, WooCommerce orders, membership levels), but communication happens in a separate silo (Gmail, Zoho, Help Scout). Support agents switch tabs constantly, lacking context.
-The "SaaS Tax": Professional helpdesk solutions are expensive (costing $20-$100+ per agent/month), taxing small businesses for essential functionality.
-Privacy & Ownership: Relying on third-party SaaS means handing over sensitive customer emails to external servers, creating privacy risks and vendor lock-in.
-Lack of Integration: Most SaaS solutions are siloed, making it hard to connect with other tools (e.g., CRM, marketing platforms). 
+### Technical Details
 
-2. The Solution:
-Fluent Mailbox is a self hosted, cloud powered inbox that turns any WordPress site into a professional email helpdesk/mailbox.
+* Built with Vue.js 3 (Composition API)
+* Uses Pinia for state management
+* Tailwind CSS for styling
+* WordPress REST API for backend
+* AWS SDK for PHP integration
+* Responsive and mobile-friendly
 
-Core Architecture (Current State) 
-Instead of processing emails on the hosting server (which is slow and unreliable, email offen land to spam), Fluent Mailbox leverages AWS Infrastructure for enterprise grade performance at near zero cost, with the added benefit of inbox deliveray to most email clients.
+## Installation
 
-Inbound Engine: Uses AWS SES & S3 to receive and parse incoming emails instantly via Webhooks.
-Storage: Raw email data is stored securely in S3, keeping the WordPress database light.
-Frontend: A modern, Gmail-like Single Page Application (SPA) built with Vue 3, ensuring a fast, app-like experience within the WP Admin.
-Cost: Utilizing AWS SES means sending/receiving 100,000 emails costs pennies, compared to hundreds of dollars for SaaS alternatives.
+### Automatic Installation
 
-Key Features:
+1. Go to WordPress Admin → Plugins → Add New
+2. Search for "Fluent Mailbox"
+3. Click "Install Now" and then "Activate"
 
-Email Management
-- Clean, modern inbox interface with real-time updates
-- Advanced search and filtering (by read status, date range, attachments, sender)
-- Bulk actions (mark as read, delete multiple emails)
-- Sorting options (date, sender, subject)
-- Attachment support with preview and download
+### Manual Installation
 
-Workflow Management
-- Compact workflow controls accessible via header icon
-- Assign emails to team members
-- Track workflow status (Open, Pending, Resolved)
-- Quick access modal for status updates
+1. Upload the `fluent-mailbox` folder to `/wp-content/plugins/` directory
+2. Activate the plugin through the 'Plugins' menu in WordPress
+3. Navigate to Fluent Mailbox in the admin menu
 
-Internal Notes
-- Team collaboration through internal notes on emails
-- Compact single-line display for quick scanning
-- Modal-based note creation for clean UX
-- Full note text visible on hover
-- User attribution with timestamps
+### Requirements
 
-Database & Performance
-- Automatic migration system ensures all tables exist
-- Intelligent table creation for new and existing installations
-- Runs on both admin and REST requests to prevent errors
-- Lightweight, optimized queries
+* WordPress 5.8 or higher
+* PHP 7.4 or higher
+* AWS SES account with verified email/domain
+* AWS Access Key ID and Secret Access Key
+* Node.js 16+ and npm (for development)
 
-3. Future Scalability: The "AI-Native" Evolution
-The true power of Fluent Mailbox lies in its potential to become an AI-Native Support Agent. Because the data lives inside the WordPress database, we can leverage LLMs (Large Language Models) in ways SaaS tools cannot easily do.
+## Development Setup
 
-Scalability Roadmap:
+### Prerequisites
 
-Phase 1: Smart Triage & Sentiment Analysis (The "Vibe" Check)
+Before you begin, ensure you have the following installed:
 
-Feature: Auto-analyze incoming emails for sentiment (Angry/Happy/Urgent).
-Value: automatically drives "Urgent" or "Refund" requests to the top of the queue. Support agents solve the burning problems first.
+* **Node.js** (v16 or higher) - [Download](https://nodejs.org/)
+* **npm** (comes with Node.js) or **yarn**
+* **Composer** - [Download](https://getcomposer.org/)
+* **PHP** 7.4 or higher
+* **WordPress** development environment
+* **AWS Account** with SES configured
 
-Phase 2: Context-Aware "Draft Zero"
+### Initial Setup
 
-Feature: When an email arrives, the AI reads it AND looks up the user's order history, shipping status, and the website's documentation/Knowledge Base.
-Value: It pre-drafts a reply: "Hi [Name], I see your order #123 is currently in transit in New York...". The human agent just reviews and clicks "Send." Reduces response time by 80%.
+1. **Clone or download the plugin** to your WordPress plugins directory:
+   ```bash
+   cd wp-content/plugins/
+   git clone <repository-url> fluent-mailbox
+   cd fluent-mailbox
+   ```
 
-Phase 3: Autonomous Agent Mode
+2. **Install PHP dependencies** using Composer:
+   ```bash
+   composer install
+   ```
 
-Feature: For simple queries ("Where is my order?", "Refunding policy?"), the AI can autonomously reply and close the ticket.
-Value: 24/7 distinct support without hiring night shifts.
+3. **Install Node.js dependencies**:
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
 
+### Development Workflow
+
+#### Running Development Server
+
+Start the Vite development server with hot module replacement (HMR):
+
+```bash
+npm run dev
+# or
+yarn dev
+```
+
+The development server will run on `http://localhost:4005` and automatically reload when you make changes to Vue components or CSS.
+
+**Important:** Make sure your WordPress site is configured to load assets from the development server. The plugin automatically detects the development environment and loads assets accordingly.
+
+#### Building for Production
+
+When you're ready to build production assets:
+
+```bash
+npm run build
+# or
+yarn build
+```
+
+This will:
+- Compile and minify Vue components
+- Process Tailwind CSS
+- Optimize assets for production
+- Output files to the `assets/` directory
+
+#### Building Plugin ZIP
+
+To create a distributable ZIP file:
+
+```bash
+npm run build:zip
+# or
+yarn build:zip
+```
+
+This will:
+1. Build production assets
+2. Copy necessary files to a build directory
+3. Create a ZIP file ready for distribution
+
+### Project Structure
+
+```
+fluent-mailbox/
+├── app/                          # PHP backend code
+│   ├── Common/
+│   │   └── DatabaseMigration.php
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   │   ├── AttachmentController.php
+│   │   │   ├── MailController.php
+│   │   │   ├── SettingsController.php
+│   │   │   └── WebhookController.php
+│   │   └── Router.php
+│   ├── Models/
+│   │   ├── Email.php
+│   │   └── Tag.php
+│   └── Services/
+│       ├── AwsSetupService.php
+│       ├── InboundService.php
+│       ├── Logger.php
+│       └── SesService.php
+├── resources/                    # Source files
+│   ├── css/
+│   │   └── style.css            # Tailwind CSS source
+│   └── js/
+│       ├── App.vue              # Main Vue app component
+│       ├── main.js             # Entry point
+│       ├── components/         # Vue components
+│       │   ├── ComposeModal.vue
+│       │   ├── TagManager.vue
+│       │   ├── TagPicker.vue
+│       │   ├── Tooltip.vue
+│       │   └── WpEditor.vue
+│       ├── composables/        # Vue composables
+│       │   ├── useEmailCounts.js
+│       │   └── useKeyboardShortcuts.js
+│       ├── directives/         # Vue directives
+│       │   └── clickOutside.js
+│       ├── stores/             # Pinia stores
+│       │   └── useAppStore.js
+│       ├── utils/              # Utility functions
+│       │   ├── api.js
+│       │   └── confetti.js
+│       └── views/              # Vue page components
+│           ├── Drafts.vue
+│           ├── EmailDetail.vue
+│           ├── Inbox.vue
+│           ├── Sent.vue
+│           ├── Settings.vue
+│           └── Trash.vue
+├── assets/                      # Built assets (generated)
+│   ├── css/
+│   │   └── style.css
+│   └── js/
+│       └── main.js
+├── vendor/                      # Composer dependencies
+├── node_modules/                # npm dependencies
+├── fluent-mailbox.php          # Main plugin file
+├── package.json                # Node.js dependencies
+├── composer.json               # PHP dependencies
+├── vite.config.js              # Vite configuration
+├── tailwind.config.js          # Tailwind CSS configuration
+├── postcss.config.js           # PostCSS configuration
+└── README.md                    # This file
+```
+
+### Technology Stack
+
+#### Frontend
+* **Vue.js 3** - Progressive JavaScript framework
+* **Pinia** - State management for Vue
+* **Vue Router** - Client-side routing
+* **Tailwind CSS** - Utility-first CSS framework
+* **Vite** - Next-generation frontend build tool
+* **Axios** - HTTP client
+* **Heroicons** - Icon library
+
+#### Backend
+* **WordPress REST API** - Backend API endpoints
+* **AWS SDK for PHP** - AWS service integration
+* **Mail MIME Parser** - Email parsing library
+
+### Development Tips
+
+1. **Hot Module Replacement**: The Vite dev server provides instant feedback. Changes to Vue components will update without a full page reload.
+
+2. **WordPress Environment**: Make sure your WordPress installation is set up for development. The plugin checks for `WP_ENV` constant or defaults to production mode.
+
+3. **API Endpoints**: All API endpoints are prefixed with `/wp-json/fluent-mailbox/v1/`. You can test these endpoints directly or through the Vue app.
+
+4. **Database Migrations**: The plugin automatically runs database migrations on activation and admin_init. Check `app/Common/DatabaseMigration.php` for schema changes.
+
+5. **Debugging**: 
+   - Use browser DevTools for frontend debugging
+   - Check WordPress debug log for PHP errors
+   - Enable WordPress debug mode: `define('WP_DEBUG', true);`
+
+6. **AWS Configuration**: 
+   - Set up AWS credentials in the Settings page
+   - Verify your email/domain in AWS SES
+   - Configure S3 bucket and SNS topic for inbound emails
+
+### Code Style
+
+* **JavaScript/Vue**: Follow Vue.js style guide and use ESLint if configured
+* **PHP**: Follow WordPress coding standards
+* **CSS**: Use Tailwind utility classes, avoid custom CSS when possible
+
+## Frequently Asked Questions
+
+### Do I need an AWS account?
+
+Yes, Fluent Mailbox requires an AWS account with SES (Simple Email Service) configured. You'll need:
+* AWS Access Key ID
+* AWS Secret Access Key
+* Verified email address or domain in SES
+
+### Can I use this with other email services?
+
+Currently, Fluent Mailbox only supports AWS SES. Support for other email services may be added in future versions.
+
+### How do I receive emails?
+
+Fluent Mailbox uses AWS S3 and SNS to receive emails. The plugin will automatically set up the necessary S3 bucket and SNS topic during the inbound setup process.
+
+### Are emails stored in WordPress database?
+
+Yes, emails are stored in a custom database table (`wp_fluent_mailbox_emails`) for quick access and management.
+
+### Can I export emails?
+
+Email export functionality is available through the email detail view. You can download individual emails and their attachments.
+
+### Is there a limit on email storage?
+
+Email storage is limited by your WordPress database size. For large volumes, consider regular cleanup of old emails or moving them to trash.
+
+### Does it support email attachments?
+
+Yes! You can attach files when composing emails, and view/download attachments from received emails.
+
+### Can I use email templates?
+
+Yes, Fluent Mailbox includes an email templates system. Create reusable templates for common email types.
+
+### Are keyboard shortcuts available?
+
+Yes! Use keyboard shortcuts for faster navigation:
+* `C` or `Ctrl/Cmd + N` - Compose new email
+* `Ctrl/Cmd + K` - Focus search
+* `Ctrl/Cmd + ,` - Open settings
+
+## Screenshots
+
+1. Modern inbox interface with email list
+2. Compose modal with rich text editor
+3. Email detail view with attachments
+4. Settings page for AWS configuration
+5. Filters and search functionality
+6. Drafts management
+
+## Changelog
+
+### 1.0.0
+* Initial release
+* AWS SES integration for sending emails
+* AWS S3/SNS integration for receiving emails
+* Modern Vue.js interface
+* Email management (Inbox, Sent, Drafts, Trash)
+* Rich text editor with WordPress TinyMCE
+* CC/BCC support
+* File attachments
+* Email signatures and templates
+* Auto-save drafts
+* Advanced search and filtering
+* Keyboard shortcuts
+* Responsive design
+* Bulk actions
+* Email starring/favorites
+* Unread indicators and badges
+* Email tags and tag management
+* Workflow management
+* Internal notes system
+
+## Upgrade Notice
+
+### 1.0.0
+Initial release of Fluent Mailbox. Make sure you have AWS SES credentials ready before activating.
+
+## Support
+
+For support, feature requests, or bug reports, please visit the plugin's support page or GitHub repository.
+
+## Credits
+
+Built with:
+* Vue.js 3
+* Pinia
+* Tailwind CSS
+* AWS SDK for PHP
+* WordPress REST API
+* Vite
+* Mail MIME Parser
+
+## License
+
+GPLv2 or later - https://www.gnu.org/licenses/gpl-2.0.html
