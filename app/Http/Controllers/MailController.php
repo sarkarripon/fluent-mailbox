@@ -7,6 +7,23 @@ use FluentMailbox\Services\SesService;
 
 class MailController
 {
+    public function getUsers($request)
+    {
+        $users = get_users([
+            'fields' => ['ID', 'display_name', 'user_email']
+        ]);
+
+        $payload = array_map(function ($user) {
+            return [
+                'id' => (int)$user->ID,
+                'display_name' => (string)$user->display_name,
+                'user_email' => (string)$user->user_email
+            ];
+        }, $users);
+
+        return rest_ensure_response($payload);
+    }
+
     public function index($request)
     {
         $page = $request->get_param('page') ?: 1;
@@ -33,7 +50,7 @@ class MailController
         }
 
         $sesService = new SesService();
-        
+
         // Prepare attachment paths if provided
         $attachmentPaths = [];
         if (!empty($attachments) && is_array($attachments)) {
@@ -44,7 +61,7 @@ class MailController
                 }
             }
         }
-        
+
         $messageId = $sesService->sendEmail($to, $subject, $body, $cc, $bcc, $attachmentPaths);
 
         if (is_wp_error($messageId)) {
@@ -62,7 +79,7 @@ class MailController
         if (empty($bodyContent)) {
             $bodyContent = ''; // Set to empty string if null/empty
         }
-        
+
         $emailId = Email::create([
             'message_id' => $messageId,
             'subject' => sanitize_text_field($subject),
@@ -88,7 +105,7 @@ class MailController
     {
         $id = $request->get_param('id');
         $email = Email::find($id);
-        
+
         if (!$email) {
              return new \WP_Error('not_found', 'Email not found', ['status' => 404]);
         }
@@ -105,7 +122,7 @@ class MailController
     {
         $id = $request->get_param('id');
         $email = Email::find($id);
-        
+
         if (!$email) {
             return new \WP_Error('not_found', 'Email not found', ['status' => 404]);
         }
@@ -124,6 +141,135 @@ class MailController
         $updated = Email::find($id);
 
         return rest_ensure_response($updated);
+    }
+
+    public function getWorkflow($request)
+    {
+        $id = (int)$request->get_param('id');
+        $email = Email::find($id);
+
+        if (!$email) {
+            return new \WP_Error('not_found', 'Email not found', ['status' => 404]);
+        }
+
+        return rest_ensure_response([
+            'workflow_status' => isset($email->workflow_status) ? (string)$email->workflow_status : 'open',
+            'assigned_to' => isset($email->assigned_to) ? (int)$email->assigned_to : null
+        ]);
+    }
+
+    public function updateWorkflow($request)
+    {
+        $id = (int)$request->get_param('id');
+        $email = Email::find($id);
+
+        if (!$email) {
+            return new \WP_Error('not_found', 'Email not found', ['status' => 404]);
+        }
+
+        $data = [];
+
+        $workflowStatus = $request->get_param('workflow_status');
+        if ($workflowStatus !== null) {
+            $workflowStatus = sanitize_key($workflowStatus);
+            $allowed = ['open', 'pending', 'resolved'];
+            if (!in_array($workflowStatus, $allowed, true)) {
+                return new \WP_Error('invalid_workflow_status', 'Invalid workflow_status', ['status' => 400]);
+            }
+            $data['workflow_status'] = $workflowStatus;
+        }
+
+        $assignedTo = $request->get_param('assigned_to');
+        if ($assignedTo !== null) {
+            if ($assignedTo === '' || $assignedTo === false) {
+                $data['assigned_to'] = null;
+            } else {
+                $assignedTo = (int)$assignedTo;
+                if ($assignedTo > 0 && !get_user_by('id', $assignedTo)) {
+                    return new \WP_Error('invalid_assigned_to', 'Assigned user not found', ['status' => 400]);
+                }
+                $data['assigned_to'] = $assignedTo > 0 ? $assignedTo : null;
+            }
+        }
+
+        if (empty($data)) {
+            return new \WP_Error('invalid_data', 'No valid fields to update', ['status' => 400]);
+        }
+
+        Email::update($id, $data);
+        return $this->getWorkflow($request);
+    }
+
+    public function getNotes($request)
+    {
+        $emailId = (int)$request->get_param('id');
+        $email = Email::find($emailId);
+
+        if (!$email) {
+            return new \WP_Error('not_found', 'Email not found', ['status' => 404]);
+        }
+
+        $notes = Email::getNotes($emailId);
+        $payload = array_map(function ($note) {
+            $user = get_user_by('id', (int)$note->user_id);
+            return [
+                'id' => (int)$note->id,
+                'email_id' => (int)$note->email_id,
+                'user_id' => (int)$note->user_id,
+                'user_name' => $user ? (string)$user->display_name : 'Unknown',
+                'note' => (string)$note->note,
+                'created_at' => (string)$note->created_at
+            ];
+        }, $notes);
+
+        return rest_ensure_response($payload);
+    }
+
+    public function addNote($request)
+    {
+        $emailId = (int)$request->get_param('id');
+        $email = Email::find($emailId);
+
+        if (!$email) {
+            return new \WP_Error('not_found', 'Email not found', ['status' => 404]);
+        }
+
+        $note = $request->get_param('note');
+        $note = is_string($note) ? trim($note) : '';
+        if ($note === '') {
+            return new \WP_Error('missing_note', 'Note is required', ['status' => 400]);
+        }
+
+        $noteId = Email::addNote($emailId, get_current_user_id(), sanitize_textarea_field($note));
+        $notes = Email::getNotes($emailId);
+
+        // Return the newest note (we order DESC)
+        $newNote = !empty($notes) ? $notes[0] : null;
+        if (!$newNote) {
+            return rest_ensure_response(['id' => (int)$noteId]);
+        }
+
+        $user = get_user_by('id', (int)$newNote->user_id);
+
+        return rest_ensure_response([
+            'id' => (int)$newNote->id,
+            'email_id' => (int)$newNote->email_id,
+            'user_id' => (int)$newNote->user_id,
+            'user_name' => $user ? (string)$user->display_name : 'Unknown',
+            'note' => (string)$newNote->note,
+            'created_at' => (string)$newNote->created_at
+        ]);
+    }
+
+    public function deleteNote($request)
+    {
+        $noteId = (int)$request->get_param('id');
+        if ($noteId <= 0) {
+            return new \WP_Error('invalid_note', 'Invalid note id', ['status' => 400]);
+        }
+
+        Email::deleteNote($noteId);
+        return rest_ensure_response(['message' => 'Note deleted']);
     }
 
     public function delete($request)
@@ -177,7 +323,7 @@ class MailController
     public function emptyTrash($request)
     {
         $deleted = Email::deleteTrash();
-        
+
         return rest_ensure_response([
             'message' => 'All emails in trash deleted successfully',
             'deleted_count' => $deleted
@@ -204,7 +350,7 @@ class MailController
 
         // Ensure body is a string
         $bodyContent = is_string($body) ? $body : (string)($body ?: '');
-        
+
         $data = [
             'subject' => $subject ?: '(No Subject)',
             'sender' => get_option('fluent_mailbox_from_email', get_bloginfo('admin_email')),

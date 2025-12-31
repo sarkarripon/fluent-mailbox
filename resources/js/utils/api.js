@@ -11,6 +11,9 @@ const api = axios.create({
 });
 
 export default {
+    getUsers() {
+        return api.get('/users');
+    },
     getEmails(page = 1, status = 'all') {
         return api.get('/emails', { params: { page, status } });
     },
@@ -40,6 +43,21 @@ export default {
     },
     getEmail(id) {
         return api.get(`/emails/${id}`);
+    },
+    getEmailWorkflow(id) {
+        return api.get(`/emails/${id}/workflow`);
+    },
+    updateEmailWorkflow(id, data) {
+        return api.put(`/emails/${id}/workflow`, data);
+    },
+    getEmailNotes(id) {
+        return api.get(`/emails/${id}/notes`);
+    },
+    addEmailNote(id, data) {
+        return api.post(`/emails/${id}/notes`, data);
+    },
+    deleteNote(id) {
+        return api.delete(`/notes/${id}`);
     },
     deleteEmail(id, params = {}) {
         return api.delete(`/emails/${id}`, { params });
@@ -85,5 +103,14 @@ export default {
     },
     deleteTemplate(id) {
         return api.delete(`/templates/${id}`);
+    },
+    simulateWebhook(type = 'content') {
+        return api.post('/settings/simulate-webhook', { type });
+    },
+    getDebugLog() {
+        return api.get('/settings/debug-log');
+    },
+    cleanDebugLog() {
+        return api.post('/settings/debug-log/clean');
     }
 };

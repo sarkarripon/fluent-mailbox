@@ -1,16 +1,16 @@
 <template>
-  <div 
-      v-if="isOpen" 
-      class="fixed z-50" 
+  <div
+      v-if="isOpen"
+      class="fixed z-50"
       :class="isExpanded ? 'right-0 bottom-0 m-0' : 'w-[600px] max-w-[calc(100vw-2rem)]'"
       :style="isExpanded ? { left: sidebarWidth + 'px', top: adminBarHeight + 'px' } : (!isExpanded ? { bottom: position.y ? 'auto' : '1rem', right: position.x ? 'auto' : '1rem', top: position.y ? position.y + 'px' : 'auto', left: position.x ? position.x + 'px' : 'auto' } : {})"
   >
-      <div 
+      <div
           class="bg-white rounded-t-lg flex flex-col border border-gray-300 shadow-2xl transition-all duration-300"
           :class="isExpanded ? 'h-full rounded-none' : 'h-[600px] max-h-[calc(100vh-2rem)]'"
           style="box-shadow: 0 8px 10px 1px rgba(0,0,0,0.14), 0 3px 14px 2px rgba(0,0,0,0.12), 0 5px 5px -3px rgba(0,0,0,0.2);"
       >
-           <div 
+           <div
                class="flex justify-between items-center px-4 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg cursor-move"
                :class="isExpanded ? 'rounded-none' : ''"
                @mousedown="startDrag"
@@ -21,8 +21,8 @@
                    </h3>
                </div>
                <div class="flex items-center space-x-1">
-                   <button 
-                       @click="toggleExpand" 
+                   <button
+                       @click="toggleExpand"
                        class="text-gray-500 hover:text-gray-700 hover:bg-gray-200 p-1.5 rounded transition-colors"
                        :title="isExpanded ? 'Minimize' : 'Maximize'"
                    >
@@ -34,17 +34,17 @@
                </button>
                </div>
            </div>
-           
+
            <div class="flex-1 overflow-y-auto">
                <form @submit.prevent="send" class="flex flex-col h-full">
                    <div class="px-4 py-2 border-b border-gray-200">
                        <div class="flex items-center">
                            <span class="text-sm text-gray-600 w-16 flex-shrink-0">To</span>
-                           <input 
-                               v-model="form.to" 
-                               type="text" 
-                               required 
-                               class="flex-1 px-2 py-1.5 bg-transparent border-none focus:ring-0 focus:outline-none text-sm" 
+                           <input
+                               v-model="form.to"
+                               type="text"
+                               required
+                               class="flex-1 px-2 py-1.5 bg-transparent border-none focus:ring-0 focus:outline-none text-sm"
                                placeholder="Recipients (comma-separated)"
                            >
                        </div>
@@ -53,19 +53,19 @@
                    <div v-if="showCcBcc" class="px-4 py-2 border-b border-gray-200 space-y-2">
                        <div class="flex items-center">
                            <span class="text-sm text-gray-600 w-16 flex-shrink-0">Cc</span>
-                           <input 
-                               v-model="form.cc" 
-                               type="text" 
-                               class="flex-1 px-2 py-1.5 bg-transparent border-none focus:ring-0 focus:outline-none text-sm" 
+                           <input
+                               v-model="form.cc"
+                               type="text"
+                               class="flex-1 px-2 py-1.5 bg-transparent border-none focus:ring-0 focus:outline-none text-sm"
                                placeholder="Cc (comma-separated)"
                            >
                        </div>
                        <div class="flex items-center">
                            <span class="text-sm text-gray-600 w-16 flex-shrink-0">Bcc</span>
-                           <input 
-                               v-model="form.bcc" 
-                               type="text" 
-                               class="flex-1 px-2 py-1.5 bg-transparent border-none focus:ring-0 focus:outline-none text-sm" 
+                           <input
+                               v-model="form.bcc"
+                               type="text"
+                               class="flex-1 px-2 py-1.5 bg-transparent border-none focus:ring-0 focus:outline-none text-sm"
                                placeholder="Bcc (comma-separated)"
                            >
                        </div>
@@ -75,15 +75,15 @@
                        <div class="flex items-center justify-between">
                            <div class="flex items-center flex-1">
                                <span class="text-sm text-gray-600 w-16 flex-shrink-0">Subject</span>
-                               <input 
-                                   v-model="form.subject" 
-                                   type="text" 
-                                   required 
-                                   class="flex-1 px-2 py-1.5 bg-transparent border-none focus:ring-0 focus:outline-none text-sm" 
+                               <input
+                                   v-model="form.subject"
+                                   type="text"
+                                   required
+                                   class="flex-1 px-2 py-1.5 bg-transparent border-none focus:ring-0 focus:outline-none text-sm"
                                    placeholder="Subject"
                                >
                            </div>
-                           <button 
+                           <button
                                type="button"
                                @click="showCcBcc = !showCcBcc"
                                class="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded hover:bg-gray-100 transition-colors"
@@ -92,18 +92,18 @@
                            </button>
                        </div>
                    </div>
-                   
+
                    <!-- Attachments Display -->
                    <div v-if="attachments.length > 0" class="px-4 py-2 border-b border-gray-200 bg-gray-50">
                        <div class="flex flex-wrap gap-2">
-                           <div 
-                               v-for="(attachment, index) in attachments" 
+                           <div
+                               v-for="(attachment, index) in attachments"
                                :key="attachment.id || index"
                                class="flex items-center gap-2 bg-white px-2 py-1.5 rounded border border-gray-200 text-xs"
                            >
                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
                                <span class="text-gray-700 max-w-[150px] truncate">{{ attachment.filename || attachment.name }}</span>
-                               <button 
+                               <button
                                    type="button"
                                    @click="removeAttachment(index)"
                                    class="text-gray-400 hover:text-red-600"
@@ -113,7 +113,7 @@
                            </div>
                        </div>
                    </div>
-                   
+
                    <div class="flex-1 px-4 py-2 overflow-y-auto relative flex flex-col min-h-0">
                        <WpEditor
                            v-model="form.body"
@@ -126,7 +126,7 @@
                        <!-- Signature/Template Insert -->
                        <div class="absolute bottom-2 right-2 flex gap-2 z-10">
                            <div class="relative">
-                               <button 
+                               <button
                                    type="button"
                                    @click.stop="showTemplates = !showTemplates"
                                    class="text-xs text-gray-600 hover:text-gray-800 px-2 py-1 bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors shadow-sm"
@@ -135,8 +135,8 @@
                                    Template
                                </button>
                                <!-- Templates Dropdown -->
-                               <div 
-                                   v-if="showTemplates" 
+                               <div
+                                   v-if="showTemplates"
                                    v-click-outside="() => showTemplates = false"
                                    class="absolute bottom-full right-0 mb-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto z-20"
                                >
@@ -152,7 +152,7 @@
                                    </button>
                                </div>
                            </div>
-                           <button 
+                           <button
                                type="button"
                                @click="insertSignature"
                                class="text-xs text-gray-600 hover:text-gray-800 px-2 py-1 bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors shadow-sm"
@@ -174,7 +174,7 @@
 
                    <div class="px-4 py-3 border-t border-gray-200 flex justify-between items-center bg-gray-50 rounded-b-lg" :class="isExpanded ? 'rounded-none' : ''">
                        <div class="flex items-center space-x-2">
-                           <button 
+                           <button
                                type="button"
                                class="text-sm text-gray-600 hover:text-gray-800 px-3 py-1.5 rounded hover:bg-gray-200 transition-colors"
                                title="Formatting options"
@@ -182,15 +182,15 @@
                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
                            </button>
                            <label class="text-sm text-gray-600 hover:text-gray-800 px-3 py-1.5 rounded hover:bg-gray-200 transition-colors cursor-pointer">
-                               <input 
-                                   type="file" 
-                                   multiple 
+                               <input
+                                   type="file"
+                                   multiple
                                    @change="handleFileUpload"
                                    class="hidden"
                                >
                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
                            </label>
-                           <button 
+                           <button
                                v-if="draftId || hasChanges"
                                type="button"
                                @click="saveDraft"
@@ -203,16 +203,16 @@
                            </button>
                        </div>
                        <div class="flex items-center space-x-2">
-                           <button 
+                           <button
                                type="button"
                                @click="$emit('close')"
                                class="text-sm text-gray-600 hover:text-gray-800 px-4 py-1.5 rounded hover:bg-gray-200 transition-colors"
                            >
                                Discard
                            </button>
-                           <button 
-                               type="submit" 
-                               :disabled="loading" 
+                           <button
+                               type="submit"
+                               :disabled="loading"
                                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-1.5 rounded text-sm font-medium transition-colors flex items-center disabled:opacity-70 disabled:cursor-not-allowed"
                            >
                            <svg v-if="loading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
@@ -279,7 +279,7 @@ const getSidebarWidth = () => {
   const adminMenu = document.getElementById('adminmenu');
   const adminMenuWrap = document.getElementById('adminmenuwrap');
   const body = document.body;
-  
+
   if (adminMenu || adminMenuWrap) {
     const menu = adminMenu || adminMenuWrap;
     if (menu) {
@@ -289,12 +289,12 @@ const getSidebarWidth = () => {
       }
     }
   }
-  
+
   // Check if sidebar is collapsed (folded class)
   if (body && body.classList.contains('folded')) {
     return 36; // Collapsed sidebar width
   }
-  
+
   return 160; // Default expanded sidebar width
 };
 
@@ -307,7 +307,7 @@ const getAdminBarHeight = () => {
       return height;
     }
   }
-  
+
   // Check if admin bar is visible (body has admin-bar class)
   const body = document.body;
   if (body && body.classList.contains('admin-bar')) {
@@ -317,7 +317,7 @@ const getAdminBarHeight = () => {
     }
     return 32; // Desktop admin bar height
   }
-  
+
   return 0; // No admin bar
 };
 
@@ -375,7 +375,7 @@ watch(() => props.isOpen, (newValue) => {
     isExpanded.value = false;
     sidebarWidth.value = getSidebarWidth();
     adminBarHeight.value = getAdminBarHeight();
-    
+
     // Pre-fill form for reply/forward or draft
     if (props.emailData) {
       if (props.emailData.is_draft) {
@@ -386,7 +386,7 @@ watch(() => props.isOpen, (newValue) => {
         form.subject = props.emailData.subject || '';
         form.body = props.emailData.body || '';
         draftId.value = props.emailData.id;
-        
+
         // Load attachments if any
         if (props.emailData.attachments) {
           try {
@@ -400,8 +400,8 @@ watch(() => props.isOpen, (newValue) => {
         hasChanges.value = false;
       } else if (props.mode === 'reply') {
         form.to = props.emailData.sender || '';
-        form.subject = props.emailData.subject?.startsWith('Re:') 
-          ? props.emailData.subject 
+        form.subject = props.emailData.subject?.startsWith('Re:')
+          ? props.emailData.subject
           : `Re: ${props.emailData.subject || ''}`;
         // Add quoted original message
         const originalBody = props.emailData.body || '';
@@ -409,8 +409,8 @@ watch(() => props.isOpen, (newValue) => {
         form.body = quotedBody;
       } else if (props.mode === 'forward') {
         form.to = '';
-        form.subject = props.emailData.subject?.startsWith('Fwd:') 
-          ? props.emailData.subject 
+        form.subject = props.emailData.subject?.startsWith('Fwd:')
+          ? props.emailData.subject
           : `Fwd: ${props.emailData.subject || ''}`;
         // Add forwarded message
         const originalBody = props.emailData.body || '';
@@ -452,12 +452,12 @@ watch(() => props.isOpen, (newValue) => {
 watch([() => form.to, () => form.cc, () => form.bcc, () => form.subject, () => form.body, () => attachments.value], () => {
   if (props.isOpen && (form.to || form.subject || form.body)) {
     hasChanges.value = true;
-    
+
     // Clear existing timer
     if (autoSaveTimer.value) {
       clearTimeout(autoSaveTimer.value);
     }
-    
+
     // Auto-save after 2 seconds of inactivity
     autoSaveTimer.value = setTimeout(() => {
       saveDraft(true); // Silent save
@@ -484,7 +484,7 @@ const handleFileUpload = async (event) => {
       error.value = `Failed to upload ${file.name}: ${e.response?.data?.message || 'Upload error'}`;
     }
   }
-  
+
   // Reset file input
   event.target.value = '';
 };
@@ -523,7 +523,7 @@ const insertSignature = () => {
     error.value = 'No signatures available. Please create a signature in settings.';
     return;
   }
-  
+
   const defaultSig = signatures.value.find(s => s.is_default);
   if (defaultSig) {
     form.body += '<br><br>' + defaultSig.content;
@@ -546,20 +546,20 @@ const insertTemplate = (template) => {
 const showNotification = (message, type = 'success') => {
   const notification = document.createElement('div');
   const bgColor = type === 'success' ? 'bg-green-600' : 'bg-red-600';
-  
+
   notification.className = `fixed bottom-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-[9999] text-sm flex items-center gap-2 animate-fade-in-up max-w-sm`;
   notification.innerHTML = `
     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      ${type === 'success' 
+      ${type === 'success'
         ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
         : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
       }
     </svg>
     <span>${message}</span>
   `;
-  
+
   document.body.appendChild(notification);
-  
+
   // Remove after 3 seconds with fade out
   setTimeout(() => {
     notification.style.opacity = '0';
@@ -577,7 +577,7 @@ const saveDraft = async (silent = false) => {
   if (!silent) {
     savingDraft.value = true;
   }
-  
+
   try {
     const { data } = await api.saveDraft({
       to: form.to,
@@ -588,10 +588,10 @@ const saveDraft = async (silent = false) => {
       attachments: attachments.value.map(a => a.id),
       draft_id: draftId.value
     });
-    
+
     draftId.value = data.draft_id;
     hasChanges.value = false;
-    
+
     // Show notification for both silent and manual saves
     showNotification('Draft saved successfully', 'success');
   } catch (e) {
@@ -616,13 +616,13 @@ if (typeof window !== 'undefined' && document.body) {
       adminBarHeight.value = getAdminBarHeight();
     }
   });
-  
+
   // Observe body class changes for folded/unfolded sidebar and admin bar
   sidebarObserver.observe(document.body, {
     attributes: true,
     attributeFilter: ['class']
   });
-  
+
   // Also observe admin menu width changes
   const adminMenu = document.getElementById('adminmenu') || document.getElementById('adminmenuwrap');
   if (adminMenu) {
@@ -633,7 +633,7 @@ if (typeof window !== 'undefined' && document.body) {
       subtree: false
     });
   }
-  
+
   // Observe admin bar changes
   const adminBar = document.getElementById('wpadminbar');
   if (adminBar) {
@@ -644,7 +644,7 @@ if (typeof window !== 'undefined' && document.body) {
       subtree: false
     });
   }
-  
+
   // Watch for window resize (admin bar height changes on mobile/desktop)
   const handleResize = () => {
     if (isExpanded.value) {
@@ -652,7 +652,7 @@ if (typeof window !== 'undefined' && document.body) {
     }
   };
   window.addEventListener('resize', handleResize);
-  
+
   // Store handler for cleanup
   window._fluentMailboxResizeHandler = handleResize;
 }
@@ -688,7 +688,7 @@ const send = async () => {
     error.value = 'Please fill in all fields';
     return;
   }
-  
+
   // Check if body has content (strip HTML tags)
   const bodyText = form.body.replace(/<[^>]*>?/gm, '').trim();
   if (!bodyText) {
@@ -710,10 +710,10 @@ const send = async () => {
         attachments: attachments.value.map(a => a.id),
         draft_id: draftId.value || null
       };
-      
+
       await api.sendEmail(emailData);
       success.value = true;
-      
+
       // Clear form
       form.to = '';
       form.cc = '';
@@ -723,12 +723,12 @@ const send = async () => {
       attachments.value = [];
       draftId.value = null;
       hasChanges.value = false;
-      
+
       if (autoSaveTimer.value) {
         clearTimeout(autoSaveTimer.value);
         autoSaveTimer.value = null;
       }
-      
+
       emit('sent');
       setTimeout(() => {
           success.value = false;

@@ -214,6 +214,44 @@
                             </div>
                         </div>
                    </div>
+                   
+                   <!-- Troubleshooting Section -->
+                   <div class="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 overflow-hidden mt-4">
+                        <div class="p-3 border-b border-gray-100/50 flex justify-between items-center bg-gray-50/50">
+                             <div class="flex items-center">
+                                 <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center mr-2">
+                                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                 </div>
+                                 <h3 class="text-lg font-bold text-gray-800">Troubleshooting</h3>
+                             </div>
+                        </div>
+                        <div class="p-4 space-y-4">
+                            <p class="text-sm text-gray-500">Use these tools to debug webhook connectivity and processing issues.</p>
+                            
+                            <div class="flex space-x-3">
+                                <button @click="simulateWebhook" :disabled="simulating" class="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-2.5 rounded-xl font-medium transition-all text-sm flex justify-center items-center shadow-sm">
+                                    <svg v-if="simulating" class="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                    <span v-else class="mr-2">⚡</span> Simulate Webhook
+                                </button>
+                                <button @click="toggleLog" class="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-2.5 rounded-xl font-medium transition-all text-sm flex justify-center items-center shadow-sm">
+                                    <span class="mr-2">📄</span> View Debug Log
+                                </button>
+                            </div>
+
+                            <div v-if="showLog" class="mt-4 border border-gray-200 rounded-xl overflow-hidden">
+                                <div class="bg-gray-900 text-gray-300 px-4 py-2 text-xs font-mono flex justify-between items-center">
+                                    <span>fluent-mailbox-debug.log</span>
+                                    <div class="flex space-x-3">
+                                        <button @click="refreshLog" class="hover:text-white transition-colors">Refresh</button>
+                                        <button @click="cleanLog" class="text-red-400 hover:text-red-300 transition-colors">Clear</button>
+                                    </div>
+                                </div>
+                                <div class="bg-gray-800 p-4 overflow-x-auto max-h-64 scrollbar-thin scrollbar-thumb-gray-600">
+                                    <pre class="text-xs font-mono text-gray-300 whitespace-pre-wrap font-ligatures-none">{{ logContent || 'Log is empty.' }}</pre>
+                                </div>
+                            </div>
+                        </div>
+                   </div>
               </div>
 
           </div>
@@ -357,6 +395,55 @@ const resetInbound = async () => {
         alert('Failed to reset configuration');
     } finally {
         loading.value = false;
+    }
+};
+
+// Troubleshooting Logic
+const simulating = ref(false);
+const showLog = ref(false);
+const logContent = ref('');
+
+const simulateWebhook = async () => {
+    simulating.value = true;
+    try {
+        const { data } = await api.simulateWebhook();
+        alert('Simulation Result: ' + data.message);
+        // If simulation succeeded, maybe refresh inbox? But we are in settings.
+        // Let's at least refresh the log if it's open
+        if (showLog.value) {
+            await refreshLog();
+        }
+    } catch (e) {
+         alert('Simulation Failed: ' + (e.response?.data?.message || e.message));
+    } finally {
+        simulating.value = false;
+    }
+};
+
+const toggleLog = async () => {
+    showLog.value = !showLog.value;
+    if (showLog.value) {
+        await refreshLog();
+    }
+};
+
+const refreshLog = async () => {
+    try {
+        const { data } = await api.getDebugLog();
+        logContent.value = data.log;
+    } catch (e) {
+        logContent.value = 'Failed to load log.';
+    }
+};
+
+const cleanLog = async () => {
+    if(!confirm('Clear debug log?')) return;
+    try {
+        await api.cleanDebugLog();
+        logContent.value = '';
+        alert('Log cleared.');
+    } catch (e) {
+        alert('Failed to clear log.');
     }
 };
 </script>

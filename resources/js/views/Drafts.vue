@@ -6,7 +6,7 @@
               <div class="text-sm text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full" v-if="drafts.length">{{ drafts.length }} drafts</div>
           </div>
       </header>
-      
+
       <div class="flex-1 overflow-auto p-0">
           <div v-if="loading" class="flex justify-center items-center h-64">
               <div class="relative">
@@ -15,9 +15,9 @@
           </div>
 
           <div v-else-if="drafts.length > 0" class="divide-y divide-gray-100">
-              <div 
-                  v-for="draft in drafts" 
-                  :key="draft.id" 
+              <div
+                  v-for="draft in drafts"
+                  :key="draft.id"
                   @click="openDraft(draft)"
                   class="px-6 py-3 bg-white hover:bg-gray-50 cursor-pointer group transition-colors"
               >
@@ -45,7 +45,7 @@
                           </p>
                       </div>
                       <div class="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button 
+                          <button
                               @click.stop="deleteDraft(draft)"
                               class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                               title="Delete draft"
@@ -97,12 +97,12 @@ const formatRelativeDate = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now - date) / 1000);
-    
+
     if (diffInSeconds < 60) return 'Just now';
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
     if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-    
+
     return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 };
 
