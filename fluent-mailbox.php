@@ -49,11 +49,15 @@ final class FluentMailbox
 
         $emailsTable = $wpdb->prefix . 'fluent_mailbox_emails';
         $notesTable = $wpdb->prefix . 'fluent_mailbox_email_notes';
+        $tagsTable = $wpdb->prefix . 'fluent_mailbox_tags';
+        $emailTagsTable = $wpdb->prefix . 'fluent_mailbox_email_tags';
 
         $emailsTableExists = ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $emailsTable)) === $emailsTable);
         $notesTableExists = ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $notesTable)) === $notesTable);
+        $tagsTableExists = ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $tagsTable)) === $tagsTable);
+        $emailTagsTableExists = ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $emailTagsTable)) === $emailTagsTable);
 
-        $needsMigration = version_compare($version, FLUENT_MAILBOX_VERSION, '<') || !$emailsTableExists || !$notesTableExists;
+        $needsMigration = version_compare($version, FLUENT_MAILBOX_VERSION, '<') || !$emailsTableExists || !$notesTableExists || !$tagsTableExists || !$emailTagsTableExists;
         if ($needsMigration) {
             \FluentMailbox\Common\DatabaseMigration::migrate();
             update_option('fluent_mailbox_db_version', FLUENT_MAILBOX_VERSION);

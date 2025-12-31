@@ -3,6 +3,7 @@
 namespace FluentMailbox\Http\Controllers;
 
 use FluentMailbox\Models\Email;
+use FluentMailbox\Models\Tag;
 use FluentMailbox\Services\SesService;
 
 class MailController
@@ -393,5 +394,169 @@ class MailController
         Email::update($id, ['status' => 'trash']);
 
         return rest_ensure_response(['message' => 'Draft deleted']);
+    }
+
+    // Tag Management Methods
+
+    /**
+     * Get all tags
+     */
+    public function getTags($request)
+    {
+        $tags = (new Tag())->all();
+        return rest_ensure_response($tags);
+    }
+
+    /**
+     * Create a new tag
+     */
+    public function createTag($request)
+    {
+        $name = trim($request->get_param('name'));
+        $color = $request->get_param('color') ?: '#3B82F6';
+
+        if (empty($name)) {
+            return new \WP_Error('missing_name', 'Tag name is required', ['status' => 400]);
+        }
+
+        $tagModel = new Tag();
+
+        // Check if tag already exists
+        if ($tagModel->existsByName($name)) {
+            return new \WP_Error('tag_exists', 'A tag with this name already exists', ['status' => 400]);
+        }
+
+        $tagId = $tagModel->create([
+            'name' => $name,
+            'color' => $color
+        ]);
+
+        $tags = $tagModel->all();
+
+        return rest_ensure_response([
+            'message' => 'Tag created successfully',
+            'tag_id' => $tagId,
+            'tags' => $tags
+        ]);
+    }
+
+    /**
+     * Update a tag
+     */
+    public function updateTag($request)
+    {
+        $id = $request->get_param('id');
+        $name = trim($request->get_param('name'));
+        $color = $request->get_param('color');
+
+        if (empty($name) && empty($color)) {
+            return new \WP_Error('missing_params', 'Name or color is required', ['status' => 400]);
+        }
+
+        $tagModel = new Tag();
+
+        // Check if new name already exists (excluding current tag)
+        if ($name && $tagModel->existsByName($name, $id)) {
+            return new \WP_Error('tag_exists', 'A tag with this name already exists', ['status' => 400]);
+        }
+
+        $data = [];
+        if ($name) {
+            $data['name'] = $name;
+        }
+        if ($color) {
+            $data['color'] = $color;
+        }
+
+        $tagModel->update($id, $data);
+        $tags = $tagModel->all();
+
+        return rest_ensure_response([
+            'message' => 'Tag updated successfully',
+            'tags' => $tags
+        ]);
+    }
+
+    /**
+     * Delete a tag
+     */
+    public function deleteTag($request)
+    {
+        $id = $request->get_param('id');
+
+        $tagModel = new Tag();
+        $tagModel->delete($id);
+
+        $tags = $tagModel->all();
+
+        return rest_ensure_response([
+            'message' => 'Tag deleted successfully',
+            'tags' => $tags
+        ]);
+    }
+
+    /**
+     * Get tags for a specific email
+     */
+    public function getEmailTags($request)
+    {
+        $emailId = $request->get_param('id');
+
+        $email = Email::find($emailId);
+        if (!$email) {
+            return new \WP_Error('not_found', 'Email not found', ['status' => 404]);
+        }
+
+        $tags = (new Tag())->getEmailTags($emailId);
+
+        return rest_ensure_response($tags);
+    }
+
+    /**
+     * Add tag to email
+     */
+    public function addEmailTag($request)
+    {
+        $emailId = $request->get_param('id');
+        $tagId = $request->get_param('tag_id');
+
+        $email = Email::find($emailId);
+        if (!$email) {
+            return new \WP_Error('not_found', 'Email not found', ['status' => 404]);
+        }
+
+        $tagModel = new Tag();
+        $tagModel->addToEmail($emailId, $tagId);
+
+        $tags = $tagModel->getEmailTags($emailId);
+
+        return rest_ensure_response([
+            'message' => 'Tag added to email',
+            'tags' => $tags
+        ]);
+    }
+
+    /**
+     * Remove tag from email
+     */
+    public function removeEmailTag($request)
+    {
+        $emailId = $request->get_param('id');
+        $tagId = $request->get_param('tag_id');
+
+        $email = Email::find($emailId);
+        if (!$email) {
+            return new \WP_Error('not_found', 'Email not found', ['status' => 404]);
+        }
+
+        $tagModel = new Tag();
+        $tagModel->removeFromEmail($emailId, $tagId);
+
+        $tags = $tagModel->getEmailTags($emailId);
+
+        return rest_ensure_response([
+            'message' => 'Tag removed from email',
+            'tags' => $tags
+        ]);
     }
 }

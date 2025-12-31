@@ -5,6 +5,9 @@
 .notice-error {
   display:none;
 }
+.router-link-active, .router-link-active:focus, .router-link-active:hover {
+  box-shadow: none;
+}
 
 /* Custom Animations */
 @keyframes fadeIn {

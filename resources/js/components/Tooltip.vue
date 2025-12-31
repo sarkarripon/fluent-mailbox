@@ -1,13 +1,14 @@
 <template>
   <div class="relative inline-block group">
     <slot></slot>
-    <div 
+    <div
       v-if="text"
-      class="absolute z-50 px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none whitespace-normal max-w-xs"
+      class="absolute z-[999999] px-2.5 py-1.5 text-xs font-medium text-white bg-gray-900 rounded-lg shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 delay-300 pointer-events-none whitespace-nowrap"
       :class="positionClass"
+      style="max-width: 280px;"
     >
       {{ text }}
-      <div 
+      <div
         class="absolute w-2 h-2 bg-gray-900 transform rotate-45"
         :class="arrowClass"
       ></div>
@@ -25,7 +26,7 @@ const props = defineProps({
   },
   position: {
     type: String,
-    default: 'top', // top, bottom, left, right
+    default: 'bottom', // top, bottom, left, right
     validator: (value) => ['top', 'bottom', 'left', 'right'].includes(value)
   }
 });
@@ -50,4 +51,5 @@ const arrowClass = computed(() => {
   return classes[props.position];
 });
 </script>
+
 

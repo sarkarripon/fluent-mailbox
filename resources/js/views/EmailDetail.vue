@@ -26,6 +26,40 @@
                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h13M8 12h13M8 17h13M3 7h.01M3 12h.01M3 17h.01" />
                         </svg>
                     </button>
+                    <div class="relative" ref="tagButtonRef">
+                        <button @click="toggleTagDropdown" class="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all" title="Tags">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                            </svg>
+                            <span v-if="emailTags.length > 0" class="absolute -top-1 -right-1 bg-purple-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">{{ emailTags.length }}</span>
+                        </button>
+
+                        <!-- Tags Dropdown -->
+                        <Teleport to="body">
+                            <div
+                                v-if="showTagDropdown"
+                                :style="tagDropdownStyle"
+                                class="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-lg w-80"
+                            >
+                                <div class="p-3 border-b border-gray-200 flex justify-between items-center">
+                                    <h3 class="text-sm font-semibold text-gray-700">Email Tags</h3>
+                                    <button
+                                        @click="showTagManager = true; showTagDropdown = false"
+                                        class="text-xs text-blue-600 hover:text-blue-700 hover:underline"
+                                    >
+                                        Manage tags
+                                    </button>
+                                </div>
+                                <div class="p-3">
+                                    <TagPicker
+                                        :email-id="email.id"
+                                        @manage-tags="showTagManager = true; showTagDropdown = false"
+                                        @tags-updated="loadEmailTags"
+                                    />
+                                </div>
+                            </div>
+                        </Teleport>
+                    </div>
                <button @click="deleteEmail" class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Delete">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                </button>
@@ -229,15 +263,20 @@
                <div class="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
            </div>
       </div>
+
+      <!-- Tag Manager Modal -->
+      <TagManager v-model="showTagManager" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '../utils/api';
 import { useAppStore } from '../stores/useAppStore';
 import { useEmailCounts } from '../composables/useEmailCounts';
+import TagPicker from '../components/TagPicker.vue';
+import TagManager from '../components/TagManager.vue';
 
 const store = useAppStore();
 const emailCounts = useEmailCounts();
@@ -248,6 +287,11 @@ const email = ref(null);
 const loading = ref(true);
 
 const users = ref([]);
+const showTagManager = ref(false);
+const showTagDropdown = ref(false);
+const tagButtonRef = ref(null);
+const tagDropdownStyle = ref({});
+const emailTags = ref([]);
 const workflow = ref({
     workflow_status: 'open',
     assigned_to: 0
@@ -274,8 +318,13 @@ onMounted(async () => {
         await Promise.all([
             loadUsers(),
             loadWorkflow(),
-            refreshNotes()
+            refreshNotes(),
+            loadEmailTags()
         ]);
+        // Load global tags if not loaded
+        if (!store.tagsLoaded) {
+            await store.loadTags();
+        }
         // Refresh counts
         emailCounts.fetchCounts();
     } catch (e) {
@@ -283,7 +332,69 @@ onMounted(async () => {
     } finally {
         loading.value = false;
     }
+
+    document.addEventListener('click', handleClickOutside);
 });
+
+onBeforeUnmount(() => {
+    document.removeEventListener('click', handleClickOutside);
+});
+
+const toggleTagDropdown = () => {
+    showTagDropdown.value = !showTagDropdown.value;
+    if (showTagDropdown.value) {
+        nextTick(() => {
+            updateTagDropdownPosition();
+        });
+    }
+};
+
+const updateTagDropdownPosition = () => {
+    if (!tagButtonRef.value) return;
+
+    const rect = tagButtonRef.value.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    // Position below by default, above if not enough space
+    if (spaceBelow < 200 && spaceAbove > spaceBelow) {
+        tagDropdownStyle.value = {
+            left: `${rect.right - 320}px`,
+            bottom: `${window.innerHeight - rect.top}px`,
+            top: 'auto'
+        };
+    } else {
+        tagDropdownStyle.value = {
+            left: `${rect.right - 320}px`,
+            top: `${rect.bottom + 8}px`
+        };
+    }
+};
+
+const loadEmailTags = async () => {
+    if (!email.value?.id) return;
+    try {
+        const response = await api.getEmailTags(email.value.id);
+        emailTags.value = response.data || [];
+    } catch (error) {
+        console.error('Failed to load email tags:', error);
+    }
+};
+
+const handleClickOutside = (event) => {
+    if (showTagDropdown.value && tagButtonRef.value && !tagButtonRef.value.contains(event.target)) {
+        const dropdowns = document.querySelectorAll('.fixed.z-50');
+        let clickedInside = false;
+        dropdowns.forEach(dropdown => {
+            if (dropdown.contains(event.target)) {
+                clickedInside = true;
+            }
+        });
+        if (!clickedInside) {
+            showTagDropdown.value = false;
+        }
+    }
+};
 
 const loadUsers = async () => {
     try {

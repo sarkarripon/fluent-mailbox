@@ -47,9 +47,33 @@ class DatabaseMigration
             KEY user_id (user_id)
         ) $charsetCollate;";
 
+        $tagsTable = $wpdb->prefix . 'fluent_mailbox_tags';
+        $tagsSql = "CREATE TABLE $tagsTable (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            name varchar(255) NOT NULL,
+            color varchar(20) DEFAULT '#3B82F6',
+            created_at datetime DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY  (id),
+            UNIQUE KEY name (name)
+        ) $charsetCollate;";
+
+        $emailTagsTable = $wpdb->prefix . 'fluent_mailbox_email_tags';
+        $emailTagsSql = "CREATE TABLE $emailTagsTable (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            email_id bigint(20) NOT NULL,
+            tag_id bigint(20) NOT NULL,
+            created_at datetime DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY  (id),
+            KEY email_id (email_id),
+            KEY tag_id (tag_id),
+            UNIQUE KEY email_tag (email_id, tag_id)
+        ) $charsetCollate;";
+
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($sql);
         dbDelta($notesSql);
+        dbDelta($tagsSql);
+        dbDelta($emailTagsSql);
 
         // Add missing columns to existing table
         self::addMissingColumns();

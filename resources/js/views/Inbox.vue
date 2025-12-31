@@ -18,7 +18,7 @@
                    <div v-else class="flex items-center space-x-3">
                        <h1 class="text-lg font-semibold text-gray-800">Inbox</h1>
                        <div class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full" v-if="emails.length">
-                           {{ unreadCount }} of {{ emails.length }}
+                           unread {{ unreadCount }} of {{ emails.length }}
                        </div>
                    </div>
               </div>
@@ -28,6 +28,11 @@
                       <Tooltip text="Mark all selected emails as read">
                           <button @click="bulkMarkAsRead" :disabled="selectedEmails.length === 0" class="px-2.5 py-1 text-xs text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                               Mark as read
+                          </button>
+                      </Tooltip>
+                      <Tooltip text="Add tag to all selected emails">
+                          <button @click="showBulkTagMenu = !showBulkTagMenu" :disabled="selectedEmails.length === 0" class="px-2.5 py-1 text-xs text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed relative">
+                              Add tag
                           </button>
                       </Tooltip>
                       <Tooltip text="Move all selected emails to trash">
@@ -152,6 +157,37 @@
                   >
               </div>
 
+              <!-- Tags Filter -->
+              <div>
+                  <div class="flex items-center justify-between mb-1.5">
+                      <label class="block text-xs font-medium text-gray-700">Tags</label>
+                      <button
+                          @click="showTagManager = true"
+                          class="text-xs text-blue-600 hover:text-blue-700 hover:underline"
+                      >
+                          Manage tags
+                      </button>
+                  </div>
+                  <div v-if="store.allTags.length === 0" class="text-xs text-gray-500">
+                      No tags available. <button @click="showTagManager = true" class="text-blue-600 hover:underline">Create tags</button>
+                  </div>
+                  <div v-else class="flex flex-wrap gap-2">
+                      <button
+                          v-for="tag in store.allTags"
+                          :key="tag.id"
+                          @click="toggleTagFilter(tag.id)"
+                          class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full transition-all"
+                          :class="filters.tags.includes(tag.id) ? 'text-white' : 'text-gray-700 bg-gray-100 hover:bg-gray-200'"
+                          :style="filters.tags.includes(tag.id) ? { backgroundColor: tag.color } : {}"
+                      >
+                          {{ tag.name }}
+                          <svg v-if="filters.tags.includes(tag.id)" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                          </svg>
+                      </button>
+                  </div>
+              </div>
+
               <!-- Clear Filters Button -->
               <div class="flex justify-end">
                   <button
@@ -177,12 +213,15 @@
                   v-for="email in filteredEmails"
                   :key="email.id"
                   @click="isSelectionMode ? toggleSelect(email) : openEmail(email.id)"
-                  class="px-6 py-3 bg-white hover:bg-gray-50 cursor-pointer group transition-colors relative"
-                  :class="!email.is_read ? 'bg-blue-50/30' : '', isSelected(email.id) ? 'bg-blue-100/50' : ''"
+                  class="px-5 py-2.5 bg-white hover:shadow-sm cursor-pointer group transition-all relative border-l-4"
+                  :class="[
+                      !email.is_read ? 'bg-blue-50/20 border-l-blue-500' : 'border-l-transparent',
+                      isSelected(email.id) ? 'bg-blue-50 border-l-blue-600' : ''
+                  ]"
               >
-                  <div class="flex items-start gap-4">
+                  <div class="flex items-center gap-3">
                       <!-- Selection Checkbox or Unread Indicator -->
-                      <div class="flex-shrink-0 pt-1">
+                      <div class="flex-shrink-0">
                           <input
                               v-if="isSelectionMode"
                               type="checkbox"
@@ -190,59 +229,102 @@
                               @click.stop="toggleSelect(email)"
                               class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
                           >
-                          <div v-else-if="!email.is_read" class="w-2 h-2 bg-blue-600 rounded-full"></div>
+                          <div v-else-if="!email.is_read" class="w-2.5 h-2.5 bg-blue-600 rounded-full ring-2 ring-blue-100"></div>
+                          <div v-else class="w-2.5 h-2.5"></div>
                       </div>
 
                       <!-- Avatar -->
                       <div class="flex-shrink-0">
-                          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold text-sm">
+                          <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold text-sm shadow-sm">
                               {{ email.sender ? email.sender[0].toUpperCase() : '?' }}
                           </div>
                       </div>
 
                       <!-- Email Content -->
                       <div class="flex-1 min-w-0">
-                          <div class="flex items-center justify-between gap-3 mb-1">
-                              <div class="flex items-center gap-2 min-w-0 flex-1">
-                                  <svg v-if="email.is_starred" class="w-3.5 h-3.5 text-yellow-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
-                                  <span class="text-sm font-medium text-gray-900 truncate" :class="!email.is_read ? 'font-semibold' : ''">
-                                      {{ email.sender }}
+                          <div class="flex items-center gap-2 mb-0.5">
+                              <!-- Starred Icon -->
+                              <svg v-if="email.is_starred" class="w-3.5 h-3.5 text-yellow-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                              </svg>
+
+                              <!-- Sender -->
+                              <span class="text-sm text-gray-900 truncate" :class="!email.is_read ? 'font-semibold' : 'font-medium'">
+                                  {{ email.sender }}
+                              </span>
+
+                              <!-- Tags -->
+                              <div v-if="getEmailTagsDisplay(email.id).length > 0" class="flex items-center gap-1">
+                                  <span
+                                      v-for="tag in getEmailTagsDisplay(email.id).slice(0, 2)"
+                                      :key="tag.id"
+                                      class="inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded text-white shadow-sm"
+                                      :style="{ backgroundColor: tag.color }"
+                                  >
+                                      {{ tag.name }}
+                                  </span>
+                                  <span
+                                      v-if="getEmailTagsDisplay(email.id).length > 2"
+                                      class="text-xs text-gray-500 font-medium"
+                                  >
+                                      +{{ getEmailTagsDisplay(email.id).length - 2 }}
                                   </span>
                               </div>
-                              <span class="text-xs text-gray-500 flex-shrink-0">{{ formatRelativeDate(email.created_at) }}</span>
+
+                              <!-- Spacer -->
+                              <div class="flex-1"></div>
+
+                              <!-- Date -->
+                              <span class="text-xs text-gray-500 flex-shrink-0 font-medium">
+                                  {{ formatRelativeDate(email.created_at) }}
+                              </span>
                           </div>
-                          <h4 class="text-sm font-medium text-gray-900 mb-1 truncate flex items-center gap-2" :class="!email.is_read ? 'font-semibold' : ''">
-                              <span>{{ email.subject || '(No Subject)' }}</span>
-                          </h4>
-                          <p class="text-sm text-gray-500 truncate line-clamp-1">
-                              {{ getEmailSnippet(email.body) }}
-                          </p>
+
+                          <!-- Subject and Snippet -->
+                          <div class="flex items-baseline gap-2">
+                              <h4 class="text-sm text-gray-900 truncate" :class="!email.is_read ? 'font-semibold' : 'font-normal'">
+                                  {{ email.subject || '(No Subject)' }}
+                              </h4>
+                              <span class="text-sm text-gray-500 truncate flex-1">
+                                  — {{ getEmailSnippet(email.body) }}
+                              </span>
+                          </div>
                       </div>
 
                       <!-- Quick Actions (shown on hover) -->
-                      <div v-if="!isSelectionMode" class="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div v-if="!isSelectionMode" class="flex-shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                               @click.stop="toggleStar(email)"
                               class="p-1.5 text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 rounded transition-colors"
                               :title="email.is_starred ? 'Unstar' : 'Star'"
                           >
-                              <svg v-if="email.is_starred" class="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
-                              <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>
+                              <svg v-if="email.is_starred" class="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                              </svg>
+                              <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                              </svg>
                           </button>
                           <button
                               @click.stop="toggleRead(email)"
                               class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                               :title="email.is_read ? 'Mark as unread' : 'Mark as read'"
                           >
-                              <svg v-if="email.is_read" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                              <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                              <svg v-if="email.is_read" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76"></path>
+                              </svg>
+                              <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                              </svg>
                           </button>
                           <button
                               @click.stop="deleteEmail(email)"
                               class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                               title="Delete"
                           >
-                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                              </svg>
                           </button>
                       </div>
                   </div>
@@ -292,6 +374,40 @@
               </button>
           </div>
       </div>
+
+      <!-- Bulk Tag Menu -->
+      <div
+          v-if="showBulkTagMenu && isSelectionMode"
+          class="fixed inset-0 z-40"
+          @click="showBulkTagMenu = false"
+      >
+          <div
+              class="absolute top-16 right-8 bg-white border border-gray-200 rounded-lg shadow-lg p-3 min-w-[200px]"
+              @click.stop
+          >
+              <div class="text-xs font-medium text-gray-700 mb-2">Add tag to {{ selectedEmails.length }} emails</div>
+              <div v-if="store.allTags.length === 0" class="text-xs text-gray-500 py-2">
+                  No tags available.
+              </div>
+              <div v-else class="space-y-1">
+                  <button
+                      v-for="tag in store.allTags"
+                      :key="tag.id"
+                      @click="bulkAddTag(tag.id)"
+                      class="w-full flex items-center gap-2 px-2 py-1.5 text-xs hover:bg-gray-50 rounded text-left"
+                  >
+                      <span
+                          class="inline-block w-3 h-3 rounded-full"
+                          :style="{ backgroundColor: tag.color }"
+                      ></span>
+                      <span>{{ tag.name }}</span>
+                  </button>
+              </div>
+          </div>
+      </div>
+
+      <!-- Tag Manager Modal -->
+      <TagManager v-model="showTagManager" />
   </div>
 </template>
 
@@ -302,6 +418,7 @@ import api from '../utils/api';
 import { useAppStore } from '../stores/useAppStore';
 import { useEmailCounts } from '../composables/useEmailCounts';
 import Tooltip from '../components/Tooltip.vue';
+import TagManager from '../components/TagManager.vue';
 
 const store = useAppStore();
 const router = useRouter();
@@ -325,8 +442,13 @@ const filters = ref({
     readStatus: 'all',
     dateRange: 'all',
     hasAttachments: 'all',
-    sender: ''
+    sender: '',
+    tags: []
 });
+
+const showTagManager = ref(false);
+const emailTags = ref({});
+const showBulkTagMenu = ref(false);
 
 const sortOptions = [
     { label: 'Date (Newest)', value: 'date-desc' },
@@ -346,32 +468,20 @@ const fetchEmails = async (page = 1, silent = false) => {
         // Get inbox emails - request with 'inbox' status
         let response = await api.getEmails(page, 'inbox');
         let allEmails = response.data.data || [];
-        
-        // Debug logging
-        console.log('Inbox fetch response (inbox status):', {
-            total: response.data.total,
-            currentPage: response.data.current_page,
-            lastPage: response.data.last_page,
-            emailsCount: allEmails.length,
-            firstEmail: allEmails[0] ? { id: allEmails[0].id, status: allEmails[0].status, subject: allEmails[0].subject } : null
-        });
-        
+
         // If no emails found with 'inbox' status, try 'all' and filter manually
         if (allEmails.length === 0 && page === 1) {
-            console.log('No emails with inbox status, trying all status...');
             response = await api.getEmails(page, 'all');
             const allStatusEmails = response.data.data || [];
-            console.log('All status emails:', allStatusEmails.length, allStatusEmails.map(e => ({ id: e.id, status: e.status, subject: e.subject })));
-            
+
             // Filter for inbox: status = 'inbox', null, empty, or not sent/trash/draft
             allEmails = allStatusEmails.filter(email => {
                 const status = email.status;
-                return status === 'inbox' || !status || status === '' || 
+                return status === 'inbox' || !status || status === '' ||
                        (status !== 'sent' && status !== 'trash' && status !== 'draft');
             });
-            console.log('Filtered inbox emails:', allEmails.length);
         }
-        
+
         // Use all emails returned (backend already filtered for inbox)
         emails.value = allEmails;
 
@@ -420,6 +530,7 @@ const activeFilterCount = computed(() => {
     if (filters.value.dateRange !== 'all') count++;
     if (filters.value.hasAttachments !== 'all') count++;
     if (filters.value.sender.trim() !== '') count++;
+    if (filters.value.tags.length > 0) count++;
     return count;
 });
 
@@ -501,6 +612,16 @@ const filteredEmails = computed(() => {
         );
     }
 
+    // Apply tag filter
+    if (filters.value.tags.length > 0) {
+        result = result.filter(email => {
+            const tags = emailTags.value[email.id] || [];
+            const tagIds = tags.map(t => t.id);
+            // Email must have at least one of the selected tags
+            return filters.value.tags.some(filterTagId => tagIds.includes(filterTagId));
+        });
+    }
+
     // Apply sorting
     result.sort((a, b) => {
         switch (sortBy.value) {
@@ -534,7 +655,8 @@ const clearFilters = () => {
         readStatus: 'all',
         dateRange: 'all',
         hasAttachments: 'all',
-        sender: ''
+        sender: '',
+        tags: []
     };
 };
 
@@ -663,10 +785,63 @@ const initializeStars = () => {
     });
 };
 
-onMounted(() => {
-    fetchEmails(1, false).then(() => {
-        initializeStars();
-    });
+// Tag functionality
+const loadEmailTags = async (emailIds) => {
+    try {
+        const promises = emailIds.map(id => api.getEmailTags(id));
+        const responses = await Promise.all(promises);
+        responses.forEach((response, index) => {
+            emailTags.value[emailIds[index]] = response.data || [];
+        });
+    } catch (error) {
+        console.error('Failed to load email tags:', error);
+    }
+};
+
+const getEmailTagsDisplay = (emailId) => {
+    return emailTags.value[emailId] || [];
+};
+
+const toggleTagFilter = (tagId) => {
+    const index = filters.value.tags.indexOf(tagId);
+    if (index > -1) {
+        filters.value.tags.splice(index, 1);
+    } else {
+        filters.value.tags.push(tagId);
+    }
+};
+
+const bulkAddTag = async (tagId) => {
+    try {
+        const promises = selectedEmails.value.map(email =>
+            api.addEmailTag(email.id, tagId)
+        );
+        await Promise.all(promises);
+
+        // Reload tags for affected emails
+        const emailIds = selectedEmails.value.map(e => e.id);
+        await loadEmailTags(emailIds);
+
+        showBulkTagMenu.value = false;
+    } catch (error) {
+        alert('Failed to add tags to emails');
+    }
+};
+
+onMounted(async () => {
+    await fetchEmails(1, false);
+    initializeStars();
+
+    // Load tags
+    if (!store.tagsLoaded) {
+        await store.loadTags();
+    }
+
+    // Load tags for current emails
+    const emailIds = emails.value.map(e => e.id);
+    if (emailIds.length > 0) {
+        await loadEmailTags(emailIds);
+    }
 
     // Auto-refresh every 15 seconds
     pollingInterval.value = setInterval(() => {
@@ -689,4 +864,12 @@ watch(() => router.currentRoute.value.path, () => {
         exitSelectionMode();
     }
 });
+
+// Watch for emails changes to load tags
+watch(() => emails.value, async (newEmails) => {
+    const emailIds = newEmails.map(e => e.id);
+    if (emailIds.length > 0) {
+        await loadEmailTags(emailIds);
+    }
+}, { deep: true });
 </script>

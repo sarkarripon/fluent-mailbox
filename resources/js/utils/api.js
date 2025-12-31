@@ -112,5 +112,27 @@ export default {
     },
     cleanDebugLog() {
         return api.post('/settings/debug-log/clean');
+    },
+    // Tag APIs
+    getTags() {
+        return api.get('/tags');
+    },
+    createTag(data) {
+        return api.post('/tags', data);
+    },
+    updateTag(id, data) {
+        return api.put(`/tags/${id}`, data);
+    },
+    deleteTag(id) {
+        return api.delete(`/tags/${id}`);
+    },
+    getEmailTags(emailId) {
+        return api.get(`/emails/${emailId}/tags`);
+    },
+    addEmailTag(emailId, tagId) {
+        return api.post(`/emails/${emailId}/tags`, { tag_id: tagId });
+    },
+    removeEmailTag(emailId, tagId) {
+        return api.delete(`/emails/${emailId}/tags/${tagId}`);
     }
 };

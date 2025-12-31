@@ -104,6 +104,54 @@ class Router
             ]
         ]);
 
+        // Tag routes
+        register_rest_route($namespace, '/tags', [
+            [
+                'methods' => \WP_REST_Server::READABLE,
+                'callback' => [new MailController(), 'getTags'],
+                'permission_callback' => [$this, 'checkPermission']
+            ],
+            [
+                'methods' => \WP_REST_Server::CREATABLE,
+                'callback' => [new MailController(), 'createTag'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
+        register_rest_route($namespace, '/tags/(?P<id>\d+)', [
+            [
+                'methods' => \WP_REST_Server::EDITABLE,
+                'callback' => [new MailController(), 'updateTag'],
+                'permission_callback' => [$this, 'checkPermission']
+            ],
+            [
+                'methods' => \WP_REST_Server::DELETABLE,
+                'callback' => [new MailController(), 'deleteTag'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
+        register_rest_route($namespace, '/emails/(?P<id>\d+)/tags', [
+            [
+                'methods' => \WP_REST_Server::READABLE,
+                'callback' => [new MailController(), 'getEmailTags'],
+                'permission_callback' => [$this, 'checkPermission']
+            ],
+            [
+                'methods' => \WP_REST_Server::CREATABLE,
+                'callback' => [new MailController(), 'addEmailTag'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
+        register_rest_route($namespace, '/emails/(?P<id>\d+)/tags/(?P<tag_id>\d+)', [
+            [
+                'methods' => \WP_REST_Server::DELETABLE,
+                'callback' => [new MailController(), 'removeEmailTag'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
         register_rest_route($namespace, '/webhook', [
             [
                 'methods' => \WP_REST_Server::CREATABLE,
