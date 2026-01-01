@@ -5,6 +5,27 @@ import { createRouter, createWebHashHistory } from 'vue-router';
 import { useAppStore } from './stores/useAppStore';
 import '../css/style.css';
 
+// Remove all elements before the Fluent Mailbox app container
+document.addEventListener('DOMContentLoaded', function () {
+    const app = document.getElementById('fluent-mailbox-app');
+    const container = document.getElementById('wpbody-content');
+
+    if (!app || !container) return;
+
+    // Find the direct child of wpbody-content that contains the app
+    let target = app.closest('#wpbody-content > div');
+
+    if (!target) return;
+
+    // Remove all elements before the target
+    let prev = target.previousElementSibling;
+    while (prev) {
+        const toRemove = prev;
+        prev = prev.previousElementSibling;
+        toRemove.remove();
+    }
+});
+
 // Placeholder views
 import Inbox from './views/Inbox.vue';
 import Sent from './views/Sent.vue';
