@@ -8,7 +8,7 @@
  */
 
 defined('ABSPATH') || exit;
-defined('WP_ENV') || define('WP_ENV', 'development');
+defined('WP_ENV') || define('WP_ENV', 'production');
 
 define('FLUENT_MAILBOX_VERSION', '1.0.0');
 define('FLUENT_MAILBOX_PATH', plugin_dir_path(__FILE__));
