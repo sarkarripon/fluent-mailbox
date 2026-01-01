@@ -2,6 +2,11 @@
 
 A modern, Gmail-like email client for WordPress powered by AWS SES. Send, receive, and manage emails directly from your WordPress admin panel.
 
+<img width="1462" height="821" alt="image" src="https://github.com/user-attachments/assets/a048d79e-74e4-446d-a6bf-eb71abfde4da" />
+
+
+
+## Details:
 **Contributors:** fluentmailbox  
 **Tags:** email, mailbox, aws, ses, smtp, email-client, gmail-like  
 **Requires at least:** WordPress 5.8  
