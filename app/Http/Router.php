@@ -19,7 +19,7 @@ class Router
             [
                 'methods' => \WP_REST_Server::READABLE,
                 'callback' => [new MailController(), 'getUsers'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ]
         ]);
 
@@ -27,12 +27,12 @@ class Router
             [
                 'methods' => \WP_REST_Server::READABLE,
                 'callback' => [new MailController(), 'index'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ],
             [
                 'methods' => \WP_REST_Server::CREATABLE,
                 'callback' => [new MailController(), 'send'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkSendPermission']
             ]
         ]);
 
@@ -40,7 +40,7 @@ class Router
             [
                 'methods' => \WP_REST_Server::CREATABLE,
                 'callback' => [new MailController(), 'fetchEmails'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ]
         ]);
 
@@ -48,7 +48,7 @@ class Router
             [
                 'methods' => \WP_REST_Server::DELETABLE,
                 'callback' => [new MailController(), 'emptyTrash'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkDeletePermission']
             ]
         ]);
 
@@ -56,17 +56,17 @@ class Router
             [
                 'methods' => \WP_REST_Server::READABLE,
                 'callback' => [new MailController(), 'get'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ],
             [
                 'methods' => \WP_REST_Server::EDITABLE,
                 'callback' => [new MailController(), 'update'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ],
             [
                 'methods' => \WP_REST_Server::DELETABLE,
                 'callback' => [new MailController(), 'delete'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkDeletePermission']
             ]
         ]);
 
@@ -74,12 +74,12 @@ class Router
             [
                 'methods' => \WP_REST_Server::READABLE,
                 'callback' => [new MailController(), 'getWorkflow'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ],
             [
                 'methods' => \WP_REST_Server::EDITABLE,
                 'callback' => [new MailController(), 'updateWorkflow'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ]
         ]);
 
@@ -87,12 +87,12 @@ class Router
             [
                 'methods' => \WP_REST_Server::READABLE,
                 'callback' => [new MailController(), 'getNotes'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ],
             [
                 'methods' => \WP_REST_Server::CREATABLE,
                 'callback' => [new MailController(), 'addNote'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ]
         ]);
 
@@ -100,7 +100,7 @@ class Router
             [
                 'methods' => \WP_REST_Server::DELETABLE,
                 'callback' => [new MailController(), 'deleteNote'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ]
         ]);
 
@@ -109,12 +109,12 @@ class Router
             [
                 'methods' => \WP_REST_Server::READABLE,
                 'callback' => [new MailController(), 'getTags'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ],
             [
                 'methods' => \WP_REST_Server::CREATABLE,
                 'callback' => [new MailController(), 'createTag'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ]
         ]);
 
@@ -122,12 +122,12 @@ class Router
             [
                 'methods' => \WP_REST_Server::EDITABLE,
                 'callback' => [new MailController(), 'updateTag'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ],
             [
                 'methods' => \WP_REST_Server::DELETABLE,
                 'callback' => [new MailController(), 'deleteTag'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ]
         ]);
 
@@ -135,12 +135,12 @@ class Router
             [
                 'methods' => \WP_REST_Server::READABLE,
                 'callback' => [new MailController(), 'getEmailTags'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ],
             [
                 'methods' => \WP_REST_Server::CREATABLE,
                 'callback' => [new MailController(), 'addEmailTag'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ]
         ]);
 
@@ -148,7 +148,7 @@ class Router
             [
                 'methods' => \WP_REST_Server::DELETABLE,
                 'callback' => [new MailController(), 'removeEmailTag'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ]
         ]);
 
@@ -164,7 +164,7 @@ class Router
             [
                 'methods' => \WP_REST_Server::CREATABLE,
                 'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'verifyCredentials'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkSettingsPermission']
             ]
         ]);
 
@@ -172,7 +172,7 @@ class Router
             [
                 'methods' => \WP_REST_Server::CREATABLE,
                 'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'saveConnection'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkSettingsPermission']
             ]
         ]);
 
@@ -180,7 +180,7 @@ class Router
             [
                 'methods' => \WP_REST_Server::CREATABLE,
                 'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'setupInbound'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkSettingsPermission']
             ]
         ]);
 
@@ -188,7 +188,7 @@ class Router
             [
                 'methods' => \WP_REST_Server::READABLE,
                 'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'getSettings'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkSettingsPermission']
             ]
         ]);
 
@@ -196,7 +196,7 @@ class Router
             [
                 'methods' => \WP_REST_Server::CREATABLE,
                 'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'disconnect'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkSettingsPermission']
             ]
         ]);
 
@@ -204,7 +204,7 @@ class Router
             [
                 'methods' => \WP_REST_Server::CREATABLE,
                 'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'simulateWebhook'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkSettingsPermission']
             ]
         ]);
 
@@ -212,7 +212,7 @@ class Router
             [
                 'methods' => \WP_REST_Server::READABLE,
                 'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'getDebugLog'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkSettingsPermission']
             ]
         ]);
 
@@ -220,7 +220,7 @@ class Router
             [
                 'methods' => \WP_REST_Server::CREATABLE,
                 'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'cleanDebugLog'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkSettingsPermission']
             ]
         ]);
 
@@ -228,7 +228,7 @@ class Router
             [
                 'methods' => \WP_REST_Server::CREATABLE,
                 'callback' => [new \FluentMailbox\Http\Controllers\AttachmentController(), 'upload'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ]
         ]);
 
@@ -236,12 +236,12 @@ class Router
             [
                 'methods' => \WP_REST_Server::READABLE,
                 'callback' => [new MailController(), 'getDrafts'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ],
             [
                 'methods' => \WP_REST_Server::CREATABLE,
                 'callback' => [new MailController(), 'saveDraft'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ]
         ]);
 
@@ -249,7 +249,7 @@ class Router
             [
                 'methods' => \WP_REST_Server::DELETABLE,
                 'callback' => [new MailController(), 'deleteDraft'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ]
         ]);
 
@@ -257,12 +257,12 @@ class Router
             [
                 'methods' => \WP_REST_Server::READABLE,
                 'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'getSignatures'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ],
             [
                 'methods' => \WP_REST_Server::CREATABLE,
                 'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'saveSignature'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ]
         ]);
 
@@ -270,7 +270,7 @@ class Router
             [
                 'methods' => \WP_REST_Server::DELETABLE,
                 'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'deleteSignature'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ]
         ]);
 
@@ -278,12 +278,12 @@ class Router
             [
                 'methods' => \WP_REST_Server::READABLE,
                 'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'getTemplates'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ],
             [
                 'methods' => \WP_REST_Server::CREATABLE,
                 'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'saveTemplate'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ]
         ]);
 
@@ -291,7 +291,7 @@ class Router
             [
                 'methods' => \WP_REST_Server::DELETABLE,
                 'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'deleteTemplate'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ]
         ]);
 
@@ -299,7 +299,7 @@ class Router
             [
                 'methods' => \WP_REST_Server::READABLE,
                 'callback' => [new \FluentMailbox\Http\Controllers\AttachmentController(), 'download'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ]
         ]);
 
@@ -307,7 +307,7 @@ class Router
             [
                 'methods' => \WP_REST_Server::READABLE,
                 'callback' => [new \FluentMailbox\Http\Controllers\AttachmentController(), 'getAttachmentInfo'],
-                'permission_callback' => [$this, 'checkPermission']
+                'permission_callback' => [$this, 'checkFrontendPermission']
             ]
         ]);
     }
@@ -315,5 +315,63 @@ class Router
     public function checkPermission()
     {
         return current_user_can('manage_options');
+    }
+
+    /**
+     * Check permission for frontend access (public access allowed)
+     * This allows the mailbox app to work on the frontend for demo purposes
+     */
+    public function checkFrontendPermission()
+    {
+        // Allow public access for frontend demo
+        return true;
+    }
+
+    /**
+     * Check permission for settings endpoints (admin only)
+     * Settings should never be accessible from frontend
+     */
+    public function checkSettingsPermission()
+    {
+        // Settings endpoints require admin access
+        return current_user_can('manage_options');
+    }
+
+    /**
+     * Check permission for sending emails (block frontend users)
+     * Only admin users can send emails
+     */
+    public function checkSendPermission()
+    {
+        // Only allow admin users to send emails
+        // Frontend demo users (who don't have manage_options) are blocked
+        if (!current_user_can('manage_options')) {
+            return new \WP_Error(
+                'frontend_restricted',
+                'Sending emails is not available in demo mode. Please use the admin area.',
+                ['status' => 403]
+            );
+        }
+        
+        return true;
+    }
+
+    /**
+     * Check permission for deleting emails (block frontend users)
+     * Only admin users can delete emails
+     */
+    public function checkDeletePermission()
+    {
+        // Only allow admin users to delete emails
+        // Frontend demo users (who don't have manage_options) are blocked
+        if (!current_user_can('manage_options')) {
+            return new \WP_Error(
+                'frontend_restricted',
+                'Deleting emails is not available in demo mode. Please use the admin area.',
+                ['status' => 403]
+            );
+        }
+        
+        return true;
     }
 }

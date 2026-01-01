@@ -5,7 +5,7 @@
               <h1 class="text-xl font-semibold text-gray-800">Trash</h1>
               <div class="text-sm text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full" v-if="emails.length">{{ emails.length }} messages</div>
           </div>
-          <button v-if="emails.length" @click="emptyTrash" class="text-red-600 text-sm font-medium hover:text-red-700 hover:bg-red-50 px-4 py-2 rounded-lg transition-all">Empty Trash</button>
+          <button v-if="emails.length" @click="emptyTrash" :disabled="store.isFrontendMode" class="text-red-600 text-sm font-medium hover:text-red-700 hover:bg-red-50 px-4 py-2 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed" :title="store.isFrontendMode ? 'Deleting emails is not available in demo mode' : 'Empty Trash'">Empty Trash</button>
       </header>
       
       <div class="flex-1 overflow-auto p-0">
@@ -101,6 +101,10 @@ const deleteEmail = async (email) => {
 };
 
 const emptyTrash = async () => {
+    if (store.isFrontendMode) {
+        alert('Deleting emails is not available in demo mode. Please use the admin area.');
+        return;
+    }
     if(!confirm('Are you sure you want to permanently delete all items in Trash? This action cannot be undone.')) return;
     try {
         await api.emptyTrash();

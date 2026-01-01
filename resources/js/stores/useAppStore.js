@@ -4,6 +4,7 @@ import api from '../utils/api';
 
 export const useAppStore = defineStore('app', () => {
     const isConfigured = ref(window.FluentMailbox?.is_configured || false);
+    const isFrontendMode = ref(window.FluentMailbox?.isFrontend || false);
     const STORAGE_KEY = 'fluent-mailbox-compact-mode';
 
     // Load compact state from localStorage
@@ -84,6 +85,7 @@ export const useAppStore = defineStore('app', () => {
 
     return {
         isConfigured,
+        isFrontendMode,
         isCompact,
         showCompose,
         composeMode,

@@ -8,7 +8,7 @@
  */
 
 defined('ABSPATH') || exit;
-defined('WP_ENV') || define('WP_ENV', 'development');
+defined('WP_ENV') || define('WP_ENV', 'production');
 
 define('FLUENT_MAILBOX_VERSION', '1.0.0');
 define('FLUENT_MAILBOX_PATH', plugin_dir_path(__FILE__));
@@ -199,7 +199,8 @@ final class FluentMailbox
             'root' => esc_url_raw(rest_url('fluent-mailbox/v1')),
             'nonce' => wp_create_nonce('wp_rest'),
             'assets' => FLUENT_MAILBOX_URL . 'assets/',
-            'is_configured' => (get_option('fluent_mailbox_aws_key') && get_option('fluent_mailbox_from_email'))
+            'is_configured' => (get_option('fluent_mailbox_aws_key') && get_option('fluent_mailbox_from_email')),
+            'isFrontend' => false // Admin mode - frontend addon will override this
         ]);
 
         add_filter('script_loader_tag', [$this, 'addModuleType'], 10, 3);

@@ -1,5 +1,5 @@
 <template>
-  <div class="flex bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 font-sans text-gray-900 overflow-hidden animate-fade-in" :style="{ height: `calc(100vh - ${adminBarHeight}px)`, marginTop: 20 + 'px' }">
+  <div class="flex bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 font-sans text-gray-900 overflow-hidden animate-fade-in" :style="store.isFrontendMode ? { height: '100vh', marginTop: '0' } : { height: `calc(100vh - ${adminBarHeight}px)`, marginTop: 20 + 'px' }">
     <!-- Sidebar -->
     <aside class="w-48 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out overflow-hidden animate-slide-in-right" :style="{ maxHeight: `calc(100vh - ${adminBarHeight + 32}px)` }">
       <div class="p-4 flex items-center space-x-2">
@@ -29,7 +29,7 @@
           </Tooltip>
       </div>
 
-      <nav class="flex-1 px-2 space-y-0.5 overflow-y-auto">
+      <nav class="flex-1 px-2 space-y-0.5">
         <template v-if="store.isConfigured">
             <router-link to="/inbox" class="flex items-center justify-between px-3 py-2 rounded-lg transition-all duration-200 group hover:translate-x-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" :class="$route.path.includes('inbox') ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-gray-700 hover:bg-gray-50'">
                 <div class="flex items-center">
@@ -55,15 +55,21 @@
         </template>
 
         <div class="pt-2 mt-2 border-t border-gray-200">
-            <router-link to="/settings" class="flex items-center px-3 py-2 rounded-lg transition-all duration-200 group hover:translate-x-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" :class="$route.path.includes('settings') ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-gray-700 hover:bg-gray-50'">
+            <Tooltip v-if="store.isFrontendMode" text="Settings are only available in the WordPress admin area" position="right">
+                <div class="flex items-center px-3 py-2 rounded-lg text-gray-400 cursor-not-allowed opacity-60">
+                    <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <span class="text-sm font-medium">Settings</span>
+                </div>
+            </Tooltip>
+            <router-link v-else to="/settings" class="flex items-center px-3 py-2 rounded-lg transition-all duration-200 group hover:translate-x-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" :class="$route.path.includes('settings') ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-gray-700 hover:bg-gray-50'">
                 <svg class="w-4 h-4 mr-2.5 transition-transform duration-200 group-hover:rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                 <span class="text-sm font-medium">Settings</span>
             </router-link>
         </div>
       </nav>
 
-      <!-- WordPress Sidebar Toggle Button -->
-      <div class="p-3 border-t border-gray-200">
+      <!-- WordPress Sidebar Toggle Button (only in admin mode) -->
+      <div v-if="!store.isFrontendMode" class="p-3 border-t border-gray-200">
           <Tooltip :text="isWordPressSidebarFolded ? 'Expand WordPress Menu' : 'Collapse WordPress Menu'" position="right">
               <button @click="toggleCompact" class="w-full flex items-center justify-center px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50 transition-all duration-200 group">
                   <svg v-if="!isWordPressSidebarFolded" class="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path></svg>
@@ -74,7 +80,7 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 flex flex-col overflow-hidden bg-white/70 backdrop-blur-xl m-2 mb-2 rounded-3xl border border-white/50 relative shadow-lg animate-scale-in" :style="{ maxHeight: `calc(100vh - ${adminBarHeight + 16}px)` }">
+    <main class="flex-1 flex flex-col overflow-hidden bg-white/70 backdrop-blur-xl rounded-3xl border border-white/50 relative shadow-lg animate-scale-in" :class="store.isFrontendMode ? 'm-0 rounded-none' : 'm-2 mb-2'" :style="store.isFrontendMode ? { maxHeight: '100vh' } : { maxHeight: `calc(100vh - ${adminBarHeight + 16}px)` }">
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
           <component :is="Component" />
@@ -181,14 +187,21 @@ let adminBarObserver = null;
 let resizeHandler = null;
 
 onMounted(() => {
-  updateAdminBarHeight();
-  // Load WordPress sidebar state from localStorage on mount
-  loadWordPressSidebarState();
+  // Only check admin bar and sidebar in admin mode
+  if (!store.isFrontendMode) {
+    updateAdminBarHeight();
+    // Load WordPress sidebar state from localStorage on mount
+    loadWordPressSidebarState();
+  } else {
+    adminBarHeight.value = 0;
+  }
   emailCounts.fetchCounts();
 
-  // Prevent body scroll when app is active
-  document.body.style.overflow = 'hidden';
-  document.documentElement.style.overflow = 'hidden';
+  // Prevent body scroll when app is active (only in admin mode, not frontend)
+  if (!store.isFrontendMode) {
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+  }
 
   // Refresh counts every 30 seconds
   setInterval(() => {
@@ -233,9 +246,11 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-  // Restore body scroll when app is unmounted
-  document.body.style.overflow = '';
-  document.documentElement.style.overflow = '';
+  // Restore body scroll when app is unmounted (only if we set it)
+  if (!store.isFrontendMode) {
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
+  }
 
   if (adminBarObserver) {
     adminBarObserver.disconnect();

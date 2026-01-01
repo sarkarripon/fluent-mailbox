@@ -60,7 +60,14 @@ app.directive('click-outside', clickOutside);
 router.beforeEach((to, from, next) => {
     const store = useAppStore();
 
-    if (to.path !== '/settings' && !store.isConfigured) {
+    // Block settings access in frontend mode
+    if (to.path === '/settings' && store.isFrontendMode) {
+        next('/inbox');
+        return;
+    }
+
+    // Redirect to settings if not configured (only in admin mode)
+    if (to.path !== '/settings' && !store.isConfigured && !store.isFrontendMode) {
         next('/settings');
     } else {
         next();
