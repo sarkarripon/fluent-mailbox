@@ -83,9 +83,9 @@
               </button>
 
               <!-- Sort Dropdown -->
-              <div class="relative">
+              <div class="relative" ref="sortMenuRef">
                   <button
-                      @click="showSortMenu = !showSortMenu"
+                      @click.stop="toggleSortMenu"
                       class="px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-1.5"
                   >
                       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path></svg>
@@ -93,13 +93,14 @@
                   </button>
                   <div
                       v-if="showSortMenu"
-                      v-click-outside="() => showSortMenu = false"
+                      v-click-outside="closeSortMenu"
                       class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20"
+                      @click.stop
                   >
                       <button
                           v-for="option in sortOptions"
                           :key="option.value"
-                          @click="setSort(option.value)"
+                          @click.stop="setSort(option.value)"
                           class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center justify-between"
                           :class="sortBy === option.value ? 'bg-blue-50 text-blue-700' : 'text-gray-700'"
                       >
@@ -211,7 +212,7 @@
           <div v-else-if="filteredEmails.length > 0" class="divide-y divide-gray-100">
               <div
                   v-for="email in filteredEmails"
-                  :key="email.id"
+                  :key="`${email.id}-${sortBy}`"
                   @click="isSelectionMode ? toggleSelect(email) : openEmail(email.id)"
                   class="px-5 py-2.5 bg-white hover:shadow-sm cursor-pointer group transition-all relative border-l-4"
                   :class="[
@@ -412,7 +413,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '../utils/api';
 import { useAppStore } from '../stores/useAppStore';
@@ -437,6 +438,7 @@ const showFilters = ref(false);
 const showSortMenu = ref(false);
 const sortBy = ref('date-desc');
 const sortOrder = ref('desc');
+const sortMenuRef = ref(null);
 
 const filters = ref({
     readStatus: 'all',
@@ -540,6 +542,9 @@ const activeFilterCount = computed(() => {
 });
 
 const filteredEmails = computed(() => {
+    // Explicitly track sortBy to ensure reactivity
+    const currentSort = sortBy.value;
+    
     let result = [...emails.value];
 
     // Apply search query
@@ -627,32 +632,88 @@ const filteredEmails = computed(() => {
         });
     }
 
-    // Apply sorting
-    result.sort((a, b) => {
-        switch (sortBy.value) {
-            case 'date-desc':
-                return new Date(b.created_at) - new Date(a.created_at);
-            case 'date-asc':
-                return new Date(a.created_at) - new Date(b.created_at);
-            case 'sender-asc':
-                return (a.sender || '').localeCompare(b.sender || '');
-            case 'sender-desc':
-                return (b.sender || '').localeCompare(a.sender || '');
-            case 'subject-asc':
-                return (a.subject || '').localeCompare(b.subject || '');
-            case 'subject-desc':
-                return (b.subject || '').localeCompare(a.subject || '');
+    // Apply sorting - create a new sorted array to ensure reactivity
+    const sortedResult = Array.from(result).sort((a, b) => {
+        let comparison = 0;
+        
+        switch (currentSort) {
+            case 'date-desc': {
+                const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+                const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+                if (!isNaN(dateA) && !isNaN(dateB)) {
+                    comparison = dateB - dateA; // Newest first
+                }
+                break;
+            }
+            case 'date-asc': {
+                const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+                const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+                if (!isNaN(dateA) && !isNaN(dateB)) {
+                    comparison = dateA - dateB; // Oldest first
+                }
+                break;
+            }
+            case 'sender-asc': {
+                const senderA = (a.sender || '').toLowerCase().trim();
+                const senderB = (b.sender || '').toLowerCase().trim();
+                comparison = senderA.localeCompare(senderB);
+                break;
+            }
+            case 'sender-desc': {
+                const senderA = (a.sender || '').toLowerCase().trim();
+                const senderB = (b.sender || '').toLowerCase().trim();
+                comparison = senderB.localeCompare(senderA);
+                break;
+            }
+            case 'subject-asc': {
+                const subjectA = (a.subject || '(No Subject)').toLowerCase().trim();
+                const subjectB = (b.subject || '(No Subject)').toLowerCase().trim();
+                comparison = subjectA.localeCompare(subjectB);
+                break;
+            }
+            case 'subject-desc': {
+                const subjectA = (a.subject || '(No Subject)').toLowerCase().trim();
+                const subjectB = (b.subject || '(No Subject)').toLowerCase().trim();
+                comparison = subjectB.localeCompare(subjectA);
+                break;
+            }
             default:
-                return 0;
+                comparison = 0;
         }
+        
+        return comparison;
     });
 
-    return result;
+    console.log('filteredEmails computed - sortBy:', currentSort, 'result count:', sortedResult.length, 'first email date:', sortedResult[0]?.created_at);
+    return sortedResult;
 });
 
+const toggleSortMenu = () => {
+    console.log('Toggle sort menu clicked, current state:', showSortMenu.value);
+    showSortMenu.value = !showSortMenu.value;
+    console.log('Sort menu state after toggle:', showSortMenu.value);
+};
+
+const closeSortMenu = () => {
+    console.log('Closing sort menu');
+    showSortMenu.value = false;
+};
+
 const setSort = (value) => {
+    console.log('Setting sort to:', value, 'Current sort:', sortBy.value);
+    if (sortBy.value === value) {
+        // Already sorted by this, no need to change
+        showSortMenu.value = false;
+        return;
+    }
     sortBy.value = value;
     showSortMenu.value = false;
+    // Force reactivity - the computed property will automatically update
+    // Use nextTick to ensure the DOM updates after the computed recalculates
+    nextTick(() => {
+        console.log('After sort change - sortBy:', sortBy.value, 'Filtered emails count:', filteredEmails.value.length);
+        console.log('First email:', filteredEmails.value[0] ? { subject: filteredEmails.value[0].subject, sender: filteredEmails.value[0].sender, date: filteredEmails.value[0].created_at } : 'none');
+    });
 };
 
 const clearFilters = () => {
