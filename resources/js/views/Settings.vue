@@ -1,20 +1,20 @@
 <template>
   <div class="h-full flex flex-col">
-      <header class="py-4 border-b border-gray-100/50 flex justify-between items-center bg-white/50 backdrop-blur-sm transition-all duration-300" :class="store.isCompact ? 'pl-16 pr-6' : 'px-6'">
-          <h1 class="text-xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Settings</h1>
+      <header class="py-4 border-b flex justify-between items-center backdrop-blur-sm transition-all duration-300" :class="[store.isCompact ? 'pl-16 pr-6' : 'px-6', store.isDarkTheme ? 'border-gray-700/50 bg-gray-900/30' : 'border-gray-100/50 bg-white/50']">
+          <h1 class="text-xl font-bold" :class="store.isDarkTheme ? 'text-gray-100' : 'bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent'">Settings</h1>
       </header>
 
       <div class="flex-1 overflow-auto p-4">
           <div class="max-w-xl mx-auto">
 
               <!-- Tab Navigation -->
-              <div class="flex space-x-1 mb-6 bg-gray-100 rounded-xl p-1">
+              <div class="flex space-x-1 mb-6 rounded-xl p-1" :class="store.isDarkTheme ? 'bg-gray-800' : 'bg-gray-100'">
                   <button
                       @click="activeTab = 'aws'"
                       class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200"
                       :class="activeTab === 'aws'
-                          ? 'bg-white text-gray-900 shadow-sm'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'"
+                          ? (store.isDarkTheme ? 'bg-gray-700 text-gray-100 shadow-sm' : 'bg-white text-gray-900 shadow-sm')
+                          : (store.isDarkTheme ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50')"
                   >
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path>
@@ -25,8 +25,8 @@
                       @click="activeTab = 'appearance'"
                       class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200"
                       :class="activeTab === 'appearance'
-                          ? 'bg-white text-gray-900 shadow-sm'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'"
+                          ? (store.isDarkTheme ? 'bg-gray-700 text-gray-100 shadow-sm' : 'bg-white text-gray-900 shadow-sm')
+                          : (store.isDarkTheme ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50')"
                   >
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>

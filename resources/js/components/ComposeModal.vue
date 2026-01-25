@@ -6,30 +6,37 @@
       :style="isExpanded ? { left: sidebarWidth + 'px', top: adminBarHeight + 'px' } : (!isExpanded ? { bottom: position.y ? 'auto' : '1rem', right: position.x ? 'auto' : '1rem', top: position.y ? position.y + 'px' : 'auto', left: position.x ? position.x + 'px' : 'auto' } : {})"
   >
       <div
-          class="bg-white rounded-t-lg flex flex-col border border-gray-300 shadow-2xl transition-all duration-300"
-          :class="isExpanded ? 'h-full rounded-none' : 'h-[600px] max-h-[calc(100vh-2rem)]'"
+          class="rounded-t-lg flex flex-col border shadow-2xl transition-all duration-300"
+          :class="[
+              isExpanded ? 'h-full rounded-none' : 'h-[600px] max-h-[calc(100vh-2rem)]',
+              store.isDarkTheme ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'
+          ]"
           style="box-shadow: 0 8px 10px 1px rgba(0,0,0,0.14), 0 3px 14px 2px rgba(0,0,0,0.12), 0 5px 5px -3px rgba(0,0,0,0.2);"
       >
            <div
-               class="flex justify-between items-center px-4 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg cursor-move"
-               :class="isExpanded ? 'rounded-none' : ''"
+               class="flex justify-between items-center px-4 py-3 border-b cursor-move"
+               :class="[
+                   isExpanded ? 'rounded-none' : 'rounded-t-lg',
+                   store.isDarkTheme ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
+               ]"
                @mousedown="startDrag"
            >
                <div class="flex items-center space-x-3 flex-1">
-                   <h3 class="font-medium text-sm text-gray-700">
+                   <h3 class="font-medium text-sm" :class="store.isDarkTheme ? 'text-gray-200' : 'text-gray-700'">
                        {{ props.mode === 'reply' ? 'Reply' : props.mode === 'forward' ? 'Forward' : 'New Message' }}
                    </h3>
                </div>
                <div class="flex items-center space-x-1">
                    <button
                        @click="toggleExpand"
-                       class="text-gray-500 hover:text-gray-700 hover:bg-gray-200 p-1.5 rounded transition-colors"
+                       class="p-1.5 rounded transition-colors"
+                       :class="store.isDarkTheme ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'"
                        :title="isExpanded ? 'Minimize' : 'Maximize'"
                    >
                       <svg v-if="!isExpanded" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
                       <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25"></path></svg>
                    </button>
-                   <button @click="$emit('close')" class="text-gray-500 hover:text-gray-700 hover:bg-gray-200 p-1.5 rounded transition-colors" title="Close">
+                   <button @click="$emit('close')" class="p-1.5 rounded transition-colors" :class="store.isDarkTheme ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'" title="Close">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                </button>
                </div>
@@ -37,56 +44,61 @@
 
            <div class="flex-1 overflow-y-auto">
                <form @submit.prevent="send" class="flex flex-col h-full">
-                   <div class="px-4 py-2 border-b border-gray-200">
+                   <div class="px-4 py-2 border-b" :class="store.isDarkTheme ? 'border-gray-600' : 'border-gray-200'">
                        <div class="flex items-center">
-                           <span class="text-sm text-gray-600 w-16 flex-shrink-0">To</span>
+                           <span class="text-sm w-16 flex-shrink-0" :class="store.isDarkTheme ? 'text-gray-400' : 'text-gray-600'">To</span>
                            <input
                                v-model="form.to"
                                type="text"
                                required
                                class="flex-1 px-2 py-1.5 bg-transparent border-none focus:ring-0 focus:outline-none text-sm"
+                               :class="store.isDarkTheme ? 'text-gray-100 placeholder-gray-500' : 'text-gray-900 placeholder-gray-400'"
                                placeholder="Recipients (comma-separated)"
                            >
                        </div>
                    </div>
 
-                   <div v-if="showCcBcc" class="px-4 py-2 border-b border-gray-200 space-y-2">
+                   <div v-if="showCcBcc" class="px-4 py-2 border-b space-y-2" :class="store.isDarkTheme ? 'border-gray-600' : 'border-gray-200'">
                        <div class="flex items-center">
-                           <span class="text-sm text-gray-600 w-16 flex-shrink-0">Cc</span>
+                           <span class="text-sm w-16 flex-shrink-0" :class="store.isDarkTheme ? 'text-gray-400' : 'text-gray-600'">Cc</span>
                            <input
                                v-model="form.cc"
                                type="text"
                                class="flex-1 px-2 py-1.5 bg-transparent border-none focus:ring-0 focus:outline-none text-sm"
+                               :class="store.isDarkTheme ? 'text-gray-100 placeholder-gray-500' : 'text-gray-900 placeholder-gray-400'"
                                placeholder="Cc (comma-separated)"
                            >
                        </div>
                        <div class="flex items-center">
-                           <span class="text-sm text-gray-600 w-16 flex-shrink-0">Bcc</span>
+                           <span class="text-sm w-16 flex-shrink-0" :class="store.isDarkTheme ? 'text-gray-400' : 'text-gray-600'">Bcc</span>
                            <input
                                v-model="form.bcc"
                                type="text"
                                class="flex-1 px-2 py-1.5 bg-transparent border-none focus:ring-0 focus:outline-none text-sm"
+                               :class="store.isDarkTheme ? 'text-gray-100 placeholder-gray-500' : 'text-gray-900 placeholder-gray-400'"
                                placeholder="Bcc (comma-separated)"
                            >
                        </div>
                    </div>
 
-                   <div class="px-4 py-2 border-b border-gray-200">
+                   <div class="px-4 py-2 border-b" :class="store.isDarkTheme ? 'border-gray-600' : 'border-gray-200'">
                        <div class="flex items-center justify-between">
                            <div class="flex items-center flex-1">
-                               <span class="text-sm text-gray-600 w-16 flex-shrink-0">Subject</span>
+                               <span class="text-sm w-16 flex-shrink-0" :class="store.isDarkTheme ? 'text-gray-400' : 'text-gray-600'">Subject</span>
                                <input
                                    v-model="form.subject"
                                    type="text"
                                    required
                                    class="flex-1 px-2 py-1.5 bg-transparent border-none focus:ring-0 focus:outline-none text-sm"
+                                   :class="store.isDarkTheme ? 'text-gray-100 placeholder-gray-500' : 'text-gray-900 placeholder-gray-400'"
                                    placeholder="Subject"
                                >
                            </div>
                            <button
                                type="button"
                                @click="showCcBcc = !showCcBcc"
-                               class="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded hover:bg-gray-100 transition-colors"
+                               class="text-xs px-2 py-1 rounded transition-colors"
+                               :class="store.isDarkTheme ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'"
                            >
                                {{ showCcBcc ? 'Hide' : 'Cc/Bcc' }}
                            </button>
@@ -94,19 +106,20 @@
                    </div>
 
                    <!-- Attachments Display -->
-                   <div v-if="attachments.length > 0" class="px-4 py-2 border-b border-gray-200 bg-gray-50">
+                   <div v-if="attachments.length > 0" class="px-4 py-2 border-b" :class="store.isDarkTheme ? 'border-gray-600 bg-gray-700/50' : 'border-gray-200 bg-gray-50'">
                        <div class="flex flex-wrap gap-2">
                            <div
                                v-for="(attachment, index) in attachments"
                                :key="attachment.id || index"
-                               class="flex items-center gap-2 bg-white px-2 py-1.5 rounded border border-gray-200 text-xs"
+                               class="flex items-center gap-2 px-2 py-1.5 rounded border text-xs"
+                               :class="store.isDarkTheme ? 'bg-gray-600 border-gray-500' : 'bg-white border-gray-200'"
                            >
-                               <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
-                               <span class="text-gray-700 max-w-[150px] truncate">{{ attachment.filename || attachment.name }}</span>
+                               <svg class="w-4 h-4" :class="store.isDarkTheme ? 'text-gray-400' : 'text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                               <span class="max-w-[150px] truncate" :class="store.isDarkTheme ? 'text-gray-200' : 'text-gray-700'">{{ attachment.filename || attachment.name }}</span>
                                <button
                                    type="button"
                                    @click="removeAttachment(index)"
-                                   class="text-gray-400 hover:text-red-600"
+                                   :class="store.isDarkTheme ? 'text-gray-400 hover:text-red-400' : 'text-gray-400 hover:text-red-600'"
                                >
                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                                </button>
@@ -129,7 +142,8 @@
                                <button
                                    type="button"
                                    @click.stop="showTemplates = !showTemplates"
-                                   class="text-xs text-gray-600 hover:text-gray-800 px-2 py-1 bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors shadow-sm"
+                                   class="text-xs px-2 py-1 border rounded shadow-sm transition-colors"
+                                   :class="store.isDarkTheme ? 'text-gray-300 hover:text-gray-100 bg-gray-700 border-gray-600 hover:bg-gray-600' : 'text-gray-600 hover:text-gray-800 bg-white border-gray-200 hover:bg-gray-50'"
                                    title="Insert template"
                                >
                                    Template
@@ -138,24 +152,27 @@
                                <div
                                    v-if="showTemplates"
                                    v-click-outside="() => showTemplates = false"
-                                   class="absolute bottom-full right-0 mb-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto z-20"
+                                   class="absolute bottom-full right-0 mb-2 w-64 border rounded-lg shadow-lg max-h-64 overflow-y-auto z-20"
+                                   :class="store.isDarkTheme ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'"
                                >
-                                   <div v-if="templates.length === 0" class="p-3 text-sm text-gray-500 text-center">No templates available</div>
+                                   <div v-if="templates.length === 0" class="p-3 text-sm text-center" :class="store.isDarkTheme ? 'text-gray-400' : 'text-gray-500'">No templates available</div>
                                    <button
                                        v-for="template in templates"
                                        :key="template.id"
                                        @click="insertTemplate(template)"
-                                       class="w-full text-left px-3 py-2 hover:bg-gray-50 border-b border-gray-100 last:border-0 transition-colors"
+                                       class="w-full text-left px-3 py-2 border-b last:border-0 transition-colors"
+                                       :class="store.isDarkTheme ? 'hover:bg-gray-600 border-gray-600' : 'hover:bg-gray-50 border-gray-100'"
                                    >
-                                       <div class="font-medium text-sm text-gray-900">{{ template.name }}</div>
-                                       <div class="text-xs text-gray-500 truncate mt-0.5">{{ template.subject || 'No subject' }}</div>
+                                       <div class="font-medium text-sm" :class="store.isDarkTheme ? 'text-gray-200' : 'text-gray-900'">{{ template.name }}</div>
+                                       <div class="text-xs truncate mt-0.5" :class="store.isDarkTheme ? 'text-gray-400' : 'text-gray-500'">{{ template.subject || 'No subject' }}</div>
                                    </button>
                                </div>
                            </div>
                            <button
                                type="button"
                                @click="insertSignature"
-                               class="text-xs text-gray-600 hover:text-gray-800 px-2 py-1 bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors shadow-sm"
+                               class="text-xs px-2 py-1 border rounded shadow-sm transition-colors"
+                               :class="store.isDarkTheme ? 'text-gray-300 hover:text-gray-100 bg-gray-700 border-gray-600 hover:bg-gray-600' : 'text-gray-600 hover:text-gray-800 bg-white border-gray-200 hover:bg-gray-50'"
                                title="Insert signature"
                            >
                                Signature
@@ -172,16 +189,17 @@
                        Email sent successfully!
                    </div>
 
-                   <div class="px-4 py-3 border-t border-gray-200 flex justify-between items-center bg-gray-50 rounded-b-lg" :class="isExpanded ? 'rounded-none' : ''">
+                   <div class="px-4 py-3 border-t flex justify-between items-center" :class="[isExpanded ? 'rounded-none' : 'rounded-b-lg', store.isDarkTheme ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50']">
                        <div class="flex items-center space-x-2">
                            <button
                                type="button"
-                               class="text-sm text-gray-600 hover:text-gray-800 px-3 py-1.5 rounded hover:bg-gray-200 transition-colors"
+                               class="text-sm px-3 py-1.5 rounded transition-colors"
+                               :class="store.isDarkTheme ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-600' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'"
                                title="Formatting options"
                            >
                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
                            </button>
-                           <label class="text-sm text-gray-600 hover:text-gray-800 px-3 py-1.5 rounded hover:bg-gray-200 transition-colors cursor-pointer">
+                           <label class="text-sm px-3 py-1.5 rounded transition-colors cursor-pointer" :class="store.isDarkTheme ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-600' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'">
                                <input
                                    type="file"
                                    multiple
@@ -195,7 +213,8 @@
                                type="button"
                                @click="saveDraft"
                                :disabled="savingDraft"
-                               class="text-sm text-gray-600 hover:text-gray-800 px-3 py-1.5 rounded hover:bg-gray-200 transition-colors disabled:opacity-50"
+                               class="text-sm px-3 py-1.5 rounded transition-colors disabled:opacity-50"
+                               :class="store.isDarkTheme ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-600' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'"
                                title="Save draft"
                            >
                                <svg v-if="savingDraft" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
@@ -206,7 +225,8 @@
                            <button
                                type="button"
                                @click="$emit('close')"
-                               class="text-sm text-gray-600 hover:text-gray-800 px-4 py-1.5 rounded hover:bg-gray-200 transition-colors"
+                               class="text-sm px-4 py-1.5 rounded transition-colors"
+                               :class="store.isDarkTheme ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-600' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'"
                            >
                                Discard
                            </button>
@@ -231,6 +251,9 @@
 import { ref, reactive, watch, onMounted, onBeforeUnmount, onUnmounted } from 'vue';
 import api from '../utils/api';
 import WpEditor from './WpEditor.vue';
+import { useAppStore } from '../stores/useAppStore';
+
+const store = useAppStore();
 
 const props = defineProps({
   isOpen: Boolean,

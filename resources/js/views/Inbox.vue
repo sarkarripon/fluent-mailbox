@@ -1,6 +1,6 @@
 <template>
   <div class="h-full flex flex-col">
-      <header class="py-2 border-b border-gray-200 flex flex-col gap-2 bg-white/50 backdrop-blur-sm sticky top-0 z-10 transition-all duration-300" :class="store.isCompact ? 'pl-16 pr-8' : 'px-8'">
+      <header class="py-2 border-b flex flex-col gap-2 backdrop-blur-sm sticky top-0 z-10 transition-all duration-300" :class="[store.isCompact ? 'pl-16 pr-8' : 'px-8', store.isDarkTheme ? 'border-gray-700/50 bg-gray-900/30' : 'border-gray-200 bg-white/50']">
           <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
                    <div v-if="isSelectionMode" class="flex items-center gap-2">
@@ -11,13 +11,13 @@
                            @change="toggleSelectAll"
                            class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
                        >
-                       <span class="text-xs text-gray-700 font-medium">
+                       <span class="text-xs font-medium" :class="store.isDarkTheme ? 'text-gray-300' : 'text-gray-700'">
                            {{ selectedEmails.length }} selected
                        </span>
                    </div>
                    <div v-else class="flex items-center space-x-3">
-                       <h1 class="text-lg font-semibold text-gray-800">Inbox</h1>
-                       <div class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full" v-if="emails.length">
+                       <h1 class="text-lg font-semibold" :class="store.isDarkTheme ? 'text-gray-100' : 'text-gray-800'">Inbox</h1>
+                       <div class="text-xs px-2 py-0.5 rounded-full" :class="store.isDarkTheme ? 'text-gray-400 bg-gray-700' : 'text-gray-500 bg-gray-100'" v-if="emails.length">
                            unread {{ unreadCount }} of {{ emails.length }}
                        </div>
                    </div>
@@ -205,19 +205,20 @@
       <div class="flex-1 overflow-auto p-0 scrollbar-hide">
           <div v-if="loading" class="flex justify-center items-center h-64">
               <div class="relative">
-                  <div class="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+                  <div class="w-16 h-16 border-4 border-t-blue-600 rounded-full animate-spin" :class="store.isDarkTheme ? 'border-gray-700' : 'border-blue-100'"></div>
               </div>
           </div>
 
-          <div v-else-if="filteredEmails.length > 0" class="divide-y divide-gray-100">
+          <div v-else-if="filteredEmails.length > 0" :class="store.isDarkTheme ? 'divide-gray-700/30' : 'divide-gray-200/50'" class="divide-y">
               <div
                   v-for="email in filteredEmails"
                   :key="`${email.id}-${sortBy}`"
                   @click="isSelectionMode ? toggleSelect(email) : openEmail(email.id)"
-                  class="px-6 py-2.5 bg-white hover:shadow-sm cursor-pointer group transition-all relative border-l-4"
+                  class="px-6 py-2.5 cursor-pointer group transition-all relative border-l-4"
                   :class="[
-                      !email.is_read ? 'bg-blue-50/20 border-l-blue-500' : 'border-l-transparent',
-                      isSelected(email.id) ? 'bg-blue-50 border-l-blue-600' : ''
+                      !email.is_read ? 'border-l-blue-500' : 'border-l-transparent',
+                      isSelected(email.id) ? (store.isDarkTheme ? 'bg-white/15 border-l-blue-500' : 'bg-black/10 border-l-blue-600') : (store.isDarkTheme ? 'bg-white/5' : 'bg-white/40'),
+                      store.isDarkTheme ? 'hover:bg-white/10' : 'hover:bg-white/60'
                   ]"
               >
                   <div class="flex items-center gap-2">
@@ -250,7 +251,7 @@
                               </svg>
 
                               <!-- Sender -->
-                              <span class="text-sm text-gray-900 truncate" :class="!email.is_read ? 'font-semibold' : 'font-medium'">
+                              <span class="text-sm truncate" :class="[!email.is_read ? 'font-semibold' : 'font-medium', store.isDarkTheme ? 'text-gray-100' : 'text-gray-900']">
                                   {{ email.sender }}
                               </span>
 
@@ -276,17 +277,17 @@
                               <div class="flex-1"></div>
 
                               <!-- Date -->
-                              <span class="text-sm text-gray-500 flex-shrink-0 font-medium">
+                              <span class="text-sm flex-shrink-0 font-medium" :class="store.isDarkTheme ? 'text-gray-400' : 'text-gray-500'">
                                   {{ formatRelativeDate(email.created_at) }}
                               </span>
                           </div>
 
                           <!-- Subject and Snippet -->
                           <div class="flex items-baseline gap-2">
-                              <h4 class="text-sm text-gray-900 truncate" :class="!email.is_read ? 'font-semibold' : 'font-normal'">
+                              <h4 class="text-sm truncate" :class="[!email.is_read ? 'font-semibold' : 'font-normal', store.isDarkTheme ? 'text-gray-200' : 'text-gray-900']">
                                   {{ email.subject || '(No Subject)' }}
                               </h4>
-                              <span class="text-sm text-gray-500 truncate flex-1">
+                              <span class="text-sm truncate flex-1" :class="store.isDarkTheme ? 'text-gray-300' : 'text-gray-500'">
                                   — {{ getEmailSnippet(email.body) }}
                               </span>
                           </div>

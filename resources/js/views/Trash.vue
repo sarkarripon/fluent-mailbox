@@ -1,25 +1,26 @@
 <template>
   <div class="h-full flex flex-col">
-      <header class="py-4 border-b border-gray-200 flex justify-between items-center bg-white/50 backdrop-blur-sm transition-all duration-300" :class="store.isCompact ? 'pl-16 pr-8' : 'px-8'">
+      <header class="py-4 border-b flex justify-between items-center backdrop-blur-sm transition-all duration-300" :class="[store.isCompact ? 'pl-16 pr-8' : 'px-8', store.isDarkTheme ? 'border-gray-700/50 bg-gray-900/30' : 'border-gray-200 bg-white/50']">
           <div class="flex items-center space-x-4">
-              <h1 class="text-xl font-semibold text-gray-800">Trash</h1>
-              <div class="text-sm text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full" v-if="emails.length">{{ emails.length }} messages</div>
+              <h1 class="text-xl font-semibold" :class="store.isDarkTheme ? 'text-gray-100' : 'text-gray-800'">Trash</h1>
+              <div class="text-sm px-2.5 py-1 rounded-full" :class="store.isDarkTheme ? 'text-gray-400 bg-gray-700' : 'text-gray-500 bg-gray-100'" v-if="emails.length">{{ emails.length }} messages</div>
           </div>
-          <button v-if="emails.length" @click="emptyTrash" class="text-red-600 text-sm font-medium hover:text-red-700 hover:bg-red-50 px-4 py-2 rounded-lg transition-all">Empty Trash</button>
+          <button v-if="emails.length" @click="emptyTrash" class="text-red-500 text-sm font-medium hover:text-red-400 px-4 py-2 rounded-lg transition-all" :class="store.isDarkTheme ? 'hover:bg-red-900/30' : 'hover:bg-red-50'">Empty Trash</button>
       </header>
 
       <div class="flex-1 overflow-auto p-0">
           <div v-if="loading" class="flex justify-center items-center h-64">
               <div class="relative">
-                  <div class="w-16 h-16 border-4 border-gray-100 border-t-red-400 rounded-full animate-spin"></div>
+                  <div class="w-16 h-16 border-4 border-t-red-400 rounded-full animate-spin" :class="store.isDarkTheme ? 'border-gray-700' : 'border-gray-100'"></div>
               </div>
           </div>
 
-          <div v-else-if="emails.length > 0" class="divide-y divide-gray-100">
+          <div v-else-if="emails.length > 0" :class="store.isDarkTheme ? 'divide-gray-700/30' : 'divide-gray-200/50'" class="divide-y">
               <div
                   v-for="email in emails"
                   :key="email.id"
-                  class="px-6 py-2.5 bg-white hover:bg-gray-50 group transition-colors"
+                  class="px-6 py-2.5 group transition-colors"
+                  :class="store.isDarkTheme ? 'bg-white/5 hover:bg-white/10' : 'bg-white/40 hover:bg-white/60'"
               >
                   <div class="flex items-center gap-2">
                       <div class="flex-shrink-0">
@@ -29,14 +30,15 @@
                       </div>
                       <div class="flex-1 min-w-0">
                           <div class="flex items-center justify-between gap-2">
-                              <span @click="$router.push(`/emails/${email.id}`)" class="text-sm font-medium text-gray-900 truncate cursor-pointer">
+                              <span @click="$router.push(`/emails/${email.id}`)" class="text-sm font-medium truncate cursor-pointer" :class="store.isDarkTheme ? 'text-gray-100' : 'text-gray-900'">
                                   {{ email.sender }}
                               </span>
                               <div class="flex items-center gap-1.5 flex-shrink-0">
-                                  <span class="text-sm text-gray-500">{{ formatRelativeDate(email.created_at) }}</span>
+                                  <span class="text-sm" :class="store.isDarkTheme ? 'text-gray-400' : 'text-gray-500'">{{ formatRelativeDate(email.created_at) }}</span>
                                   <button
                                       @click.stop="deleteEmail(email)"
-                                      class="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                                      class="p-1 rounded transition-colors opacity-0 group-hover:opacity-100"
+                                      :class="store.isDarkTheme ? 'text-gray-500 hover:text-red-400 hover:bg-red-900/30' : 'text-gray-400 hover:text-red-600 hover:bg-red-50'"
                                       title="Permanently delete"
                                   >
                                       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -44,8 +46,8 @@
                               </div>
                           </div>
                           <div @click="$router.push(`/emails/${email.id}`)" class="cursor-pointer">
-                              <span class="text-sm text-gray-900 font-medium">{{ email.subject || '(No Subject)' }}</span>
-                              <span class="text-sm text-gray-500 ml-1">{{ getEmailSnippet(email.body) }}</span>
+                              <span class="text-sm font-medium" :class="store.isDarkTheme ? 'text-gray-200' : 'text-gray-900'">{{ email.subject || '(No Subject)' }}</span>
+                              <span class="text-sm ml-1" :class="store.isDarkTheme ? 'text-gray-300' : 'text-gray-500'">{{ getEmailSnippet(email.body) }}</span>
                           </div>
                       </div>
                   </div>

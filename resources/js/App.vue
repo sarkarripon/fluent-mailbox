@@ -81,14 +81,23 @@
         </div>
       </nav>
 
-      <!-- WordPress Sidebar Toggle Button -->
-      <div class="p-3 border-t" :class="store.isDarkTheme ? 'border-gray-700' : 'border-gray-200'">
+      <!-- Bottom Actions -->
+      <div class="p-3 border-t flex items-center gap-2" :class="store.isDarkTheme ? 'border-gray-700' : 'border-gray-200'">
+        <!-- WordPress Sidebar Toggle Button -->
           <Tooltip :text="isWordPressSidebarFolded ? 'Expand WordPress Menu' : 'Collapse WordPress Menu'" position="right">
-              <button @click="toggleCompact" class="w-full flex items-center justify-center px-3 py-2 rounded-lg transition-all duration-200 group" :class="store.isDarkTheme ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'">
+              <button @click="toggleCompact" class="flex-1 flex items-center justify-center px-3 py-2 rounded-lg transition-all duration-200 group" :class="store.isDarkTheme ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'">
                   <svg v-if="!isWordPressSidebarFolded" class="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path></svg>
                   <svg v-else class="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
               </button>
           </Tooltip>
+
+        <!-- Theme Settings Button -->
+          <Tooltip text="Customize Appearance" position="right">
+              <button @click="showAppearancePanel = true" class="flex-1 flex items-center justify-center px-3 py-2 rounded-lg transition-all duration-200 group" :class="store.isDarkTheme ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'">
+                  <svg class="w-4 h-4 transition-transform duration-200 group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>
+              </button>
+          </Tooltip>
+
       </div>
     </aside>
 
@@ -113,6 +122,12 @@
         :email-data="store.composeEmailData"
         @close="store.closeCompose"
     />
+
+    <!-- Appearance Panel -->
+    <AppearancePanel
+        :is-open="showAppearancePanel"
+        @close="showAppearancePanel = false"
+    />
   </div>
 </template>
 
@@ -120,6 +135,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute } from 'vue-router';
 import ComposeModal from './components/ComposeModal.vue';
+import AppearancePanel from './components/AppearancePanel.vue';
 import { useAppStore } from './stores/useAppStore';
 import { useEmailCounts } from './composables/useEmailCounts';
 import { useKeyboardShortcuts } from './composables/useKeyboardShortcuts';
@@ -130,6 +146,7 @@ const route = useRoute();
 const emailCounts = useEmailCounts();
 const adminBarHeight = ref(0);
 const isWordPressSidebarFolded = ref(false);
+const showAppearancePanel = ref(false);
 
 // Enable keyboard shortcuts
 useKeyboardShortcuts();

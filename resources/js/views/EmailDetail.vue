@@ -1,27 +1,27 @@
 <template>
   <div class="h-full flex flex-col">
-      <header class="py-4 border-b border-gray-200 flex justify-between items-center bg-white/50 backdrop-blur-sm sticky top-0 z-10 transition-all duration-300" :class="store.isCompact ? 'pl-16 pr-8' : 'px-8'">
+      <header class="py-4 border-b flex justify-between items-center backdrop-blur-sm sticky top-0 z-10 transition-all duration-300" :class="[store.isCompact ? 'pl-16 pr-8' : 'px-8', store.isDarkTheme ? 'border-gray-700/50 bg-gray-900/30' : 'border-gray-200 bg-white/50']">
           <div class="flex items-center space-x-3">
-              <button @click="$router.back()" class="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-900 transition-all">
+              <button @click="$router.back()" class="p-2 rounded-lg transition-all" :class="store.isDarkTheme ? 'hover:bg-gray-700 text-gray-400 hover:text-gray-200' : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
               </button>
-              <h1 class="text-lg font-semibold text-gray-800 truncate max-w-xl">{{ email ? email.subject : 'Loading...' }}</h1>
+              <h1 class="text-lg font-semibold truncate max-w-xl" :class="store.isDarkTheme ? 'text-gray-100' : 'text-gray-800'">{{ email ? email.subject : 'Loading...' }}</h1>
           </div>
 
           <div class="flex items-center space-x-1" v-if="email">
-               <button @click="handleReply" class="px-3 py-1.5 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all flex items-center gap-1.5">
+               <button @click="handleReply" class="px-3 py-1.5 text-sm rounded-lg transition-all flex items-center gap-1.5" :class="store.isDarkTheme ? 'text-gray-300 hover:text-blue-400 hover:bg-blue-900/30' : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
                   Reply
                </button>
-               <button @click="handleForward" class="px-3 py-1.5 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all flex items-center gap-1.5">
+               <button @click="handleForward" class="px-3 py-1.5 text-sm rounded-lg transition-all flex items-center gap-1.5" :class="store.isDarkTheme ? 'text-gray-300 hover:text-blue-400 hover:bg-blue-900/30' : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                   Forward
                </button>
-               <button @click="toggleRead" class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" :title="email.is_read ? 'Mark as unread' : 'Mark as read'">
+               <button @click="toggleRead" class="p-2 rounded-lg transition-all" :class="store.isDarkTheme ? 'text-gray-400 hover:text-blue-400 hover:bg-blue-900/30' : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'" :title="email.is_read ? 'Mark as unread' : 'Mark as read'">
                   <svg v-if="email.is_read" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                   <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                </button>
-                    <button @click="openWorkflowModal" class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Workflow">
+                    <button @click="openWorkflowModal" class="p-2 rounded-lg transition-all" :class="store.isDarkTheme ? 'text-gray-400 hover:text-blue-400 hover:bg-blue-900/30' : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'" title="Workflow">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h13M8 12h13M8 17h13M3 7h.01M3 12h.01M3 17h.01" />
                         </svg>
