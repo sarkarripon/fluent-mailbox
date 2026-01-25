@@ -5,7 +5,6 @@ import api from '../utils/api';
 export const useAppStore = defineStore('app', () => {
     const isConfigured = ref(window.FluentMailbox?.is_configured || false);
     const STORAGE_KEY = 'fluent-mailbox-compact-mode';
-    const THEME_STORAGE_KEY = 'fluent-mailbox-theme-settings';
 
     // Load compact state from localStorage
     const loadCompactState = () => {
@@ -13,29 +12,20 @@ export const useAppStore = defineStore('app', () => {
         return saved === 'true';
     };
 
-    // Load theme settings from localStorage
-    const loadThemeSettings = () => {
-        try {
-            const saved = localStorage.getItem(THEME_STORAGE_KEY);
-            if (saved) {
-                return JSON.parse(saved);
-            }
-        } catch (e) {
-            console.error('Failed to load theme settings:', e);
-        }
-        return {
-            theme: 'default',
-            accentColor: 'blue',
-            density: 'comfortable',
-            darkMode: 'light',
-            backgroundImage: null
-        };
-    };
+    // Default theme settings
+    const getDefaultThemeSettings = () => ({
+        theme: 'default',
+        accentColor: 'blue',
+        density: 'comfortable',
+        darkMode: 'light',
+        backgroundImage: null
+    });
 
     const isCompact = ref(loadCompactState());
+    const themeSettingsLoaded = ref(false);
 
-    // Theme state
-    const themeSettings = ref(loadThemeSettings());
+    // Theme state - start with defaults, will be loaded from server
+    const themeSettings = ref(getDefaultThemeSettings());
 
     // Theme presets
     const themePresets = [
@@ -89,10 +79,29 @@ export const useAppStore = defineStore('app', () => {
         return themeSettings.value.darkMode === 'dark' || currentTheme.value.dark;
     });
 
-    // Save theme settings to localStorage
-    const saveThemeSettings = () => {
-        localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(themeSettings.value));
+    // Load theme settings from server (user meta)
+    const loadThemeSettings = async () => {
+        try {
+            const response = await api.getThemeSettings();
+            if (response.data) {
+                themeSettings.value = { ...getDefaultThemeSettings(), ...response.data };
+            }
+            themeSettingsLoaded.value = true;
+            applyThemeToDOM();
+        } catch (e) {
+            console.error('Failed to load theme settings from server:', e);
+            themeSettingsLoaded.value = true;
+        }
+    };
+
+    // Save theme settings to server (user meta)
+    const saveThemeSettings = async () => {
         applyThemeToDOM();
+        try {
+            await api.saveThemeSettings(themeSettings.value);
+        } catch (e) {
+            console.error('Failed to save theme settings to server:', e);
+        }
     };
 
     // Apply CSS variables to DOM
@@ -265,6 +274,8 @@ export const useAppStore = defineStore('app', () => {
         setDensity,
         setDarkMode,
         setBackgroundImage,
-        applyThemeToDOM
+        applyThemeToDOM,
+        loadThemeSettings,
+        themeSettingsLoaded
     };
 });

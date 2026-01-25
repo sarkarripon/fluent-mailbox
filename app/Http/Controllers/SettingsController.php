@@ -65,7 +65,7 @@ class SettingsController
                 update_option('fluent_mailbox_aws_region', sanitize_text_field($params['region']));
             }
         }
-        
+
         if (isset($params['key'])) {
             if (empty($params['key'])) {
                  delete_option('fluent_mailbox_aws_key');
@@ -106,14 +106,14 @@ class SettingsController
         $region = get_option('fluent_mailbox_aws_region');
         $key = get_option('fluent_mailbox_aws_key');
         $secret = get_option('fluent_mailbox_aws_secret');
-        
+
         if (!$key || !$secret) {
             return new \WP_Error('params', 'Please save credentials first.', ['status' => 400]);
         }
 
         $service = new AwsSetupService($region, $key, $secret);
         $webhookUrl = rest_url('fluent-mailbox/v1/webhook');
-        
+
         // For local dev, maybe allow overriding?
         // $webhookUrl = 'https://mysite.com/webhook';
 
@@ -130,7 +130,7 @@ class SettingsController
     {
         delete_option('fluent_mailbox_s3_bucket');
         delete_option('fluent_mailbox_sns_topic_arn');
-        
+
         return rest_ensure_response(['message' => 'Inbound configuration reset.']);
     }
 
@@ -278,11 +278,11 @@ class SettingsController
         }
 
         $payload['Message'] = json_encode($messageData);
-        
-        // We need to call the WebhookController logic. 
+
+        // We need to call the WebhookController logic.
         // We can instantiate it and call handle, wrapping our payload in a WP_REST_Request mock or just passing what it needs.
         // But WebhookController expects a request object.
-        
+
         $simRequest = new \WP_REST_Request('POST', '/fluent-mailbox/v1/webhook');
         $simRequest->set_body(json_encode($payload));
         $simRequest->set_header('Content-Type', 'text/plain; charset=UTF-8');
@@ -301,5 +301,69 @@ class SettingsController
     {
         \FluentMailbox\Services\Logger::clean();
         return rest_ensure_response(['message' => 'Log cleaned']);
+    }
+
+    /**
+     * Get user theme settings
+     */
+    public function getThemeSettings($request)
+    {
+        $user_id = get_current_user_id();
+
+        $defaults = [
+            'theme' => 'default',
+            'accentColor' => 'blue',
+            'density' => 'comfortable',
+            'darkMode' => 'light',
+            'backgroundImage' => null
+        ];
+
+        $settings = get_user_meta($user_id, 'fluent_mailbox_theme_settings', true);
+
+        if (empty($settings) || !is_array($settings)) {
+            $settings = $defaults;
+        } else {
+            // Merge with defaults to ensure all keys exist
+            $settings = array_merge($defaults, $settings);
+        }
+
+        return rest_ensure_response($settings);
+    }
+
+    /**
+     * Save user theme settings
+     */
+    public function saveThemeSettings($request)
+    {
+        $user_id = get_current_user_id();
+
+        $allowed_keys = ['theme', 'accentColor', 'density', 'darkMode', 'backgroundImage'];
+        $settings = [];
+
+        foreach ($allowed_keys as $key) {
+            $value = $request->get_param($key);
+            if ($value !== null) {
+                if ($key === 'backgroundImage') {
+                    $settings[$key] = $value ? esc_url_raw($value) : null;
+                } else {
+                    $settings[$key] = sanitize_text_field($value);
+                }
+            }
+        }
+
+        // Get existing settings and merge
+        $existing = get_user_meta($user_id, 'fluent_mailbox_theme_settings', true);
+        if (!is_array($existing)) {
+            $existing = [];
+        }
+
+        $settings = array_merge($existing, $settings);
+
+        update_user_meta($user_id, 'fluent_mailbox_theme_settings', $settings);
+
+        return rest_ensure_response([
+            'message' => 'Theme settings saved',
+            'settings' => $settings
+        ]);
     }
 }

@@ -36,6 +36,9 @@ final class FluentMailbox
         register_deactivation_hook(__FILE__, [__CLASS__, 'deactivate']);
         add_action('admin_menu', [$this, 'registerMenu']);
         add_action('admin_enqueue_scripts', [$this, 'enqueueAssets']);
+        add_action('admin_bar_menu', [$this, 'addAdminBarItem'], 100);
+        add_action('admin_head', [$this, 'adminBarStyles']);
+        add_action('wp_head', [$this, 'adminBarStyles']);
         // Run migration check on init so REST requests are covered too
         add_action('init', [__CLASS__, 'checkMigration']);
     }
@@ -76,6 +79,95 @@ final class FluentMailbox
     public static function deactivate()
     {
         // Cleanup if needed
+    }
+
+    /**
+     * Add Fluent Mailbox item to WordPress admin bar with unread count
+     */
+    public function addAdminBarItem($wp_admin_bar)
+    {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'fluent_mailbox_emails';
+        
+        // Check if table exists first
+        $table_exists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) === $table;
+        
+        $unread_count = 0;
+        if ($table_exists) {
+            $unread_count = (int) $wpdb->get_var(
+                "SELECT COUNT(*) FROM `$table` WHERE is_read = 0 AND (status = 'inbox' OR status IS NULL OR status = '')"
+            );
+        }
+
+        $title = '<span class="ab-icon dashicons dashicons-email"></span>';
+        $title .= '<span class="ab-label">' . __('Mailbox', 'fluent-mailbox') . '</span>';
+        
+        if ($unread_count > 0) {
+            $title .= '<span class="fluent-mailbox-unread-count">' . $unread_count . '</span>';
+        }
+
+        $wp_admin_bar->add_node([
+            'id'    => 'fluent-mailbox',
+            'title' => $title,
+            'href'  => admin_url('admin.php?page=fluent-mailbox'),
+            'meta'  => [
+                'class' => 'fluent-mailbox-admin-bar' . ($unread_count > 0 ? ' has-unread' : '')
+            ]
+        ]);
+    }
+
+    /**
+     * Admin bar styles for unread count badge
+     */
+    public function adminBarStyles()
+    {
+        if (!is_admin_bar_showing() || !current_user_can('manage_options')) {
+            return;
+        }
+        ?>
+        <style>
+            #wpadminbar .fluent-mailbox-admin-bar .ab-icon.dashicons {
+                font-family: dashicons;
+                top: 3px;
+            }
+            #wpadminbar .fluent-mailbox-admin-bar .ab-icon.dashicons:before {
+                content: "\f465";
+                font-size: 18px;
+            }
+            #wpadminbar .fluent-mailbox-unread-count {
+                display: inline-block;
+                background: #d63638;
+                color: #fff;
+                font-size: 10px;
+                font-weight: 600;
+                line-height: 16px;
+                min-width: 16px;
+                height: 16px;
+                padding: 0 5px;
+                border-radius: 10px;
+                text-align: center;
+                margin-left: 5px;
+                vertical-align: middle;
+                box-sizing: border-box;
+            }
+            #wpadminbar .fluent-mailbox-admin-bar.has-unread > .ab-item {
+                background: rgba(0, 0, 0, 0.1);
+            }
+            @media screen and (max-width: 782px) {
+                #wpadminbar .fluent-mailbox-admin-bar .ab-label,
+                #wpadminbar .fluent-mailbox-unread-count {
+                    display: none;
+                }
+                #wpadminbar .fluent-mailbox-admin-bar .ab-icon.dashicons {
+                    top: 6px;
+                }
+            }
+        </style>
+        <?php
     }
 
     public function registerMenu()

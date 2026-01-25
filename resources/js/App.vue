@@ -245,8 +245,8 @@ onMounted(() => {
   loadWordPressSidebarState();
   emailCounts.fetchCounts();
 
-  // Apply theme on mount
-  store.applyThemeToDOM();
+  // Load theme settings from server (user meta)
+  store.loadThemeSettings();
 
   // Prevent body scroll when app is active
   document.body.style.overflow = 'hidden';
