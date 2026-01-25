@@ -7,6 +7,36 @@
       <div class="flex-1 overflow-auto p-4">
           <div class="max-w-xl mx-auto">
 
+              <!-- Tab Navigation -->
+              <div class="flex space-x-1 mb-6 bg-gray-100 rounded-xl p-1">
+                  <button
+                      @click="activeTab = 'aws'"
+                      class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200"
+                      :class="activeTab === 'aws'
+                          ? 'bg-white text-gray-900 shadow-sm'
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'"
+                  >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path>
+                      </svg>
+                      AWS Configuration
+                  </button>
+                  <button
+                      @click="activeTab = 'appearance'"
+                      class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200"
+                      :class="activeTab === 'appearance'
+                          ? 'bg-white text-gray-900 shadow-sm'
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'"
+                  >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
+                      </svg>
+                      Appearance
+                  </button>
+              </div>
+
+              <!-- AWS Configuration Tab -->
+              <div v-show="activeTab === 'aws'">
               <!-- Step 1: Credentials configuration -->
               <div v-if="step === 'credentials'" class="bg-white/70 backdrop-blur-sm p-5 rounded-2xl border border-gray-200/50 transition-all duration-300">
                   <div class="flex items-center mb-3">
@@ -214,7 +244,7 @@
                             </div>
                         </div>
                    </div>
-                   
+
                    <!-- Troubleshooting Section -->
                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 overflow-hidden mt-4">
                         <div class="p-3 border-b border-gray-100/50 flex justify-between items-center bg-gray-50/50">
@@ -227,7 +257,7 @@
                         </div>
                         <div class="p-4 space-y-4">
                             <p class="text-sm text-gray-500">Use these tools to debug webhook connectivity and processing issues.</p>
-                            
+
                             <div class="flex space-x-3">
                                 <button @click="simulateWebhook" :disabled="simulating" class="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-2.5 rounded-xl font-medium transition-all text-sm flex justify-center items-center shadow-sm">
                                     <svg v-if="simulating" class="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
@@ -253,6 +283,12 @@
                         </div>
                    </div>
               </div>
+              </div><!-- End AWS Tab -->
+
+              <!-- Appearance Tab -->
+              <div v-show="activeTab === 'appearance'" class="bg-white/70 backdrop-blur-sm p-6 rounded-2xl border border-gray-200/50 transition-all duration-300">
+                  <ThemeSettings />
+              </div>
 
           </div>
       </div>
@@ -264,9 +300,11 @@ import { ref, reactive, onMounted } from 'vue';
 import api from '../utils/api';
 import { useAppStore } from '../stores/useAppStore';
 import Tooltip from '../components/Tooltip.vue';
+import ThemeSettings from '../components/ThemeSettings.vue';
 import { triggerConfetti } from '../utils/confetti';
 
 const store = useAppStore();
+const activeTab = ref('aws'); // 'aws' or 'appearance'
 const step = ref('credentials'); // credentials, identity, dashboard
 const loading = ref(false);
 const error = ref('');
@@ -287,7 +325,7 @@ onMounted(async () => {
         if (data.key && !data.key.includes('****')) {
              // Not masked = empty or invalid likely? Or just check if set.
         }
-        
+
         // If we have data, populate. If we have a verified email, go to dashboard.
         if (data.key && data.from_email) {
             form.region = data.region;
@@ -327,10 +365,10 @@ const verifyCredentials = async () => {
 const saveIdentity = async () => {
     loading.value = true;
     error.value = '';
-    
+
     // Clone form to avoid mutating UI
     let payload = { ...form };
-    
+
     // If it's a domain, merge with email_username
     if (payload.from_email && !payload.from_email.includes('@')) {
         const user = payload.email_username || 'contact';
@@ -343,7 +381,7 @@ const saveIdentity = async () => {
         form.from_email = payload.from_email;
         store.setConfigured(true);
         step.value = 'dashboard';
-        
+
         // Trigger confetti celebration!
         triggerConfetti();
     } catch (e) {
@@ -368,7 +406,7 @@ const setupInbound = async () => {
 
 const disconnect = async () => {
     if(!confirm('Are you sure you want to disconnect? This will clear your AWS credentials from this site.')) return;
-    
+
     // Disconnect credentials
     try {
         await api.saveConnection({ key: '', secret: '', from_email: '' });
@@ -384,7 +422,7 @@ const disconnect = async () => {
 
 const resetInbound = async () => {
     if(!confirm('Are you sure you want to reset inbound configuration? Use this if you deleted resources on AWS and need to setup again.')) return;
-    
+
     loading.value = true;
     try {
         await api.disconnect(); // This endpoint clears ONLY the inbound S3/SNS options

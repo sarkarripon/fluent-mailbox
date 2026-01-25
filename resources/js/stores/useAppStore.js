@@ -1,10 +1,11 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { ref, computed, watch } from 'vue';
 import api from '../utils/api';
 
 export const useAppStore = defineStore('app', () => {
     const isConfigured = ref(window.FluentMailbox?.is_configured || false);
     const STORAGE_KEY = 'fluent-mailbox-compact-mode';
+    const THEME_STORAGE_KEY = 'fluent-mailbox-theme-settings';
 
     // Load compact state from localStorage
     const loadCompactState = () => {
@@ -12,7 +13,139 @@ export const useAppStore = defineStore('app', () => {
         return saved === 'true';
     };
 
+    // Load theme settings from localStorage
+    const loadThemeSettings = () => {
+        try {
+            const saved = localStorage.getItem(THEME_STORAGE_KEY);
+            if (saved) {
+                return JSON.parse(saved);
+            }
+        } catch (e) {
+            console.error('Failed to load theme settings:', e);
+        }
+        return {
+            theme: 'default',
+            accentColor: 'blue',
+            density: 'comfortable',
+            darkMode: 'light',
+            backgroundImage: null
+        };
+    };
+
     const isCompact = ref(loadCompactState());
+
+    // Theme state
+    const themeSettings = ref(loadThemeSettings());
+
+    // Theme presets
+    const themePresets = [
+        { id: 'default', name: 'Default', gradient: 'from-slate-50 via-blue-50 to-indigo-50', sidebar: 'bg-white', surface: 'bg-white/70' },
+        { id: 'ocean', name: 'Ocean', gradient: 'from-cyan-50 via-sky-50 to-blue-50', sidebar: 'bg-white', surface: 'bg-white/70' },
+        { id: 'sunset', name: 'Sunset', gradient: 'from-orange-50 via-rose-50 to-pink-50', sidebar: 'bg-white', surface: 'bg-white/70' },
+        { id: 'forest', name: 'Forest', gradient: 'from-emerald-50 via-green-50 to-teal-50', sidebar: 'bg-white', surface: 'bg-white/70' },
+        { id: 'lavender', name: 'Lavender', gradient: 'from-purple-50 via-violet-50 to-fuchsia-50', sidebar: 'bg-white', surface: 'bg-white/70' },
+        { id: 'midnight', name: 'Midnight', gradient: 'from-slate-900 via-gray-900 to-zinc-900', sidebar: 'bg-gray-900', surface: 'bg-gray-800/90', dark: true },
+        { id: 'charcoal', name: 'Charcoal', gradient: 'from-gray-800 via-gray-900 to-black', sidebar: 'bg-gray-800', surface: 'bg-gray-700/90', dark: true },
+    ];
+
+    // Accent color presets
+    const accentColors = [
+        { id: 'blue', name: 'Blue', primary: '#2563eb', hover: '#1d4ed8', light: '#dbeafe' },
+        { id: 'indigo', name: 'Indigo', primary: '#4f46e5', hover: '#4338ca', light: '#e0e7ff' },
+        { id: 'violet', name: 'Violet', primary: '#7c3aed', hover: '#6d28d9', light: '#ede9fe' },
+        { id: 'pink', name: 'Pink', primary: '#db2777', hover: '#be185d', light: '#fce7f3' },
+        { id: 'rose', name: 'Rose', primary: '#e11d48', hover: '#be123c', light: '#ffe4e6' },
+        { id: 'orange', name: 'Orange', primary: '#ea580c', hover: '#c2410c', light: '#ffedd5' },
+        { id: 'amber', name: 'Amber', primary: '#d97706', hover: '#b45309', light: '#fef3c7' },
+        { id: 'emerald', name: 'Emerald', primary: '#059669', hover: '#047857', light: '#d1fae5' },
+        { id: 'teal', name: 'Teal', primary: '#0d9488', hover: '#0f766e', light: '#ccfbf1' },
+        { id: 'cyan', name: 'Cyan', primary: '#0891b2', hover: '#0e7490', light: '#cffafe' },
+    ];
+
+    // Density options
+    const densityOptions = [
+        { id: 'comfortable', name: 'Comfortable', description: 'More spacing for easier reading', py: 'py-3', text: 'text-sm' },
+        { id: 'default', name: 'Default', description: 'Balanced spacing', py: 'py-2.5', text: 'text-sm' },
+        { id: 'compact', name: 'Compact', description: 'Fit more content on screen', py: 'py-2', text: 'text-xs' },
+    ];
+
+    // Computed theme values
+    const currentTheme = computed(() => {
+        return themePresets.find(t => t.id === themeSettings.value.theme) || themePresets[0];
+    });
+
+    const currentAccent = computed(() => {
+        return accentColors.find(c => c.id === themeSettings.value.accentColor) || accentColors[0];
+    });
+
+    const currentDensity = computed(() => {
+        return densityOptions.find(d => d.id === themeSettings.value.density) || densityOptions[1];
+    });
+
+    const isDarkTheme = computed(() => {
+        if (themeSettings.value.darkMode === 'system') {
+            return window.matchMedia('(prefers-color-scheme: dark)').matches;
+        }
+        return themeSettings.value.darkMode === 'dark' || currentTheme.value.dark;
+    });
+
+    // Save theme settings to localStorage
+    const saveThemeSettings = () => {
+        localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(themeSettings.value));
+        applyThemeToDOM();
+    };
+
+    // Apply CSS variables to DOM
+    const applyThemeToDOM = () => {
+        const root = document.documentElement;
+        const accent = currentAccent.value;
+
+        root.style.setProperty('--fm-primary', accent.primary);
+        root.style.setProperty('--fm-primary-hover', accent.hover);
+        root.style.setProperty('--fm-primary-light', accent.light);
+
+        // Apply dark mode class
+        if (isDarkTheme.value) {
+            root.classList.add('fm-dark');
+        } else {
+            root.classList.remove('fm-dark');
+        }
+    };
+
+    // Theme actions
+    const setTheme = (themeId) => {
+        themeSettings.value.theme = themeId;
+        saveThemeSettings();
+    };
+
+    const setAccentColor = (colorId) => {
+        themeSettings.value.accentColor = colorId;
+        saveThemeSettings();
+    };
+
+    const setDensity = (densityId) => {
+        themeSettings.value.density = densityId;
+        saveThemeSettings();
+    };
+
+    const setDarkMode = (mode) => {
+        themeSettings.value.darkMode = mode;
+        saveThemeSettings();
+    };
+
+    const setBackgroundImage = (url) => {
+        themeSettings.value.backgroundImage = url;
+        saveThemeSettings();
+    };
+
+    // Watch for system dark mode changes
+    if (typeof window !== 'undefined') {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            if (themeSettings.value.darkMode === 'system') {
+                applyThemeToDOM();
+            }
+        });
+    }
 
     // Compose modal state
     const showCompose = ref(false);
@@ -91,6 +224,15 @@ export const useAppStore = defineStore('app', () => {
         allTags,
         selectedTagIds,
         tagsLoaded,
+        // Theme exports
+        themeSettings,
+        themePresets,
+        accentColors,
+        densityOptions,
+        currentTheme,
+        currentAccent,
+        currentDensity,
+        isDarkTheme,
         setConfigured,
         toggleCompact,
         setCompact,
@@ -100,6 +242,13 @@ export const useAppStore = defineStore('app', () => {
         setTags,
         toggleTagFilter,
         clearTagFilter,
-        setTagFilter
+        setTagFilter,
+        // Theme actions
+        setTheme,
+        setAccentColor,
+        setDensity,
+        setDarkMode,
+        setBackgroundImage,
+        applyThemeToDOM
     };
 });

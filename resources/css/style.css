@@ -2,6 +2,124 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ================================================
+   FLUENT MAILBOX THEME SYSTEM
+   ================================================ */
+
+/* CSS Custom Properties for Dynamic Theming */
+:root {
+    /* Primary accent colors (default: blue) */
+    --fm-primary: #2563eb;
+    --fm-primary-hover: #1d4ed8;
+    --fm-primary-light: #dbeafe;
+
+    /* Surface colors */
+    --fm-bg-page: #f8fafc;
+    --fm-bg-sidebar: #ffffff;
+    --fm-bg-surface: rgba(255, 255, 255, 0.7);
+    --fm-bg-card: #ffffff;
+    --fm-bg-hover: #f1f5f9;
+
+    /* Text colors */
+    --fm-text-primary: #1e293b;
+    --fm-text-secondary: #64748b;
+    --fm-text-muted: #94a3b8;
+
+    /* Border colors */
+    --fm-border: #e2e8f0;
+    --fm-border-light: rgba(226, 232, 240, 0.5);
+
+    /* Shadows */
+    --fm-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --fm-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --fm-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* Dark Theme Variables */
+.fm-dark {
+    --fm-bg-page: #0f172a;
+    --fm-bg-sidebar: #1e293b;
+    --fm-bg-surface: rgba(30, 41, 59, 0.9);
+    --fm-bg-card: #1e293b;
+    --fm-bg-hover: #334155;
+
+    --fm-text-primary: #f1f5f9;
+    --fm-text-secondary: #94a3b8;
+    --fm-text-muted: #64748b;
+
+    --fm-border: #334155;
+    --fm-border-light: rgba(51, 65, 85, 0.5);
+
+    --fm-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --fm-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.3);
+    --fm-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+}
+
+/* Utility classes using CSS variables */
+.fm-bg-primary {
+    background-color: var(--fm-primary);
+}
+
+.fm-bg-primary-hover:hover {
+    background-color: var(--fm-primary-hover);
+}
+
+.fm-bg-primary-light {
+    background-color: var(--fm-primary-light);
+}
+
+.fm-text-primary-color {
+    color: var(--fm-primary);
+}
+
+.fm-border-primary {
+    border-color: var(--fm-primary);
+}
+
+/* Theme-aware surface classes */
+.fm-surface {
+    background-color: var(--fm-bg-surface);
+    color: var(--fm-text-primary);
+}
+
+.fm-card {
+    background-color: var(--fm-bg-card);
+    border-color: var(--fm-border);
+}
+
+/* Button with accent color */
+.fm-btn-primary {
+    background-color: var(--fm-primary);
+    color: white;
+    transition: all 0.2s;
+}
+
+.fm-btn-primary:hover {
+    background-color: var(--fm-primary-hover);
+}
+
+/* Active nav item with accent */
+.fm-nav-active {
+    background-color: var(--fm-primary-light);
+    color: var(--fm-primary);
+}
+
+/* Badge with accent color */
+.fm-badge-primary {
+    background-color: var(--fm-primary);
+    color: white;
+}
+
+/* Focus ring with accent */
+.fm-focus-ring:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--fm-primary-light), 0 0 0 4px var(--fm-primary);
+}
+
+/* ================================================
+   END THEME SYSTEM
+   ================================================ */
+
 .notice-error {
   display:none;
 }
@@ -654,4 +772,11 @@
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Chrome, Safari and Opera */
+}
+
+
+/* wordpress root css */
+
+#wpcontent {
+  padding-left: 0 !important;
 }
