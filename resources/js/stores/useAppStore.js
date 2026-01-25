@@ -39,13 +39,13 @@ export const useAppStore = defineStore('app', () => {
 
     // Theme presets
     const themePresets = [
-        { id: 'default', name: 'Default', gradient: 'from-slate-50 via-blue-50 to-indigo-50', sidebar: 'bg-white', surface: 'bg-white/70' },
-        { id: 'ocean', name: 'Ocean', gradient: 'from-cyan-50 via-sky-50 to-blue-50', sidebar: 'bg-white', surface: 'bg-white/70' },
-        { id: 'sunset', name: 'Sunset', gradient: 'from-orange-50 via-rose-50 to-pink-50', sidebar: 'bg-white', surface: 'bg-white/70' },
-        { id: 'forest', name: 'Forest', gradient: 'from-emerald-50 via-green-50 to-teal-50', sidebar: 'bg-white', surface: 'bg-white/70' },
-        { id: 'lavender', name: 'Lavender', gradient: 'from-purple-50 via-violet-50 to-fuchsia-50', sidebar: 'bg-white', surface: 'bg-white/70' },
-        { id: 'midnight', name: 'Midnight', gradient: 'from-slate-900 via-gray-900 to-zinc-900', sidebar: 'bg-gray-900', surface: 'bg-gray-800/90', dark: true },
-        { id: 'charcoal', name: 'Charcoal', gradient: 'from-gray-800 via-gray-900 to-black', sidebar: 'bg-gray-800', surface: 'bg-gray-700/90', dark: true },
+        { id: 'default', name: 'Default', gradient: 'from-slate-50 via-blue-50 to-indigo-50', sidebar: 'bg-white/80 backdrop-blur-sm', surface: 'bg-white/70' },
+        { id: 'ocean', name: 'Ocean', gradient: 'from-cyan-50 via-sky-50 to-blue-50', sidebar: 'bg-white/80 backdrop-blur-sm', surface: 'bg-white/70' },
+        { id: 'sunset', name: 'Sunset', gradient: 'from-orange-50 via-rose-50 to-pink-50', sidebar: 'bg-white/80 backdrop-blur-sm', surface: 'bg-white/70' },
+        { id: 'forest', name: 'Forest', gradient: 'from-emerald-50 via-green-50 to-teal-50', sidebar: 'bg-white/80 backdrop-blur-sm', surface: 'bg-white/70' },
+        { id: 'lavender', name: 'Lavender', gradient: 'from-purple-50 via-violet-50 to-fuchsia-50', sidebar: 'bg-white/80 backdrop-blur-sm', surface: 'bg-white/70' },
+        { id: 'midnight', name: 'Midnight', gradient: 'from-slate-900 via-gray-900 to-zinc-900', sidebar: 'bg-gray-800/90 backdrop-blur-sm', surface: 'bg-gray-800/90', dark: true },
+        { id: 'charcoal', name: 'Charcoal', gradient: 'from-gray-800 via-gray-900 to-black', sidebar: 'bg-gray-900/90 backdrop-blur-sm', surface: 'bg-gray-700/90', dark: true },
     ];
 
     // Accent color presets
@@ -114,7 +114,14 @@ export const useAppStore = defineStore('app', () => {
 
     // Theme actions
     const setTheme = (themeId) => {
+        const theme = themePresets.find(t => t.id === themeId);
         themeSettings.value.theme = themeId;
+        // Sync dark mode with theme type
+        if (theme?.dark) {
+            themeSettings.value.darkMode = 'dark';
+        } else {
+            themeSettings.value.darkMode = 'light';
+        }
         saveThemeSettings();
     };
 
@@ -130,6 +137,15 @@ export const useAppStore = defineStore('app', () => {
 
     const setDarkMode = (mode) => {
         themeSettings.value.darkMode = mode;
+        // Sync theme with dark mode
+        const currentThemeIsDark = themePresets.find(t => t.id === themeSettings.value.theme)?.dark;
+        if (mode === 'dark' && !currentThemeIsDark) {
+            // Switch to midnight (first dark theme)
+            themeSettings.value.theme = 'midnight';
+        } else if (mode === 'light' && currentThemeIsDark) {
+            // Switch to default (first light theme)
+            themeSettings.value.theme = 'default';
+        }
         saveThemeSettings();
     };
 

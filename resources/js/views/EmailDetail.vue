@@ -39,10 +39,11 @@
                             <div
                                 v-if="showTagDropdown"
                                 :style="tagDropdownStyle"
-                                class="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-lg w-80"
+                                class="fixed z-50 rounded-lg shadow-lg w-80 border"
+                                :class="store.isDarkTheme ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'"
                             >
-                                <div class="p-3 border-b border-gray-200 flex justify-between items-center">
-                                    <h3 class="text-sm font-semibold text-gray-700">Email Tags</h3>
+                                <div class="p-3 border-b flex justify-between items-center" :class="store.isDarkTheme ? 'border-gray-700' : 'border-gray-200'">
+                                    <h3 class="text-sm font-semibold" :class="store.isDarkTheme ? 'text-gray-200' : 'text-gray-700'">Email Tags</h3>
                                     <button
                                         @click="showTagManager = true; showTagDropdown = false"
                                         class="text-xs text-blue-600 hover:text-blue-700 hover:underline"
@@ -61,15 +62,15 @@
                             </div>
                         </Teleport>
                     </div>
-               <button @click="deleteEmail" class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Delete">
+               <button @click="deleteEmail" class="p-2 rounded-lg transition-all" :class="store.isDarkTheme ? 'text-gray-400 hover:text-red-400 hover:bg-red-900/30' : 'text-gray-500 hover:text-red-600 hover:bg-red-50'" title="Delete">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                </button>
           </div>
       </header>
 
-      <div class="flex-1 overflow-auto p-4 bg-white/50" v-if="!loading && email">
+      <div class="flex-1 overflow-auto p-4" v-if="!loading && email">
           <!-- Metadata -->
-          <div class="bg-white rounded-lg p-4 mb-3 border border-gray-200">
+          <div class="rounded-lg p-4 mb-3 border backdrop-blur-sm" :class="store.isDarkTheme ? 'bg-slate-200 border-slate-300' : 'bg-white/80 border-white/50'">
               <div class="flex justify-between items-center">
               <div class="flex items-center space-x-2">
                       <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-xs">
@@ -77,29 +78,29 @@
                   </div>
                   <div>
                           <div class="text-sm font-semibold text-gray-900">{{ email.sender }}</div>
-                          <div class="text-xs text-gray-500 space-x-1">
+                          <div class="text-xs space-x-1 text-gray-600">
                               <span>To: {{ getRecipients(email.recipients) }}</span>
                               <span v-if="getRecipients(email.cc)">• Cc: {{ getRecipients(email.cc) }}</span>
                               <span v-if="getRecipients(email.bcc)">• Bcc: {{ getRecipients(email.bcc) }}</span>
                           </div>
                       </div>
                   </div>
-                  <div class="text-xs text-gray-500 flex-shrink-0">
+                  <div class="text-xs flex-shrink-0 text-gray-600">
                       {{ formatRelativeDate(email.created_at) }}
                   </div>
               </div>
           </div>
 
           <!-- Attachments -->
-          <div v-if="emailAttachments.length > 0" class="bg-white rounded-lg p-4 mb-4 border border-gray-200">
-              <h3 class="text-sm font-semibold text-gray-700 mb-3">Attachments</h3>
+          <div v-if="emailAttachments.length > 0" class="rounded-lg p-4 mb-4 border backdrop-blur-sm" :class="store.isDarkTheme ? 'bg-slate-200 border-slate-300' : 'bg-white/80 border-white/50'">
+              <h3 class="text-sm font-semibold mb-3 text-gray-700">Attachments</h3>
               <div class="flex flex-wrap gap-2">
                   <a
                       v-for="(attachment, index) in emailAttachments"
                       :key="index"
                       :href="getAttachmentUrl(attachment)"
                       target="_blank"
-                      class="flex items-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 text-sm text-gray-700 transition-colors"
+                      class="flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700"
                   >
                       <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
                       <span>{{ attachment.filename || `Attachment ${index + 1}` }}</span>
@@ -114,21 +115,22 @@
               class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30 p-3"
               @click.self="closeWorkflowModal"
           >
-              <div class="w-full max-w-md bg-white rounded-lg border border-gray-200 p-3">
+              <div class="w-full max-w-md rounded-lg border p-3" :class="store.isDarkTheme ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'">
                   <div class="flex items-center justify-between mb-2">
-                      <div class="text-xs font-semibold text-gray-800">Workflow</div>
+                      <div class="text-xs font-semibold" :class="store.isDarkTheme ? 'text-gray-200' : 'text-gray-800'">Workflow</div>
                       <div class="flex items-center gap-3">
-                          <div v-if="workflowSaving" class="text-xs text-gray-500">Saving...</div>
-                          <button class="text-xs text-gray-600 hover:text-gray-900" @click="closeWorkflowModal">Close</button>
+                          <div v-if="workflowSaving" class="text-xs" :class="store.isDarkTheme ? 'text-gray-400' : 'text-gray-500'">Saving...</div>
+                          <button class="text-xs transition-colors" :class="store.isDarkTheme ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-900'" @click="closeWorkflowModal">Close</button>
                       </div>
                   </div>
 
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                          <label class="block text-xs font-medium text-gray-600 mb-0.5">Status</label>
+                          <label class="block text-xs font-medium mb-0.5" :class="store.isDarkTheme ? 'text-gray-400' : 'text-gray-600'">Status</label>
                           <select
                               v-model="workflowDraft.workflow_status"
-                              class="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
+                              class="w-full px-2 py-1.5 border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
+                              :class="store.isDarkTheme ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-200 text-gray-900'"
                           >
                               <option value="open">Open</option>
                               <option value="pending">Pending</option>
@@ -137,10 +139,11 @@
                       </div>
 
                       <div>
-                          <label class="block text-xs font-medium text-gray-600 mb-0.5">Assigned To</label>
+                          <label class="block text-xs font-medium mb-0.5" :class="store.isDarkTheme ? 'text-gray-400' : 'text-gray-600'">Assigned To</label>
                           <select
                               v-model.number="workflowDraft.assigned_to"
-                              class="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
+                              class="w-full px-2 py-1.5 border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
+                              :class="store.isDarkTheme ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-200 text-gray-900'"
                           >
                               <option :value="0">Unassigned</option>
                               <option v-for="u in users" :key="u.id" :value="u.id">{{ u.display_name }}</option>
@@ -150,7 +153,8 @@
 
                   <div class="mt-3 flex justify-end gap-2">
                       <button
-                          class="px-3 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-700 hover:bg-gray-50"
+                          class="px-3 py-1.5 rounded-lg border text-xs transition-colors"
+                          :class="store.isDarkTheme ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-200 text-gray-700 hover:bg-gray-50'"
                           @click="closeWorkflowModal"
                           :disabled="workflowSaving"
                       >
@@ -168,26 +172,26 @@
           </div>
 
           <!-- Body -->
-          <div class="bg-white rounded-lg p-6 border border-gray-200">
+          <div class="rounded-lg p-6 border backdrop-blur-sm" :class="store.isDarkTheme ? 'bg-slate-200 border-slate-300' : 'bg-white/80 border-white/50'">
               <div v-if="email.body && email.body.trim()" class="prose prose-sm max-w-none text-gray-800" v-html="email.body"></div>
-              <div v-else class="text-sm text-gray-500 italic">No message content</div>
+              <div v-else class="text-sm italic text-gray-500">No message content</div>
           </div>
 
           <!-- Internal Notes (bottom) -->
-          <div class="bg-white rounded-lg p-3 mt-3 border border-gray-200">
+          <div class="rounded-lg p-3 mt-3 border backdrop-blur-sm" :class="store.isDarkTheme ? 'bg-slate-200 border-slate-300' : 'bg-white/80 border-white/50'">
               <div class="flex items-center justify-between mb-2">
                   <h3 class="text-xs font-semibold text-gray-800">Internal Notes</h3>
                   <div class="flex items-center gap-3">
                       <button
                           v-if="notes.length"
                           @click="refreshNotes"
-                          class="text-xs text-gray-600 hover:text-blue-600 hover:underline"
+                          class="text-xs hover:underline text-gray-600 hover:text-blue-600"
                       >
                           Refresh
                       </button>
                       <button
                           @click="openAddNote"
-                          class="text-xs text-gray-600 hover:text-blue-600 hover:underline"
+                          class="text-xs hover:underline text-gray-600 hover:text-blue-600"
                       >
                           Add note
                       </button>
@@ -210,10 +214,10 @@
                               Delete
                           </button>
                       </div>
-                      <div class="text-xs text-gray-800 truncate" :title="n.note">{{ n.note }}</div>
+                      <div class="text-xs truncate text-gray-800" :title="n.note">{{ n.note }}</div>
                   </div>
               </div>
-              <div v-else class="text-xs text-gray-500 italic">No notes yet</div>
+              <div v-else class="text-xs italic text-gray-500">No notes yet</div>
 
               <!-- Add Note Modal -->
               <div
@@ -221,22 +225,24 @@
                   class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30 p-3"
                   @click.self="closeAddNote"
               >
-                  <div class="w-full max-w-md bg-white rounded-lg border border-gray-200 p-3">
+                  <div class="w-full max-w-md rounded-lg border p-3" :class="store.isDarkTheme ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'">
                       <div class="flex items-center justify-between mb-2">
-                          <div class="text-xs font-semibold text-gray-800">Add internal note</div>
-                          <button class="text-xs text-gray-600 hover:text-gray-900" @click="closeAddNote">Close</button>
+                          <div class="text-xs font-semibold" :class="store.isDarkTheme ? 'text-gray-200' : 'text-gray-800'">Add internal note</div>
+                          <button class="text-xs transition-colors" :class="store.isDarkTheme ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-900'" @click="closeAddNote">Close</button>
                       </div>
 
                       <textarea
                           v-model="draftNote"
                           rows="4"
                           placeholder="Write a note..."
-                          class="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
+                          class="w-full px-2 py-1.5 border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
+                          :class="store.isDarkTheme ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-500' : 'bg-white border-gray-200 text-gray-900'"
                       ></textarea>
 
                       <div class="mt-2 flex justify-end gap-2">
                           <button
-                              class="px-3 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-700 hover:bg-gray-50"
+                              class="px-3 py-1.5 rounded-lg border text-xs transition-colors"
+                              :class="store.isDarkTheme ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-200 text-gray-700 hover:bg-gray-50'"
                               @click="closeAddNote"
                               :disabled="notesSaving"
                           >
@@ -257,7 +263,7 @@
 
       <div v-else-if="loading" class="flex-1 flex justify-center items-center">
            <div class="relative">
-               <div class="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+               <div class="w-16 h-16 border-4 border-t-blue-600 rounded-full animate-spin" :class="store.isDarkTheme ? 'border-gray-700' : 'border-blue-100'"></div>
            </div>
       </div>
 
