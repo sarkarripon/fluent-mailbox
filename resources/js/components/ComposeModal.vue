@@ -1,18 +1,22 @@
 <template>
-  <div
+  <transition name="compose-genie" appear>
+    <div
       v-if="isOpen"
       class="fixed z-50"
       :class="isExpanded ? 'right-0 bottom-0 m-0' : 'w-[600px] max-w-[calc(100vw-2rem)]'"
       :style="isExpanded ? { left: sidebarWidth + 'px', top: adminBarHeight + 'px' } : (!isExpanded ? { bottom: position.y ? 'auto' : '1rem', right: position.x ? 'auto' : '1rem', top: position.y ? position.y + 'px' : 'auto', left: position.x ? position.x + 'px' : 'auto' } : {})"
-  >
-      <div
+    >
+        <div
           class="rounded-t-lg flex flex-col border shadow-2xl transition-all duration-300"
           :class="[
-              isExpanded ? 'h-full rounded-none' : 'h-[600px] max-h-[calc(100vh-2rem)]',
-              store.isDarkTheme ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'
+            isExpanded ? 'h-full rounded-none' : 'h-[600px] max-h-[calc(100vh-2rem)]',
+            store.isDarkTheme ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'
           ]"
-          style="box-shadow: 0 8px 10px 1px rgba(0,0,0,0.14), 0 3px 14px 2px rgba(0,0,0,0.12), 0 5px 5px -3px rgba(0,0,0,0.2);"
-      >
+          :style="[
+          'box-shadow: 0 8px 10px 1px rgba(0,0,0,0.14), 0 3px 14px 2px rgba(0,0,0,0.12), 0 5px 5px -3px rgba(0,0,0,0.2);',
+          store.isDarkTheme ? 'background-color: #1f2937; color: #e5e7eb;' : ''
+          ]"
+        >
            <div
                class="flex justify-between items-center px-4 py-3 border-b cursor-move"
                :class="[
@@ -47,37 +51,40 @@
                    <div class="px-4 py-2 border-b" :class="store.isDarkTheme ? 'border-gray-600' : 'border-gray-200'">
                        <div class="flex items-center">
                            <span class="text-sm w-16 flex-shrink-0" :class="store.isDarkTheme ? 'text-gray-400' : 'text-gray-600'">To</span>
-                           <input
+                             <input
                                v-model="form.to"
                                type="text"
                                required
-                               class="flex-1 px-2 py-1.5 bg-transparent border-none focus:ring-0 focus:outline-none text-sm"
-                               :class="store.isDarkTheme ? 'text-gray-100 placeholder-gray-500' : 'text-gray-900 placeholder-gray-400'"
+                               class="flex-1 px-2 py-1.5 border-none focus:ring-0 focus:outline-none text-sm"
+                               :class="store.isDarkTheme ? 'bg-gray-800 text-gray-100 placeholder-gray-400' : 'bg-white text-gray-900 placeholder-gray-500'"
+                               :style="store.isDarkTheme ? 'background-color: #1f2937; color: #e5e7eb;' : ''"
                                placeholder="Recipients (comma-separated)"
-                           >
+                             >
                        </div>
                    </div>
 
                    <div v-if="showCcBcc" class="px-4 py-2 border-b space-y-2" :class="store.isDarkTheme ? 'border-gray-600' : 'border-gray-200'">
                        <div class="flex items-center">
                            <span class="text-sm w-16 flex-shrink-0" :class="store.isDarkTheme ? 'text-gray-400' : 'text-gray-600'">Cc</span>
-                           <input
+                             <input
                                v-model="form.cc"
                                type="text"
-                               class="flex-1 px-2 py-1.5 bg-transparent border-none focus:ring-0 focus:outline-none text-sm"
-                               :class="store.isDarkTheme ? 'text-gray-100 placeholder-gray-500' : 'text-gray-900 placeholder-gray-400'"
+                               class="flex-1 px-2 py-1.5 border-none focus:ring-0 focus:outline-none text-sm"
+                               :class="store.isDarkTheme ? 'bg-gray-800 text-gray-100 placeholder-gray-400' : 'bg-white text-gray-900 placeholder-gray-500'"
+                               :style="store.isDarkTheme ? 'background-color: #1f2937; color: #e5e7eb;' : ''"
                                placeholder="Cc (comma-separated)"
-                           >
+                             >
                        </div>
                        <div class="flex items-center">
                            <span class="text-sm w-16 flex-shrink-0" :class="store.isDarkTheme ? 'text-gray-400' : 'text-gray-600'">Bcc</span>
-                           <input
+                             <input
                                v-model="form.bcc"
                                type="text"
-                               class="flex-1 px-2 py-1.5 bg-transparent border-none focus:ring-0 focus:outline-none text-sm"
-                               :class="store.isDarkTheme ? 'text-gray-100 placeholder-gray-500' : 'text-gray-900 placeholder-gray-400'"
+                               class="flex-1 px-2 py-1.5 border-none focus:ring-0 focus:outline-none text-sm"
+                               :class="store.isDarkTheme ? 'bg-gray-800 text-gray-100 placeholder-gray-400' : 'bg-white text-gray-900 placeholder-gray-500'"
+                               :style="store.isDarkTheme ? 'background-color: #1f2937; color: #e5e7eb;' : ''"
                                placeholder="Bcc (comma-separated)"
-                           >
+                             >
                        </div>
                    </div>
 
@@ -85,14 +92,15 @@
                        <div class="flex items-center justify-between">
                            <div class="flex items-center flex-1">
                                <span class="text-sm w-16 flex-shrink-0" :class="store.isDarkTheme ? 'text-gray-400' : 'text-gray-600'">Subject</span>
-                               <input
+                                 <input
                                    v-model="form.subject"
                                    type="text"
                                    required
-                                   class="flex-1 px-2 py-1.5 bg-transparent border-none focus:ring-0 focus:outline-none text-sm"
-                                   :class="store.isDarkTheme ? 'text-gray-100 placeholder-gray-500' : 'text-gray-900 placeholder-gray-400'"
+                                   class="flex-1 px-2 py-1.5 border-none focus:ring-0 focus:outline-none text-sm"
+                                   :class="store.isDarkTheme ? 'bg-gray-800 text-gray-100 placeholder-gray-400' : 'bg-white text-gray-900 placeholder-gray-500'"
+                                   :style="store.isDarkTheme ? 'background-color: #1f2937; color: #e5e7eb;' : ''"
                                    placeholder="Subject"
-                               >
+                                 >
                            </div>
                            <button
                                type="button"
@@ -138,8 +146,8 @@
                        />
                        <!-- Signature/Template Insert -->
                        <div class="absolute bottom-2 right-2 flex gap-2 z-10">
-                           <div class="relative">
-                               <button
+                           <!-- <div class="relative"> -->
+                               <!-- <button
                                    type="button"
                                    @click.stop="showTemplates = !showTemplates"
                                    class="text-xs px-2 py-1 border rounded shadow-sm transition-colors"
@@ -147,9 +155,9 @@
                                    title="Insert template"
                                >
                                    Template
-                               </button>
+                               </button> -->
                                <!-- Templates Dropdown -->
-                               <div
+                               <!-- <div
                                    v-if="showTemplates"
                                    v-click-outside="() => showTemplates = false"
                                    class="absolute bottom-full right-0 mb-2 w-64 border rounded-lg shadow-lg max-h-64 overflow-y-auto z-20"
@@ -166,8 +174,8 @@
                                        <div class="font-medium text-sm" :class="store.isDarkTheme ? 'text-gray-200' : 'text-gray-900'">{{ template.name }}</div>
                                        <div class="text-xs truncate mt-0.5" :class="store.isDarkTheme ? 'text-gray-400' : 'text-gray-500'">{{ template.subject || 'No subject' }}</div>
                                    </button>
-                               </div>
-                           </div>
+                               </div> -->
+                           <!-- </div> -->
                            <button
                                type="button"
                                @click="insertSignature"
@@ -244,8 +252,32 @@
                </form>
            </div>
       </div>
-  </div>
+    </div>
+
+  </transition>
 </template>
+
+<style>
+/* Genie-style modal open/close transition */
+.compose-genie-enter-active, .compose-genie-leave-active {
+  transition:
+    opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    border-radius 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.compose-genie-enter-from, .compose-genie-leave-to {
+  opacity: 0;
+  transform: scaleY(0.7) scaleX(0.85) translateY(60px) skewY(8deg);
+  border-radius: 80px 80px 24px 24px;
+  filter: blur(8px);
+}
+.compose-genie-enter-to, .compose-genie-leave-from {
+  opacity: 1;
+  transform: scaleY(1) scaleX(1) translateY(0) skewY(0deg);
+  border-radius: 16px;
+  filter: blur(0);
+}
+</style>
 
 <script setup>
 import { ref, reactive, watch, onMounted, onBeforeUnmount, onUnmounted } from 'vue';
