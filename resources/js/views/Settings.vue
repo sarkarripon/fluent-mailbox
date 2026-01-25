@@ -295,15 +295,15 @@
                    </div>
 
                    <!-- Incoming Config -->
-                   <div class="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 overflow-hidden">
+                   <div :class="[store.isDarkTheme ? 'bg-gray-900/80 border-gray-700/50' : 'bg-white/80 border-gray-200/50', 'backdrop-blur-sm rounded-2xl overflow-hidden border']">
                         <div class="p-3 border-b border-gray-100/50 flex justify-between items-center">
                              <div class="flex items-center">
                                  <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mr-2">
                                      <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                                  </div>
-                                 <h3 class="text-lg font-bold text-gray-800">Incoming Configuration</h3>
+                                 <h3 class="text-lg font-bold" :class="store.isDarkTheme ? 'text-gray-100' : 'text-gray-800'">Incoming Configuration</h3>
                              </div>
-                             <button v-if="inboundConfigured" @click="resetInbound" class="text-red-500 hover:text-red-700 hover:bg-red-50 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300">
+                             <button v-if="inboundConfigured" @click="resetInbound" :class="store.isDarkTheme ? 'text-red-400 hover:text-red-300 hover:bg-red-900/20' : 'text-red-500 hover:text-red-700 hover:bg-red-50'" class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300">
                                  Reset Configuration
                              </button>
                         </div>
@@ -312,8 +312,8 @@
                              <div class="inline-flex p-3 bg-gradient-to-br from-amber-400 to-orange-500 text-white rounded-full mb-3">
                                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                              </div>
-                             <h4 class="text-base font-bold text-gray-800 mb-1">Incoming message is not configured</h4>
-                             <p class="text-sm text-gray-500 max-w-md mx-auto mb-4">Setup now to get a full featured mailbox. This will automatically create the necessary S3 Bucket, SNS Topic, and SES Rules for you.</p>
+                             <h4 class="text-base font-bold mb-1" :class="store.isDarkTheme ? 'text-gray-100' : 'text-gray-800'">Incoming message is not configured</h4>
+                             <p class="text-sm max-w-md mx-auto mb-4" :class="store.isDarkTheme ? 'text-gray-400' : 'text-gray-500'">Setup now to get a full featured mailbox. This will automatically create the necessary S3 Bucket, SNS Topic, and SES Rules for you.</p>
 
                              <Tooltip text="This will automatically create an S3 bucket for storing emails, an SNS topic for notifications, and configure SES rules to forward incoming emails to your S3 bucket. All resources will be created in your selected AWS region.">
                                  <button @click="setupInbound" :disabled="loading" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2.5 rounded-2xl font-bold transition-all inline-flex items-center disabled:opacity-70 disabled:cursor-not-allowed hover:-translate-y-0.5 active:translate-y-0 text-sm relative overflow-hidden">
@@ -332,36 +332,37 @@
                                  </button>
                              </Tooltip>
                              <div v-if="error" class="mt-3 bg-red-50/80 backdrop-blur-sm text-red-600 p-3 rounded-xl max-w-lg mx-auto border border-red-200/50 text-xs">{{ error }}</div>
+                                                <!-- error color is fine for both themes -->
                         </div>
 
                         <div v-else class="p-4">
-                            <div class="flex items-center p-3 bg-green-50/80 backdrop-blur-sm rounded-xl border border-green-200/50">
+                            <div class="flex items-center p-3 rounded-xl border" :class="store.isDarkTheme ? 'bg-green-900/40 border-green-700/40' : 'bg-green-50/80 border-green-200/50 backdrop-blur-sm'">
                                 <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center mr-2">
                                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                 </div>
                                 <div>
-                                    <span class="font-semibold text-green-700 text-sm">Inbound handling is active</span>
-                                    <p class="text-gray-500 text-xs mt-1">Emails sent to this domain will be processed via S3 and SNS Webhooks.</p>
+                                    <span class="font-semibold text-sm" :class="store.isDarkTheme ? 'text-green-300' : 'text-green-700'">Inbound handling is active</span>
+                                    <p class="text-xs mt-1" :class="store.isDarkTheme ? 'text-green-200/80' : 'text-gray-500'">Emails sent to this domain will be processed via S3 and SNS Webhooks.</p>
                                 </div>
                             </div>
                         </div>
                    </div>
 
                    <!-- Troubleshooting Section -->
-                   <div class="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 overflow-hidden mt-4">
+                   <div :class="[store.isDarkTheme ? 'bg-gray-900/80 border-gray-700/50' : 'bg-white/80 border-gray-200/50', 'backdrop-blur-sm rounded-2xl overflow-hidden border mt-4']">
                         <div class="p-3 border-b border-gray-100/50 flex justify-between items-center bg-gray-50/50">
                              <div class="flex items-center">
                                  <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center mr-2">
                                      <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                                  </div>
-                                 <h3 class="text-lg font-bold text-gray-800">Troubleshooting</h3>
+                                 <h3 class="text-lg font-bold" :class="store.isDarkTheme ? 'text-gray-100' : 'text-gray-800'">Troubleshooting</h3>
                              </div>
                         </div>
                         <div class="p-4 space-y-4">
-                            <p class="text-sm text-gray-500">Use these tools to debug webhook connectivity and processing issues.</p>
+                            <p class="text-sm" :class="store.isDarkTheme ? 'text-gray-400' : 'text-gray-500'">Use these tools to debug webhook connectivity and processing issues.</p>
 
                             <div class="flex space-x-3">
-                                <button @click="simulateWebhook" :disabled="simulating" class="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-2.5 rounded-xl font-medium transition-all text-sm flex justify-center items-center shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+                                <button @click="simulateWebhook" :disabled="simulating" :class="store.isDarkTheme ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-gray-200' : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-700'" class="flex-1 py-2.5 rounded-xl font-medium transition-all text-sm flex justify-center items-center shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
                                     <template v-if="simulating">
                                         <span class="flex items-center gap-1 mr-2">
                                             <span class="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
@@ -374,13 +375,13 @@
                                         <span class="mr-2">⚡</span> Simulate Webhook
                                     </template>
                                 </button>
-                                <button @click="toggleLog" class="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-2.5 rounded-xl font-medium transition-all text-sm flex justify-center items-center shadow-sm">
+                                <button @click="toggleLog" :class="store.isDarkTheme ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-gray-200' : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-700'" class="flex-1 py-2.5 rounded-xl font-medium transition-all text-sm flex justify-center items-center shadow-sm">
                                     <span class="mr-2">📄</span> View Debug Log
                                 </button>
                             </div>
 
                             <div v-if="showLog" class="mt-4 border border-gray-200 rounded-xl overflow-hidden">
-                                <div class="bg-gray-900 text-gray-300 px-4 py-2 text-xs font-mono flex justify-between items-center">
+                                <div class="px-4 py-2 text-xs font-mono flex justify-between items-center" :class="store.isDarkTheme ? 'bg-gray-900 text-gray-300' : 'bg-gray-900 text-gray-300'">
                                     <span>fluent-mailbox-debug.log</span>
                                     <div class="flex space-x-3">
                                         <button @click="refreshLog" :disabled="refreshingLog" class="hover:text-white transition-colors disabled:opacity-50 flex items-center gap-1">
@@ -396,8 +397,8 @@
                                         <button @click="cleanLog" class="text-red-400 hover:text-red-300 transition-colors">Clear</button>
                                     </div>
                                 </div>
-                                <div class="bg-gray-800 p-4 overflow-x-auto max-h-64 scrollbar-thin scrollbar-thumb-gray-600">
-                                    <pre class="text-xs font-mono text-gray-300 whitespace-pre-wrap font-ligatures-none">{{ logContent || 'Log is empty.' }}</pre>
+                                <div :class="store.isDarkTheme ? 'bg-gray-800' : 'bg-gray-800'" class="p-4 overflow-x-auto max-h-64 scrollbar-thin scrollbar-thumb-gray-600">
+                                    <pre class="text-xs font-mono" :class="store.isDarkTheme ? 'text-gray-300' : 'text-gray-300'" style="white-space: pre-wrap; font-variant-ligatures: none;">{{ logContent || 'Log is empty.' }}</pre>
                                 </div>
                             </div>
                         </div>
