@@ -7,7 +7,7 @@
           </div>
           <button v-if="emails.length" @click="emptyTrash" class="text-red-600 text-sm font-medium hover:text-red-700 hover:bg-red-50 px-4 py-2 rounded-lg transition-all">Empty Trash</button>
       </header>
-      
+
       <div class="flex-1 overflow-auto p-0">
           <div v-if="loading" class="flex justify-center items-center h-64">
               <div class="relative">
@@ -16,41 +16,37 @@
           </div>
 
           <div v-else-if="emails.length > 0" class="divide-y divide-gray-100">
-              <div 
-                  v-for="email in emails" 
-                  :key="email.id" 
-                  class="px-6 py-3 bg-white hover:bg-gray-50 group transition-colors"
+              <div
+                  v-for="email in emails"
+                  :key="email.id"
+                  class="px-6 py-2.5 bg-white hover:bg-gray-50 group transition-colors"
               >
-                  <div class="flex items-start gap-4">
+                  <div class="flex items-center gap-2">
                       <div class="flex-shrink-0">
-                          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center text-white font-semibold text-sm">
+                          <div class="w-7 h-7 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center text-white font-semibold text-xs">
                               {{ email.sender ? email.sender[0].toUpperCase() : '?' }}
                           </div>
                       </div>
                       <div class="flex-1 min-w-0">
-                          <div class="flex items-center justify-between gap-3 mb-1">
-                              <div class="flex items-center gap-2 min-w-0 flex-1">
-                                  <span @click="$router.push(`/emails/${email.id}`)" class="text-sm font-medium text-gray-900 truncate cursor-pointer">
-                                      {{ email.sender }}
-                                  </span>
-                              </div>
-                              <div class="flex items-center gap-2 flex-shrink-0">
-                                  <span class="text-xs text-gray-500">{{ formatRelativeDate(email.created_at) }}</span>
-                                  <button 
+                          <div class="flex items-center justify-between gap-2">
+                              <span @click="$router.push(`/emails/${email.id}`)" class="text-sm font-medium text-gray-900 truncate cursor-pointer">
+                                  {{ email.sender }}
+                              </span>
+                              <div class="flex items-center gap-1.5 flex-shrink-0">
+                                  <span class="text-sm text-gray-500">{{ formatRelativeDate(email.created_at) }}</span>
+                                  <button
                                       @click.stop="deleteEmail(email)"
-                                      class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                                      class="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
                                       title="Permanently delete"
                                   >
-                                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                   </button>
                               </div>
                           </div>
-                          <h4 @click="$router.push(`/emails/${email.id}`)" class="text-sm font-medium text-gray-900 mb-1 truncate cursor-pointer">
-                              {{ email.subject || '(No Subject)' }}
-                          </h4>
-                          <p @click="$router.push(`/emails/${email.id}`)" class="text-sm text-gray-500 truncate line-clamp-1 cursor-pointer">
-                              {{ getEmailSnippet(email.body) }}
-                          </p>
+                          <div @click="$router.push(`/emails/${email.id}`)" class="cursor-pointer">
+                              <span class="text-sm text-gray-900 font-medium">{{ email.subject || '(No Subject)' }}</span>
+                              <span class="text-sm text-gray-500 ml-1">{{ getEmailSnippet(email.body) }}</span>
+                          </div>
                       </div>
                   </div>
               </div>
@@ -114,12 +110,12 @@ const formatRelativeDate = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now - date) / 1000);
-    
+
     if (diffInSeconds < 60) return 'Just now';
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
     if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-    
+
     return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 };
 

@@ -110,7 +110,7 @@
                   </div>
               </div>
           </div>
-          
+
           <!-- Filter Panel -->
           <div v-if="showFilters" class="bg-white border border-gray-200 rounded-lg p-3 space-y-3">
               <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -201,7 +201,7 @@
               </div>
           </div>
       </header>
-      
+
       <div class="flex-1 overflow-auto p-0 scrollbar-hide">
           <div v-if="loading" class="flex justify-center items-center h-64">
               <div class="relative">
@@ -214,13 +214,13 @@
                   v-for="email in filteredEmails"
                   :key="`${email.id}-${sortBy}`"
                   @click="isSelectionMode ? toggleSelect(email) : openEmail(email.id)"
-                  class="px-5 py-2.5 bg-white hover:shadow-sm cursor-pointer group transition-all relative border-l-4"
+                  class="px-6 py-2.5 bg-white hover:shadow-sm cursor-pointer group transition-all relative border-l-4"
                   :class="[
                       !email.is_read ? 'bg-blue-50/20 border-l-blue-500' : 'border-l-transparent',
                       isSelected(email.id) ? 'bg-blue-50 border-l-blue-600' : ''
                   ]"
               >
-                  <div class="flex items-center gap-3">
+                  <div class="flex items-center gap-2">
                       <!-- Selection Checkbox or Unread Indicator -->
                       <div class="flex-shrink-0">
                           <input
@@ -236,7 +236,7 @@
 
                       <!-- Avatar -->
                       <div class="flex-shrink-0">
-                          <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold text-sm shadow-sm">
+                          <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold text-xs shadow-sm">
                               {{ email.sender ? email.sender[0].toUpperCase() : '?' }}
                           </div>
                       </div>
@@ -245,7 +245,7 @@
                       <div class="flex-1 min-w-0">
                           <div class="flex items-center gap-2 mb-0.5">
                               <!-- Starred Icon -->
-                              <svg v-if="email.is_starred" class="w-3.5 h-3.5 text-yellow-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                              <svg v-if="email.is_starred" class="w-3 h-3 text-yellow-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
                                   <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
                               </svg>
 
@@ -259,14 +259,14 @@
                                   <span
                                       v-for="tag in getEmailTagsDisplay(email.id).slice(0, 2)"
                                       :key="tag.id"
-                                      class="inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded text-white shadow-sm"
+                                      class="inline-flex items-center px-1.5 py-0.5 text-sm font-medium rounded text-white shadow-sm"
                                       :style="{ backgroundColor: tag.color }"
                                   >
                                       {{ tag.name }}
                                   </span>
                                   <span
                                       v-if="getEmailTagsDisplay(email.id).length > 2"
-                                      class="text-xs text-gray-500 font-medium"
+                                      class="text-sm text-gray-500 font-medium"
                                   >
                                       +{{ getEmailTagsDisplay(email.id).length - 2 }}
                                   </span>
@@ -276,7 +276,7 @@
                               <div class="flex-1"></div>
 
                               <!-- Date -->
-                              <span class="text-xs text-gray-500 flex-shrink-0 font-medium">
+                              <span class="text-sm text-gray-500 flex-shrink-0 font-medium">
                                   {{ formatRelativeDate(email.created_at) }}
                               </span>
                           </div>
@@ -296,34 +296,34 @@
                       <div v-if="!isSelectionMode" class="flex-shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                               @click.stop="toggleStar(email)"
-                              class="p-1.5 text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 rounded transition-colors"
+                              class="p-1 text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 rounded transition-colors"
                               :title="email.is_starred ? 'Unstar' : 'Star'"
                           >
-                              <svg v-if="email.is_starred" class="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                              <svg v-if="email.is_starred" class="w-3.5 h-3.5 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
                                   <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
                               </svg>
-                              <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
                               </svg>
                           </button>
                           <button
                               @click.stop="toggleRead(email)"
-                              class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                              class="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                               :title="email.is_read ? 'Mark as unread' : 'Mark as read'"
                           >
-                              <svg v-if="email.is_read" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg v-if="email.is_read" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76"></path>
                               </svg>
-                              <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                               </svg>
                           </button>
                           <button
                               @click.stop="deleteEmail(email)"
-                              class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                              class="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                               title="Delete"
                           >
-                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                               </svg>
                           </button>
@@ -544,7 +544,7 @@ const activeFilterCount = computed(() => {
 const filteredEmails = computed(() => {
     // Explicitly track sortBy to ensure reactivity
     const currentSort = sortBy.value;
-    
+
     let result = [...emails.value];
 
     // Apply search query
@@ -635,7 +635,7 @@ const filteredEmails = computed(() => {
     // Apply sorting - create a new sorted array to ensure reactivity
     const sortedResult = Array.from(result).sort((a, b) => {
         let comparison = 0;
-        
+
         switch (currentSort) {
             case 'date-desc': {
                 const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
@@ -680,7 +680,7 @@ const filteredEmails = computed(() => {
             default:
                 comparison = 0;
         }
-        
+
         return comparison;
     });
 
@@ -852,11 +852,11 @@ const initializeStars = () => {
 const loadEmailTags = async (emailIds) => {
     // Filter out email IDs we've already loaded tags for
     const newEmailIds = emailIds.filter(id => !loadedEmailTagIds.value.has(id));
-    
+
     if (newEmailIds.length === 0) {
         return; // All tags already loaded
     }
-    
+
     try {
         const promises = newEmailIds.map(id => api.getEmailTags(id));
         const responses = await Promise.all(promises);
@@ -906,7 +906,7 @@ onMounted(async () => {
     if (!store.tagsLoaded) {
         await store.loadTags();
     }
-    
+
     await fetchEmails(1, false);
     initializeStars();
 

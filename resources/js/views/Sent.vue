@@ -6,7 +6,7 @@
               <div class="text-sm text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full" v-if="emails.length">{{ emails.length }} messages</div>
           </div>
       </header>
-      
+
       <div class="flex-1 overflow-auto p-0">
           <div v-if="loading" class="flex justify-center items-center h-64">
               <div class="relative">
@@ -15,33 +15,29 @@
           </div>
 
           <div v-else-if="emails.length > 0" class="divide-y divide-gray-100">
-              <div 
-                  v-for="email in emails" 
-                  :key="email.id" 
+              <div
+                  v-for="email in emails"
+                  :key="email.id"
                   @click="$router.push(`/emails/${email.id}`)"
-                  class="px-6 py-3 bg-white hover:bg-gray-50 cursor-pointer group transition-colors"
+                  class="px-6 py-2.5 bg-white hover:bg-gray-50 cursor-pointer group transition-colors"
               >
-                  <div class="flex items-start gap-4">
+                  <div class="flex items-center gap-2">
                       <div class="flex-shrink-0">
-                          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white font-semibold text-sm">
-                              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                          <div class="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white font-semibold text-xs">
+                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                           </div>
                       </div>
                       <div class="flex-1 min-w-0">
-                          <div class="flex items-center justify-between gap-3 mb-1">
-                              <div class="flex items-center gap-2 min-w-0 flex-1">
-                                  <span class="text-sm font-medium text-gray-900 truncate">
-                                      To: {{ getRecipients(email.recipients) }}
-                                  </span>
-                              </div>
-                              <span class="text-xs text-gray-500 flex-shrink-0">{{ formatRelativeDate(email.created_at) }}</span>
+                          <div class="flex items-center justify-between gap-2">
+                              <span class="text-sm font-medium text-gray-900 truncate">
+                                  To: {{ getRecipients(email.recipients) }}
+                              </span>
+                              <span class="text-sm text-gray-500 flex-shrink-0">{{ formatRelativeDate(email.created_at) }}</span>
                           </div>
-                          <h4 class="text-sm font-medium text-gray-900 mb-1 truncate">
-                              {{ email.subject || '(No Subject)' }}
-                          </h4>
-                          <p class="text-sm text-gray-500 truncate line-clamp-1">
-                              {{ getEmailSnippet(email.body) }}
-                          </p>
+                          <div>
+                              <span class="text-sm text-gray-900 font-medium">{{ email.subject || '(No Subject)' }}</span>
+                              <span class="text-sm text-gray-500 ml-1">{{ getEmailSnippet(email.body) }}</span>
+                          </div>
                       </div>
                   </div>
               </div>
@@ -85,12 +81,12 @@ const formatRelativeDate = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now - date) / 1000);
-    
+
     if (diffInSeconds < 60) return 'Just now';
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
     if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-    
+
     return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 };
 

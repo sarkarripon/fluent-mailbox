@@ -7,7 +7,7 @@
               </button>
               <h1 class="text-lg font-semibold text-gray-800 truncate max-w-xl">{{ email ? email.subject : 'Loading...' }}</h1>
           </div>
-          
+
           <div class="flex items-center space-x-1" v-if="email">
                <button @click="handleReply" class="px-3 py-1.5 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all flex items-center gap-1.5">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
@@ -67,28 +67,24 @@
           </div>
       </header>
 
-      <div class="flex-1 overflow-auto p-6 bg-white/50" v-if="!loading && email">
+      <div class="flex-1 overflow-auto p-4 bg-white/50" v-if="!loading && email">
           <!-- Metadata -->
-          <div class="bg-white rounded-lg p-5 mb-4 border border-gray-200">
-              <div class="flex justify-between items-start mb-4">
-              <div class="flex items-center space-x-3">
-                      <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-lg">
+          <div class="bg-white rounded-lg p-4 mb-3 border border-gray-200">
+              <div class="flex justify-between items-center">
+              <div class="flex items-center space-x-2">
+                      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-xs">
                       {{ email.sender ? email.sender[0].toUpperCase() : '?' }}
                   </div>
                   <div>
-                          <div class="font-semibold text-gray-900">{{ email.sender }}</div>
-                          <div class="text-sm text-gray-500 mt-0.5 space-y-0.5">
-                              <div>To: <span class="text-gray-700">{{ getRecipients(email.recipients) }}</span></div>
-                              <div v-if="getRecipients(email.cc)">
-                                  Cc: <span class="text-gray-700">{{ getRecipients(email.cc) }}</span>
-                              </div>
-                              <div v-if="getRecipients(email.bcc)">
-                                  Bcc: <span class="text-gray-700">{{ getRecipients(email.bcc) }}</span>
-                              </div>
+                          <div class="text-sm font-semibold text-gray-900">{{ email.sender }}</div>
+                          <div class="text-xs text-gray-500 space-x-1">
+                              <span>To: {{ getRecipients(email.recipients) }}</span>
+                              <span v-if="getRecipients(email.cc)">• Cc: {{ getRecipients(email.cc) }}</span>
+                              <span v-if="getRecipients(email.bcc)">• Bcc: {{ getRecipients(email.bcc) }}</span>
                           </div>
                       </div>
                   </div>
-                  <div class="text-xs text-gray-500">
+                  <div class="text-xs text-gray-500 flex-shrink-0">
                       {{ formatRelativeDate(email.created_at) }}
                   </div>
               </div>
@@ -258,7 +254,7 @@
               </div>
           </div>
       </div>
-      
+
       <div v-else-if="loading" class="flex-1 flex justify-center items-center">
            <div class="relative">
                <div class="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>

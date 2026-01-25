@@ -19,38 +19,36 @@
                   v-for="draft in drafts"
                   :key="draft.id"
                   @click="openDraft(draft)"
-                  class="px-6 py-3 bg-white hover:bg-gray-50 cursor-pointer group transition-colors"
+                  class="px-6 py-2.5 bg-white hover:bg-gray-50 cursor-pointer group transition-colors"
               >
-                  <div class="flex items-start gap-4">
+                  <div class="flex items-center gap-2">
                       <div class="flex-shrink-0">
-                          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white font-semibold text-sm">
-                              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                          <div class="w-7 h-7 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white font-semibold text-xs">
+                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
                           </div>
                       </div>
                       <div class="flex-1 min-w-0">
-                          <div class="flex items-center justify-between gap-3 mb-1">
-                              <div class="flex items-center gap-2 min-w-0 flex-1">
-                                  <span class="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded">Draft</span>
+                          <div class="flex items-center justify-between gap-2">
+                              <div class="flex items-center gap-1.5 min-w-0 flex-1">
+                                  <span class="text-xs font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">Draft</span>
                                   <span class="text-sm font-medium text-gray-900 truncate">
                                       {{ getRecipients(draft.recipients) || '(No recipients)' }}
                                   </span>
                               </div>
-                              <span class="text-xs text-gray-500 flex-shrink-0">{{ formatRelativeDate(draft.updated_at) }}</span>
+                              <span class="text-sm text-gray-500 flex-shrink-0">{{ formatRelativeDate(draft.updated_at) }}</span>
                           </div>
-                          <h4 class="text-sm font-medium text-gray-900 mb-1 truncate">
-                              {{ draft.subject || '(No Subject)' }}
-                          </h4>
-                          <p class="text-sm text-gray-500 truncate line-clamp-1">
-                              {{ getEmailSnippet(draft.body) }}
-                          </p>
+                          <div>
+                              <span class="text-sm text-gray-900 font-medium">{{ draft.subject || '(No Subject)' }}</span>
+                              <span class="text-sm text-gray-500 ml-1">{{ getEmailSnippet(draft.body) }}</span>
+                          </div>
                       </div>
                       <div class="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                               @click.stop="deleteDraft(draft)"
-                              class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                              class="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                               title="Delete draft"
                           >
-                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                           </button>
                       </div>
                   </div>
