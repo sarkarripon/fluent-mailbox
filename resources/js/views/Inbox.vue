@@ -67,15 +67,19 @@
                       v-model="searchQuery"
                       type="text"
                       placeholder="Search emails..."
-                      class="w-[300px] float-right pl-9 pr-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all"
+                      class="w-[300px] float-right pl-9 pr-3 py-1.5 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all"
+                      :class="store.isDarkTheme ? 'bg-gray-800 border-gray-600 text-gray-200 placeholder-gray-400 !bg-gray-800 !border-gray-600' : 'bg-white border border-gray-200 text-gray-900 placeholder-gray-500'"
                   >
               </div>
 
               <!-- Filter Toggle Button -->
               <button
                   @click="showFilters = !showFilters"
-                  class="px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-1.5"
-                  :class="hasActiveFilters ? 'border-blue-500 bg-blue-50' : ''"
+                  class="px-2.5 py-1.5 rounded-lg text-xs transition-colors flex items-center gap-1.5"
+                  :class="[
+                      store.isDarkTheme ? 'bg-gray-800 border border-gray-600 text-gray-300 hover:bg-gray-700' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50',
+                      hasActiveFilters ? (store.isDarkTheme ? 'border-blue-400 bg-blue-900/30' : 'border-blue-500 bg-blue-50') : ''
+                  ]"
               >
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
                   Filters
@@ -86,7 +90,8 @@
               <div class="relative" ref="sortMenuRef">
                   <button
                       @click.stop="toggleSortMenu"
-                      class="px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+                      class="px-2.5 py-1.5 rounded-lg text-xs transition-colors flex items-center gap-1.5"
+                      :class="store.isDarkTheme ? 'bg-gray-800 border border-gray-600 text-gray-300 hover:bg-gray-700' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'"
                   >
                       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path></svg>
                       Sort
@@ -94,15 +99,19 @@
                   <div
                       v-if="showSortMenu"
                       v-click-outside="closeSortMenu"
-                      class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20"
+                      class="absolute right-0 mt-2 w-48 rounded-lg shadow-lg z-20"
+                      :class="store.isDarkTheme ? 'bg-gray-800 border border-gray-600' : 'bg-white border border-gray-200'"
                       @click.stop
                   >
                       <button
                           v-for="option in sortOptions"
                           :key="option.value"
                           @click.stop="setSort(option.value)"
-                          class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center justify-between"
-                          :class="sortBy === option.value ? 'bg-blue-50 text-blue-700' : 'text-gray-700'"
+                          class="w-full text-left px-4 py-2 text-sm flex items-center justify-between"
+                          :class="[
+                              store.isDarkTheme ? 'hover:bg-gray-700' : 'hover:bg-gray-50',
+                              sortBy === option.value ? (store.isDarkTheme ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-50 text-blue-700') : (store.isDarkTheme ? 'text-gray-300' : 'text-gray-700')
+                          ]"
                       >
                           <span>{{ option.label }}</span>
                           <svg v-if="sortBy === option.value" class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
@@ -112,12 +121,16 @@
           </div>
 
           <!-- Filter Panel -->
-          <div v-if="showFilters" class="bg-white border border-gray-200 rounded-lg p-3 space-y-3">
+        <div v-if="showFilters" class="rounded-lg p-3 space-y-3"
+            :class="store.isDarkTheme ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'">
               <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <!-- Read Status Filter -->
                   <div>
-                      <label class="block text-xs font-medium text-gray-700 mb-1.5">Read Status</label>
-                      <select v-model="filters.readStatus" class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none">
+                          <label class="block text-xs font-medium mb-1.5" :class="store.isDarkTheme ? 'text-gray-300' : 'text-gray-700'">Read Status</label>
+                          <select v-model="filters.readStatus"
+                              class="w-full px-2.5 py-1.5 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none"
+                              :class="store.isDarkTheme ? 'bg-gray-800 border border-gray-700 text-gray-200' : 'bg-white border border-gray-200 text-gray-900'"
+                              :style="store.isDarkTheme ? 'background-color: #1f2937; color: #e5e7eb;' : ''">
                           <option value="all">All</option>
                           <option value="unread">Unread</option>
                           <option value="read">Read</option>
@@ -126,8 +139,11 @@
 
                   <!-- Date Range Filter -->
                   <div>
-                      <label class="block text-xs font-medium text-gray-700 mb-1.5">Date Range</label>
-                      <select v-model="filters.dateRange" class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none">
+                          <label class="block text-xs font-medium mb-1.5" :class="store.isDarkTheme ? 'text-gray-300' : 'text-gray-700'">Date Range</label>
+                          <select v-model="filters.dateRange"
+                              class="w-full px-2.5 py-1.5 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none"
+                              :class="store.isDarkTheme ? 'bg-gray-800 border border-gray-700 text-gray-200' : 'bg-white border border-gray-200 text-gray-900'"
+                              :style="store.isDarkTheme ? 'background-color: #1f2937; color: #e5e7eb;' : ''">
                           <option value="all">All Time</option>
                           <option value="today">Today</option>
                           <option value="week">This Week</option>
@@ -138,8 +154,11 @@
 
                   <!-- Attachments Filter -->
                   <div>
-                      <label class="block text-xs font-medium text-gray-700 mb-1.5">Attachments</label>
-                      <select v-model="filters.hasAttachments" class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none">
+                          <label class="block text-xs font-medium mb-1.5" :class="store.isDarkTheme ? 'text-gray-300' : 'text-gray-700'">Attachments</label>
+                          <select v-model="filters.hasAttachments"
+                              class="w-full px-2.5 py-1.5 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none"
+                              :class="store.isDarkTheme ? 'bg-gray-800 border border-gray-700 text-gray-200' : 'bg-white border border-gray-200 text-gray-900'"
+                              :style="store.isDarkTheme ? 'background-color: #1f2937; color: #e5e7eb;' : ''">
                           <option value="all">All</option>
                           <option value="yes">With Attachments</option>
                           <option value="no">Without Attachments</option>
@@ -149,19 +168,21 @@
 
               <!-- Sender Filter -->
               <div>
-                  <label class="block text-xs font-medium text-gray-700 mb-1.5">From</label>
+                  <label class="block text-xs font-medium mb-1.5" :class="store.isDarkTheme ? 'text-gray-300' : 'text-gray-700'">From</label>
                   <input
                       v-model="filters.sender"
                       type="text"
                       placeholder="Filter by sender email..."
-                      class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none"
+                      class="w-full px-2.5 py-1.5 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none"
+                      :class="store.isDarkTheme ? 'bg-gray-800 border border-gray-700 text-gray-200 placeholder-gray-400' : 'bg-white border border-gray-200 text-gray-900 placeholder-gray-500'"
+                      :style="store.isDarkTheme ? 'background-color: #1f2937; color: #e5e7eb;' : ''"
                   >
               </div>
 
               <!-- Tags Filter -->
               <div>
                   <div class="flex items-center justify-between mb-1.5">
-                      <label class="block text-xs font-medium text-gray-700">Tags</label>
+                      <label class="block text-xs font-medium" :class="store.isDarkTheme ? 'text-gray-300' : 'text-gray-700'">Tags</label>
                       <button
                           @click="showTagManager = true"
                           class="text-xs text-blue-600 hover:text-blue-700 hover:underline"
@@ -169,7 +190,7 @@
                           Manage tags
                       </button>
                   </div>
-                  <div v-if="store.allTags.length === 0" class="text-xs text-gray-500">
+                  <div v-if="store.allTags.length === 0" class="text-xs" :class="store.isDarkTheme ? 'text-gray-500' : 'text-gray-500'">
                       No tags available. <button @click="showTagManager = true" class="text-blue-600 hover:underline">Create tags</button>
                   </div>
                   <div v-else class="flex flex-wrap gap-2">
@@ -178,7 +199,9 @@
                           :key="tag.id"
                           @click="toggleTagFilter(tag.id)"
                           class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full transition-all"
-                          :class="filters.tags.includes(tag.id) ? 'text-white' : 'text-gray-700 bg-gray-100 hover:bg-gray-200'"
+                          :class="filters.tags.includes(tag.id)
+                              ? (store.isDarkTheme ? 'text-white' : 'text-white')
+                              : (store.isDarkTheme ? 'text-gray-200 bg-gray-700 hover:bg-gray-600' : 'text-gray-700 bg-gray-100 hover:bg-gray-200')"
                           :style="filters.tags.includes(tag.id) ? { backgroundColor: tag.color } : {}"
                       >
                           {{ tag.name }}
@@ -193,19 +216,36 @@
               <div class="flex justify-end">
                   <button
                       @click="clearFilters"
-                      class="px-3 py-1.5 text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors"
+                      class="px-3 py-1.5 text-xs rounded-lg transition-colors"
+                      :class="store.isDarkTheme ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-800' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'"
                       :disabled="!hasActiveFilters"
                   >
                       Clear Filters
-          </button>
+                  </button>
               </div>
-          </div>
+        </div>
       </header>
 
       <div class="flex-1 overflow-auto p-0 scrollbar-hide">
-          <div v-if="loading" class="flex justify-center items-center h-64">
+          <div v-if="loading" class="flex flex-col justify-center items-center h-64 gap-4">
+              <!-- Animated envelope loader -->
               <div class="relative">
-                  <div class="w-16 h-16 border-4 border-t-blue-600 rounded-full animate-spin" :class="store.isDarkTheme ? 'border-gray-700' : 'border-blue-100'"></div>
+                  <div class="w-16 h-16 rounded-2xl fm-bg-primary/10 flex items-center justify-center">
+                      <svg class="w-8 h-8 fm-text-primary animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                      </svg>
+                  </div>
+                  <!-- Pulse ring effect -->
+                  <div class="absolute inset-0 w-16 h-16 rounded-2xl fm-bg-primary/20 animate-ping"></div>
+              </div>
+              <!-- Loading dots -->
+              <div class="flex items-center gap-2">
+                  <span class="flex items-center gap-1">
+                      <span class="w-2 h-2 rounded-full fm-bg-primary animate-bounce" style="animation-delay: 0ms"></span>
+                      <span class="w-2 h-2 rounded-full fm-bg-primary opacity-75 animate-bounce" style="animation-delay: 150ms"></span>
+                      <span class="w-2 h-2 rounded-full fm-bg-primary opacity-50 animate-bounce" style="animation-delay: 300ms"></span>
+                  </span>
+                  <span class="text-sm font-medium" :class="store.isDarkTheme ? 'text-gray-400' : 'text-gray-500'">Loading emails...</span>
               </div>
           </div>
 
@@ -293,38 +333,43 @@
                           </div>
                       </div>
 
-                      <!-- Quick Actions (shown on hover) -->
-                      <div v-if="!isSelectionMode" class="flex-shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <!-- Quick Actions -->
+                      <div v-if="!isSelectionMode" class="flex-shrink-0 flex items-center gap-1 pl-2 border-l opacity-0 group-hover:opacity-100 transition-all duration-200" :class="store.isDarkTheme ? 'border-gray-700' : 'border-gray-200'">
                           <button
                               @click.stop="toggleStar(email)"
-                              class="p-1 text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 rounded transition-colors"
+                              class="p-1.5 rounded-lg transition-all duration-200"
+                              :class="email.is_starred
+                                  ? 'text-yellow-500 bg-yellow-50 hover:bg-yellow-100'
+                                  : (store.isDarkTheme ? 'text-gray-500 hover:text-yellow-400 hover:bg-yellow-900/30' : 'text-gray-400 hover:text-yellow-500 hover:bg-yellow-50')"
                               :title="email.is_starred ? 'Unstar' : 'Star'"
                           >
-                              <svg v-if="email.is_starred" class="w-3.5 h-3.5 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                              <svg v-if="email.is_starred" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                   <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
                               </svg>
-                              <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
                               </svg>
                           </button>
                           <button
                               @click.stop="toggleRead(email)"
-                              class="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                              class="p-1.5 rounded-lg transition-all duration-200"
+                              :class="store.isDarkTheme ? 'text-gray-500 hover:text-blue-400 hover:bg-blue-900/30' : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'"
                               :title="email.is_read ? 'Mark as unread' : 'Mark as read'"
                           >
-                              <svg v-if="email.is_read" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg v-if="email.is_read" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76"></path>
                               </svg>
-                              <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                               </svg>
                           </button>
                           <button
                               @click.stop="deleteEmail(email)"
-                              class="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                              class="p-1.5 rounded-lg transition-all duration-200"
+                              :class="store.isDarkTheme ? 'text-gray-500 hover:text-red-400 hover:bg-red-900/30' : 'text-gray-400 hover:text-red-600 hover:bg-red-50'"
                               title="Delete"
                           >
-                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                               </svg>
                           </button>

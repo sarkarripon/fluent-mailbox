@@ -8,7 +8,7 @@
  */
 
 defined('ABSPATH') || exit;
-defined('WP_ENV') || define('WP_ENV', 'development');
+defined('WP_ENV') || define('WP_ENV', 'production');
 
 define('FLUENT_MAILBOX_VERSION', '1.0.0');
 define('FLUENT_MAILBOX_PATH', plugin_dir_path(__FILE__));
@@ -92,10 +92,10 @@ final class FluentMailbox
 
         global $wpdb;
         $table = $wpdb->prefix . 'fluent_mailbox_emails';
-        
+
         // Check if table exists first
         $table_exists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) === $table;
-        
+
         $unread_count = 0;
         if ($table_exists) {
             $unread_count = (int) $wpdb->get_var(
@@ -105,7 +105,7 @@ final class FluentMailbox
 
         $title = '<span class="ab-icon dashicons dashicons-email"></span>';
         $title .= '<span class="ab-label">' . __('Mailbox', 'fluent-mailbox') . '</span>';
-        
+
         if ($unread_count > 0) {
             $title .= '<span class="fluent-mailbox-unread-count">' . $unread_count . '</span>';
         }

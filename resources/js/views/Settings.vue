@@ -7,6 +7,63 @@
       <div class="flex-1 overflow-auto p-4">
           <div class="max-w-xl mx-auto">
 
+              <!-- Initial Loading Skeleton -->
+              <div v-if="initialLoading" class="space-y-6">
+                  <!-- Tab skeleton -->
+                  <div class="flex space-x-1 rounded-xl p-1" :class="store.isDarkTheme ? 'bg-gray-800' : 'bg-gray-100'">
+                      <div class="flex-1 h-10 rounded-lg skeleton-shimmer" :class="store.isDarkTheme ? 'bg-gray-700' : 'bg-gray-200'"></div>
+                      <div class="flex-1 h-10 rounded-lg skeleton-shimmer" style="animation-delay: 0.1s" :class="store.isDarkTheme ? 'bg-gray-700/50' : 'bg-gray-200/50'"></div>
+                  </div>
+
+                  <!-- Card skeleton -->
+                  <div class="rounded-2xl p-6 border relative overflow-hidden" :class="store.isDarkTheme ? 'bg-gray-800/50 border-gray-700' : 'bg-white/70 border-gray-200/50'">
+                      <!-- Header -->
+                      <div class="flex items-center mb-6">
+                          <div class="w-12 h-12 rounded-xl skeleton-shimmer" :class="store.isDarkTheme ? 'bg-gray-700' : 'bg-gray-200'"></div>
+                          <div class="ml-4 flex-1 space-y-2">
+                              <div class="h-5 rounded-lg w-2/3 skeleton-shimmer" style="animation-delay: 0.1s" :class="store.isDarkTheme ? 'bg-gray-700' : 'bg-gray-200'"></div>
+                              <div class="h-3 rounded-lg w-1/2 skeleton-shimmer" style="animation-delay: 0.2s" :class="store.isDarkTheme ? 'bg-gray-700/60' : 'bg-gray-200/60'"></div>
+                          </div>
+                      </div>
+                      <!-- Form fields -->
+                      <div class="space-y-4">
+                          <div class="space-y-2">
+                              <div class="h-4 rounded w-24 skeleton-shimmer" style="animation-delay: 0.15s" :class="store.isDarkTheme ? 'bg-gray-700' : 'bg-gray-200'"></div>
+                              <div class="h-11 rounded-xl skeleton-shimmer" style="animation-delay: 0.2s" :class="store.isDarkTheme ? 'bg-gray-700' : 'bg-gray-200'"></div>
+                          </div>
+                          <div class="space-y-2">
+                              <div class="h-4 rounded w-32 skeleton-shimmer" style="animation-delay: 0.25s" :class="store.isDarkTheme ? 'bg-gray-700' : 'bg-gray-200'"></div>
+                              <div class="h-11 rounded-xl skeleton-shimmer" style="animation-delay: 0.3s" :class="store.isDarkTheme ? 'bg-gray-700' : 'bg-gray-200'"></div>
+                          </div>
+                          <div class="space-y-2">
+                              <div class="h-4 rounded w-28 skeleton-shimmer" style="animation-delay: 0.35s" :class="store.isDarkTheme ? 'bg-gray-700' : 'bg-gray-200'"></div>
+                              <div class="h-11 rounded-xl skeleton-shimmer" style="animation-delay: 0.4s" :class="store.isDarkTheme ? 'bg-gray-700' : 'bg-gray-200'"></div>
+                          </div>
+                          <div class="h-12 rounded-2xl mt-6 skeleton-shimmer" style="animation-delay: 0.45s" :class="store.isDarkTheme ? 'bg-gray-700' : 'bg-gray-200'"></div>
+                      </div>
+
+                      <!-- Animated shimmer overlay -->
+                      <div class="absolute inset-0 -translate-x-full animate-shimmer pointer-events-none"
+                           :class="store.isDarkTheme ? 'bg-gradient-to-r from-transparent via-gray-600/10 to-transparent' : 'bg-gradient-to-r from-transparent via-white/40 to-transparent'">
+                      </div>
+                  </div>
+
+                  <!-- Decorative loading indicator -->
+                  <div class="flex justify-center items-center py-4">
+                      <div class="flex items-center gap-3">
+                          <div class="flex gap-1">
+                              <span class="w-2 h-2 rounded-full animate-bounce fm-bg-primary" style="animation-delay: 0ms"></span>
+                              <span class="w-2 h-2 rounded-full animate-bounce fm-bg-primary opacity-75" style="animation-delay: 150ms"></span>
+                              <span class="w-2 h-2 rounded-full animate-bounce fm-bg-primary opacity-50" style="animation-delay: 300ms"></span>
+                          </div>
+                          <span class="text-sm font-medium" :class="store.isDarkTheme ? 'text-gray-400' : 'text-gray-500'">Loading settings...</span>
+                      </div>
+                  </div>
+              </div>
+
+              <!-- Main Content (shown after loading) -->
+              <template v-else>
+
               <!-- Tab Navigation -->
               <div class="flex space-x-1 mb-6 rounded-xl p-1" :class="store.isDarkTheme ? 'bg-gray-800' : 'bg-gray-100'">
                   <button
@@ -90,9 +147,19 @@
                       </div>
 
                       <div class="pt-2">
-                          <button type="submit" :disabled="loading" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-2xl font-bold transition-all flex justify-center items-center disabled:opacity-70 disabled:cursor-not-allowed hover:-translate-y-0.5 active:translate-y-0">
-                              <svg v-if="loading" class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                              {{ loading ? 'Verifying Credentials...' : 'Connect to AWS' }}
+                          <button type="submit" :disabled="loading" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-2xl font-bold transition-all flex justify-center items-center disabled:opacity-70 disabled:cursor-not-allowed hover:-translate-y-0.5 active:translate-y-0 relative overflow-hidden group">
+                              <template v-if="loading">
+                                  <span class="flex items-center gap-1">
+                                      <span class="w-2 h-2 bg-white rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+                                      <span class="w-2 h-2 bg-white rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+                                      <span class="w-2 h-2 bg-white rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+                                  </span>
+                                  <span class="ml-3">Verifying...</span>
+                              </template>
+                              <template v-else>
+                                  <svg class="w-5 h-5 mr-2 transition-transform group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                  Connect to AWS
+                              </template>
                           </button>
                       </div>
                   </form>
@@ -160,9 +227,19 @@
                           <button type="button" @click="step = 'credentials'" class="flex-1 bg-white border border-gray-200/70 hover:bg-gray-50 text-gray-700 py-2.5 rounded-2xl font-medium transition-all text-sm">
                               Back
                           </button>
-                          <button type="submit" :disabled="loading || !form.from_email" class="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-2.5 rounded-2xl font-bold transition-all flex justify-center items-center disabled:opacity-70 disabled:cursor-not-allowed hover:-translate-y-0.5 active:translate-y-0">
-                              <svg v-if="loading" class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                              {{ loading ? 'Saving...' : 'Complete Setup' }}
+                          <button type="submit" :disabled="loading || !form.from_email" class="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-2.5 rounded-2xl font-bold transition-all flex justify-center items-center disabled:opacity-70 disabled:cursor-not-allowed hover:-translate-y-0.5 active:translate-y-0 relative overflow-hidden group">
+                              <template v-if="loading">
+                                  <span class="flex items-center gap-1">
+                                      <span class="w-2 h-2 bg-white rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+                                      <span class="w-2 h-2 bg-white rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+                                      <span class="w-2 h-2 bg-white rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+                                  </span>
+                                  <span class="ml-3">Saving...</span>
+                              </template>
+                              <template v-else>
+                                  <svg class="w-5 h-5 mr-2 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                  Complete Setup
+                              </template>
                           </button>
                       </div>
                    </form>
@@ -171,35 +248,50 @@
               <!-- Step 3: Dashboard / Connected State -->
               <div v-else-if="step === 'dashboard' || true" class="space-y-4">
                   <!-- Success Banner -->
-                   <div class="bg-gradient-to-br from-green-600 via-emerald-500 to-teal-600 rounded-2xl p-5 text-white relative overflow-hidden">
-                       <div class="absolute inset-0">
-                           <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-32 translate-x-32"></div>
-                       </div>
-                       <div class="relative z-10 flex items-center justify-between">
+                   <div class="relative rounded-2xl p-5 overflow-hidden border" :class="store.isDarkTheme ? 'bg-gray-800/80 border-gray-700' : 'bg-white/80 border-gray-200/50'">
+                       <!-- Accent color stripe on left -->
+                       <div class="absolute left-0 top-0 bottom-0 w-1.5 fm-bg-primary"></div>
+
+                       <div class="flex items-center justify-between pl-4">
                            <div class="flex items-center space-x-4">
-                               <div class="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30">
-                                   <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                               <div class="w-12 h-12 fm-bg-primary-light rounded-2xl flex items-center justify-center">
+                                   <svg class="w-6 h-6 fm-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
                                </div>
                                <div class="text-left">
-                                   <h2 class="text-xl font-bold mb-1">All Set!</h2>
-                                   <p class="text-green-50/90 text-sm">Ready to send emails from <span class="font-semibold text-white bg-white/20 px-2 py-0.5 rounded-full mx-1 text-xs inline-block">{{ form.from_email }}</span></p>
+                                   <div class="flex items-center gap-2 mb-1">
+                                       <h2 class="text-lg font-bold" :class="store.isDarkTheme ? 'text-gray-100' : 'text-gray-800'">Connected & Ready</h2>
+                                       <span class="relative flex h-2.5 w-2.5">
+                                           <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                           <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                                       </span>
+                                   </div>
+                                   <p class="text-sm" :class="store.isDarkTheme ? 'text-gray-400' : 'text-gray-500'">
+                                       Sending from
+                                       <span class="font-medium fm-text-primary">{{ form.from_email }}</span>
+                                   </p>
                                </div>
                            </div>
-                           <div class="text-5xl text-white/5 font-light">
-                               ✓
+                           <div class="hidden sm:flex items-center gap-2">
+                               <div class="text-right">
+                                   <div class="text-xs font-medium uppercase tracking-wider" :class="store.isDarkTheme ? 'text-gray-500' : 'text-gray-400'">Region</div>
+                                   <div class="text-sm font-semibold" :class="store.isDarkTheme ? 'text-gray-300' : 'text-gray-700'">{{ form.region }}</div>
+                               </div>
+                               <button @click="disconnect" class="ml-3 p-2 rounded-xl transition-all duration-200 hover:bg-red-50 group" title="Disconnect">
+                                   <svg class="w-5 h-5 text-gray-400 group-hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                               </button>
                            </div>
                        </div>
-                   </div>
 
-                   <!-- Configuration Summary -->
-                   <div class="bg-white/70 backdrop-blur-sm rounded-xl border border-gray-200/50 p-3 flex justify-between items-center">
-                       <div>
-                           <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">Connected Region</div>
-                           <div class="font-semibold text-gray-800 text-sm">{{ form.region }}</div>
+                       <!-- Mobile disconnect button -->
+                       <div class="sm:hidden mt-3 pl-4 flex items-center justify-between">
+                           <div class="text-xs">
+                               <span class="font-medium uppercase tracking-wider" :class="store.isDarkTheme ? 'text-gray-500' : 'text-gray-400'">Region:</span>
+                               <span class="ml-1 font-semibold" :class="store.isDarkTheme ? 'text-gray-300' : 'text-gray-700'">{{ form.region }}</span>
+                           </div>
+                           <button @click="disconnect" class="text-red-500 hover:text-red-700 text-xs font-medium">
+                               Disconnect
+                           </button>
                        </div>
-                       <button @click="disconnect" class="text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1.5 rounded-lg text-xs font-medium transition-all duration-300">
-                           Disconnect
-                       </button>
                    </div>
 
                    <!-- Incoming Config -->
@@ -224,9 +316,19 @@
                              <p class="text-sm text-gray-500 max-w-md mx-auto mb-4">Setup now to get a full featured mailbox. This will automatically create the necessary S3 Bucket, SNS Topic, and SES Rules for you.</p>
 
                              <Tooltip text="This will automatically create an S3 bucket for storing emails, an SNS topic for notifications, and configure SES rules to forward incoming emails to your S3 bucket. All resources will be created in your selected AWS region.">
-                                 <button @click="setupInbound" :disabled="loading" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2.5 rounded-2xl font-bold transition-all inline-flex items-center disabled:opacity-70 disabled:cursor-not-allowed hover:-translate-y-0.5 active:translate-y-0 text-sm">
-                                     <svg v-if="loading" class="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                     {{ loading ? 'Configuring...' : 'Setup Now' }}
+                                 <button @click="setupInbound" :disabled="loading" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2.5 rounded-2xl font-bold transition-all inline-flex items-center disabled:opacity-70 disabled:cursor-not-allowed hover:-translate-y-0.5 active:translate-y-0 text-sm relative overflow-hidden">
+                                     <template v-if="loading">
+                                         <span class="flex items-center gap-1">
+                                             <span class="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+                                             <span class="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+                                             <span class="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+                                         </span>
+                                         <span class="ml-2">Configuring...</span>
+                                     </template>
+                                     <template v-else>
+                                         <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                                         Setup Now
+                                     </template>
                                  </button>
                              </Tooltip>
                              <div v-if="error" class="mt-3 bg-red-50/80 backdrop-blur-sm text-red-600 p-3 rounded-xl max-w-lg mx-auto border border-red-200/50 text-xs">{{ error }}</div>
@@ -259,9 +361,18 @@
                             <p class="text-sm text-gray-500">Use these tools to debug webhook connectivity and processing issues.</p>
 
                             <div class="flex space-x-3">
-                                <button @click="simulateWebhook" :disabled="simulating" class="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-2.5 rounded-xl font-medium transition-all text-sm flex justify-center items-center shadow-sm">
-                                    <svg v-if="simulating" class="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                    <span v-else class="mr-2">⚡</span> Simulate Webhook
+                                <button @click="simulateWebhook" :disabled="simulating" class="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-2.5 rounded-xl font-medium transition-all text-sm flex justify-center items-center shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+                                    <template v-if="simulating">
+                                        <span class="flex items-center gap-1 mr-2">
+                                            <span class="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+                                            <span class="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+                                            <span class="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+                                        </span>
+                                        Simulating...
+                                    </template>
+                                    <template v-else>
+                                        <span class="mr-2">⚡</span> Simulate Webhook
+                                    </template>
                                 </button>
                                 <button @click="toggleLog" class="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-2.5 rounded-xl font-medium transition-all text-sm flex justify-center items-center shadow-sm">
                                     <span class="mr-2">📄</span> View Debug Log
@@ -272,7 +383,16 @@
                                 <div class="bg-gray-900 text-gray-300 px-4 py-2 text-xs font-mono flex justify-between items-center">
                                     <span>fluent-mailbox-debug.log</span>
                                     <div class="flex space-x-3">
-                                        <button @click="refreshLog" class="hover:text-white transition-colors">Refresh</button>
+                                        <button @click="refreshLog" :disabled="refreshingLog" class="hover:text-white transition-colors disabled:opacity-50 flex items-center gap-1">
+                                            <template v-if="refreshingLog">
+                                                <span class="flex items-center gap-0.5">
+                                                    <span class="w-1 h-1 bg-gray-300 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+                                                    <span class="w-1 h-1 bg-gray-300 rounded-full animate-bounce" style="animation-delay: 100ms"></span>
+                                                    <span class="w-1 h-1 bg-gray-300 rounded-full animate-bounce" style="animation-delay: 200ms"></span>
+                                                </span>
+                                            </template>
+                                            <template v-else>Refresh</template>
+                                        </button>
                                         <button @click="cleanLog" class="text-red-400 hover:text-red-300 transition-colors">Clear</button>
                                     </div>
                                 </div>
@@ -289,6 +409,8 @@
               <div v-show="activeTab === 'appearance'" class="bg-white/70 backdrop-blur-sm p-6 rounded-2xl border border-gray-200/50 transition-all duration-300">
                   <ThemeSettings />
               </div>
+
+              </template><!-- End main content template -->
 
           </div>
       </div>
@@ -307,6 +429,8 @@ const store = useAppStore();
 const activeTab = ref('aws'); // 'aws' or 'appearance'
 const step = ref('credentials'); // credentials, identity, dashboard
 const loading = ref(false);
+const initialLoading = ref(true);
+const refreshingLog = ref(false);
 const error = ref('');
 const identities = ref([]);
 const inboundConfigured = ref(false);
@@ -319,7 +443,7 @@ const form = reactive({
 });
 
 onMounted(async () => {
-    loading.value = true;
+    initialLoading.value = true;
     try {
         const { data } = await api.getSettings();
         if (data.key && !data.key.includes('****')) {
@@ -344,7 +468,7 @@ onMounted(async () => {
     } catch (e) {
         console.error('Failed to load settings', e);
     } finally {
-        loading.value = false;
+        initialLoading.value = false;
     }
 });
 
@@ -466,11 +590,14 @@ const toggleLog = async () => {
 };
 
 const refreshLog = async () => {
+    refreshingLog.value = true;
     try {
         const { data } = await api.getDebugLog();
         logContent.value = data.log;
     } catch (e) {
         logContent.value = 'Failed to load log.';
+    } finally {
+        refreshingLog.value = false;
     }
 };
 

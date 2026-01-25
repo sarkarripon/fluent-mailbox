@@ -1,8 +1,8 @@
 <template>
-  <div 
+  <div
     ref="triggerRef"
-    class="relative inline-block" 
-    @mouseenter="onMouseEnter" 
+    class="relative inline-block"
+    @mouseenter="onMouseEnter"
     @mouseleave="onMouseLeave"
   >
     <slot></slot>
@@ -62,10 +62,10 @@ const onMouseLeave = () => {
 
 const tooltipStyle = computed(() => {
   if (!triggerRect.value) return { opacity: 0 };
-  
+
   const rect = triggerRect.value;
   const gap = 8;
-  
+
   switch (props.position) {
     case 'top':
       return {

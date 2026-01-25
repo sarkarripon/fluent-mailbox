@@ -261,10 +261,27 @@
           </div>
       </div>
 
-      <div v-else-if="loading" class="flex-1 flex justify-center items-center">
-           <div class="relative">
-               <div class="w-16 h-16 border-4 border-t-blue-600 rounded-full animate-spin" :class="store.isDarkTheme ? 'border-gray-700' : 'border-blue-100'"></div>
-           </div>
+      <div v-else-if="loading" class="flex-1 flex flex-col justify-center items-center gap-4">
+          <!-- Animated loading indicator -->
+          <div class="relative">
+              <div class="w-16 h-16 rounded-2xl fm-bg-primary/10 flex items-center justify-center">
+                  <svg class="w-8 h-8 fm-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+              </div>
+              <!-- Pulse ring -->
+              <div class="absolute inset-0 w-16 h-16 rounded-2xl fm-bg-primary/20 animate-ping"></div>
+          </div>
+          <!-- Skeleton preview -->
+          <div class="w-full max-w-md space-y-3 px-4">
+              <div class="h-6 rounded-lg skeleton-shimmer w-3/4 mx-auto" :class="store.isDarkTheme ? 'bg-gray-700' : 'bg-gray-200'"></div>
+              <div class="h-4 rounded-lg skeleton-shimmer w-1/2 mx-auto" style="animation-delay: 0.1s" :class="store.isDarkTheme ? 'bg-gray-700/60' : 'bg-gray-200/60'"></div>
+              <div class="flex justify-center gap-1 pt-2">
+                  <span class="w-2 h-2 rounded-full fm-bg-primary animate-bounce" style="animation-delay: 0ms"></span>
+                  <span class="w-2 h-2 rounded-full fm-bg-primary opacity-75 animate-bounce" style="animation-delay: 150ms"></span>
+                  <span class="w-2 h-2 rounded-full fm-bg-primary opacity-50 animate-bounce" style="animation-delay: 300ms"></span>
+              </div>
+          </div>
       </div>
 
       <!-- Tag Manager Modal -->

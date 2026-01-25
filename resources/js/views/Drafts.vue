@@ -8,9 +8,22 @@
       </header>
 
       <div class="flex-1 overflow-auto p-0">
-          <div v-if="loading" class="flex justify-center items-center h-64">
+          <div v-if="loading" class="flex flex-col justify-center items-center h-64 gap-4">
               <div class="relative">
-                  <div class="w-16 h-16 border-4 border-t-blue-600 rounded-full animate-spin" :class="store.isDarkTheme ? 'border-gray-700' : 'border-blue-100'"></div>
+                  <div class="w-16 h-16 rounded-2xl fm-bg-primary/10 flex items-center justify-center">
+                      <svg class="w-8 h-8 fm-text-primary animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+                      </svg>
+                  </div>
+                  <div class="absolute inset-0 w-16 h-16 rounded-2xl fm-bg-primary/20 animate-ping"></div>
+              </div>
+              <div class="flex items-center gap-2">
+                  <span class="flex items-center gap-1">
+                      <span class="w-2 h-2 rounded-full fm-bg-primary animate-bounce" style="animation-delay: 0ms"></span>
+                      <span class="w-2 h-2 rounded-full fm-bg-primary opacity-75 animate-bounce" style="animation-delay: 150ms"></span>
+                      <span class="w-2 h-2 rounded-full fm-bg-primary opacity-50 animate-bounce" style="animation-delay: 300ms"></span>
+                  </span>
+                  <span class="text-sm font-medium" :class="store.isDarkTheme ? 'text-gray-400' : 'text-gray-500'">Loading drafts...</span>
               </div>
           </div>
 

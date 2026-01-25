@@ -1,10 +1,10 @@
 <template>
     <Teleport to="body">
         <div v-if="modelValue" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50" @click.self="close">
-            <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-                    <h2 class="text-xl font-semibold">Manage Tags</h2>
-                    <button @click="close" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">
+            <div :class="appStore.isDarkTheme ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-900'" class="rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border" :style="appStore.isDarkTheme ? 'border-color: #374151' : ''">
+                <div :class="appStore.isDarkTheme ? 'bg-gray-900 border-b border-gray-700' : 'bg-white border-b border-gray-200'" class="sticky top-0 px-6 py-4 flex justify-between items-center">
+                    <h2 :class="appStore.isDarkTheme ? 'text-2xl font-bold text-white drop-shadow' : 'text-xl font-semibold text-gray-900'">Manage Tags</h2>
+                    <button @click="close" :class="appStore.isDarkTheme ? 'text-gray-400 hover:text-gray-200' : 'text-gray-400 hover:text-gray-600'" class="text-2xl leading-none">
                         &times;
                     </button>
                 </div>
@@ -12,18 +12,22 @@
                 <div class="p-6">
                     <!-- Create new tag form -->
                     <div class="mb-6">
-                        <h3 class="text-sm font-medium text-gray-700 mb-3">Create New Tag</h3>
+                        <h3 :class="appStore.isDarkTheme ? 'text-gray-300' : 'text-gray-700'" class="text-sm font-medium mb-3">Create New Tag</h3>
                         <div class="flex gap-3">
                             <input
                                 v-model="newTag.name"
                                 type="text"
                                 placeholder="Tag name"
-                                class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                :class="appStore.isDarkTheme ? 'bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-400' : 'border border-gray-300 text-gray-900'"
+                                class="flex-1 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                :style="appStore.isDarkTheme ? 'background-color: #1f2937; color: #e5e7eb;' : ''"
                                 @keyup.enter="createTag"
                             />
                             <select
                                 v-model="newTag.color"
-                                class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                :class="appStore.isDarkTheme ? 'bg-gray-800 border border-gray-700 text-gray-100' : 'border border-gray-300 text-gray-900'"
+                                class="px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                :style="appStore.isDarkTheme ? 'background-color: #1f2937; color: #e5e7eb;' : ''"
                             >
                                 <option v-for="color in availableColors" :key="color.value" :value="color.value">
                                     {{ color.name }}
@@ -37,23 +41,24 @@
                                 {{ creating ? 'Creating...' : 'Create' }}
                             </button>
                         </div>
-                        <p v-if="createError" class="mt-2 text-sm text-red-600">{{ createError }}</p>
+                        <p v-if="createError" class="mt-2 text-sm text-red-500">{{ createError }}</p>
                     </div>
 
                     <!-- Existing tags list -->
                     <div>
-                        <h3 class="text-sm font-medium text-gray-700 mb-3">Existing Tags</h3>
-                        <div v-if="loading" class="text-center py-8 text-gray-500">
+                        <h3 :class="appStore.isDarkTheme ? 'text-gray-300' : 'text-gray-700'" class="text-sm font-medium mb-3">Existing Tags</h3>
+                        <div v-if="loading" :class="appStore.isDarkTheme ? 'text-gray-500' : 'text-gray-500'" class="text-center py-8">
                             Loading tags...
                         </div>
-                        <div v-else-if="tags.length === 0" class="text-center py-8 text-gray-500">
+                        <div v-else-if="tags.length === 0" :class="appStore.isDarkTheme ? 'text-gray-500' : 'text-gray-500'" class="text-center py-8">
                             No tags yet. Create your first tag above.
                         </div>
                         <div v-else class="space-y-2">
                             <div
                                 v-for="tag in tags"
                                 :key="tag.id"
-                                class="flex items-center gap-3 p-3 border border-gray-200 rounded-md hover:bg-gray-50"
+                                :class="appStore.isDarkTheme ? 'border border-gray-700 hover:bg-gray-800' : 'border border-gray-200 hover:bg-gray-50'"
+                                class="flex items-center gap-3 p-3 rounded-md transition-colors"
                             >
                                 <span
                                     class="inline-block w-4 h-4 rounded-full"
@@ -64,13 +69,15 @@
                                     <input
                                         v-model="editingTag.name"
                                         type="text"
-                                        class="flex-1 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        :class="appStore.isDarkTheme ? 'bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-400' : 'border border-gray-300 text-gray-900'"
+                                        class="flex-1 px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         @keyup.enter="saveEdit(tag.id)"
                                         @keyup.escape="cancelEdit"
                                     />
                                     <select
                                         v-model="editingTag.color"
-                                        class="px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        :class="appStore.isDarkTheme ? 'bg-gray-800 border border-gray-700 text-gray-100' : 'border border-gray-300 text-gray-900'"
+                                        class="px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
                                         <option v-for="color in availableColors" :key="color.value" :value="color.value">
                                             {{ color.name }}
@@ -84,7 +91,8 @@
                                     </button>
                                     <button
                                         @click="cancelEdit"
-                                        class="px-3 py-1 text-sm bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+                                        :class="appStore.isDarkTheme ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-300 text-gray-700 hover:bg-gray-400'"
+                                        class="px-3 py-1 text-sm rounded"
                                     >
                                         Cancel
                                     </button>
@@ -94,14 +102,16 @@
                                     <span class="flex-1 font-medium">{{ tag.name }}</span>
                                     <button
                                         @click="startEdit(tag)"
-                                        class="px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded"
+                                        :class="appStore.isDarkTheme ? 'text-blue-400 hover:bg-gray-800' : 'text-blue-600 hover:bg-blue-50'"
+                                        class="px-3 py-1 text-sm rounded"
                                     >
                                         Edit
                                     </button>
                                     <button
                                         @click="deleteTag(tag.id)"
                                         :disabled="deleting === tag.id"
-                                        class="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded disabled:opacity-50"
+                                        :class="appStore.isDarkTheme ? 'text-red-400 hover:bg-gray-800' : 'text-red-600 hover:bg-red-50'"
+                                        class="px-3 py-1 text-sm rounded disabled:opacity-50"
                                     >
                                         {{ deleting === tag.id ? 'Deleting...' : 'Delete' }}
                                     </button>
@@ -111,10 +121,11 @@
                     </div>
                 </div>
 
-                <div class="sticky bottom-0 bg-gray-50 px-6 py-4 border-t flex justify-end">
+                <div :class="appStore.isDarkTheme ? 'bg-gray-800 border-t border-gray-700' : 'bg-gray-50 border-t border-gray-200'" class="sticky bottom-0 px-6 py-4 flex justify-end">
                     <button
                         @click="close"
-                        class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                        :class="appStore.isDarkTheme ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
+                        class="px-4 py-2 rounded-md"
                     >
                         Close
                     </button>
