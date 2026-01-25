@@ -1,13 +1,33 @@
 <template>
-  <div class="flex bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 font-sans text-gray-900 overflow-hidden animate-fade-in" :style="store.isFrontendMode ? { height: '100vh', marginTop: '0' } : { height: `calc(100vh - ${adminBarHeight}px)`, marginTop: 20 + 'px' }">
+  <div
+    class="flex font-sans overflow-hidden animate-fade-in transition-all duration-500"
+    :class="[
+      `bg-gradient-to-br ${store.currentTheme.gradient}`,
+      store.isDarkTheme ? 'text-gray-100' : 'text-gray-900'
+    ]"
+    :style="{
+      height: store.isFrontendMode ? '100vh' : `calc(100vh - ${adminBarHeight}px)`,
+      marginTop: store.isFrontendMode ? '0' : '20px',
+      backgroundImage: store.themeSettings.backgroundImage ? `url(${store.themeSettings.backgroundImage})` : 'none',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }"
+  >
     <!-- Sidebar -->
-    <aside class="w-48 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out overflow-hidden animate-slide-in-right" :style="{ maxHeight: `calc(100vh - ${adminBarHeight + 32}px)` }">
+    <aside
+      class="m-2 rounded-[22px] w-48 border-r flex flex-col transition-all duration-300 ease-in-out overflow-hidden animate-slide-in-right"
+      :class="[
+        store.currentTheme.sidebar,
+        store.isDarkTheme ? 'border-gray-700' : 'border-white/50'
+      ]"
+      :style="{ maxHeight: `calc(100vh - ${adminBarHeight}px)` }"
+    >
       <div class="p-4 flex items-center space-x-2">
-        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm hover:shadow-md transition-shadow duration-200">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm hover:shadow-md transition-shadow duration-200 fm-bg-primary">
             <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
         </div>
         <div class="flex items-center space-x-2 flex-1">
-          <span class="text-base text-sm font-semibold text-gray-800">Fluent Mailbox</span>
+          <span class="text-sm font-semibold" :class="store.isDarkTheme ? 'text-gray-100' : 'text-gray-800'">Fluent Mailbox</span>
           <Tooltip v-if="store.isConfigured" text="Mailbox is connected and ready" position="right">
             <div class="relative">
               <div class="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse"></div>
@@ -22,7 +42,7 @@
 
       <div class="px-3 mb-3">
           <Tooltip text="Create and send a new email message" position="right">
-              <button v-if="store.isConfigured" @click="store.openCompose('new')" class="w-full flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0">
+              <button v-if="store.isConfigured" @click="store.openCompose('new')" class="w-full flex items-center justify-center space-x-2 fm-btn-primary py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0">
                  <svg class="w-4 h-4 transition-transform duration-200 group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                  <span>Compose</span>
               </button>
@@ -31,56 +51,73 @@
 
       <nav class="flex-1 px-2 space-y-0.5">
         <template v-if="store.isConfigured">
-            <router-link to="/inbox" class="flex items-center justify-between px-3 py-2 rounded-lg transition-all duration-200 group hover:translate-x-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" :class="$route.path.includes('inbox') ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-gray-700 hover:bg-gray-50'">
+            <router-link to="/inbox" class="flex items-center justify-between px-3 py-2 rounded-lg transition-all duration-200 group hover:translate-x-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1" :class="getNavLinkClass('/inbox')">
                 <div class="flex items-center">
                     <svg class="w-4 h-4 mr-2.5 transition-transform duration-200 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
                     <span class="text-sm font-medium">Inbox</span>
                 </div>
-                <span v-if="emailCounts.inboxUnreadCount > 0" class="text-xs font-semibold bg-blue-600 text-white px-2 py-0.5 rounded-full min-w-[20px] text-center animate-scale-in">{{ emailCounts.inboxUnreadCount }}</span>
+                <span v-if="emailCounts.inboxUnreadCount > 0" class="text-xs font-semibold fm-badge-primary px-2 py-0.5 rounded-full min-w-[20px] text-center animate-scale-in">{{ emailCounts.inboxUnreadCount }}</span>
             </router-link>
-            <router-link to="/sent" class="flex items-center px-3 py-2 rounded-lg transition-all duration-200 group hover:translate-x-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" :class="$route.path.includes('sent') ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-gray-700 hover:bg-gray-50'">
+            <router-link to="/sent" class="flex items-center px-3 py-2 rounded-lg transition-all duration-200 group hover:translate-x-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1" :class="getNavLinkClass('/sent')">
                 <svg class="w-4 h-4 mr-2.5 transition-transform duration-200 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                 <span class="text-sm font-medium">Sent</span>
             </router-link>
 
-            <router-link to="/drafts" class="flex items-center px-3 py-2 rounded-lg transition-all duration-200 group hover:translate-x-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" :class="$route.path.includes('drafts') ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-gray-700 hover:bg-gray-50'">
+            <router-link to="/drafts" class="flex items-center px-3 py-2 rounded-lg transition-all duration-200 group hover:translate-x-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1" :class="getNavLinkClass('/drafts')">
                 <svg class="w-4 h-4 mr-2.5 transition-transform duration-200 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
                 <span class="text-sm font-medium">Drafts</span>
             </router-link>
 
-            <router-link to="/trash" class="flex items-center px-3 py-2 rounded-lg transition-all duration-200 group hover:translate-x-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" :class="$route.path.includes('trash') ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-gray-700 hover:bg-gray-50'">
+            <router-link to="/trash" class="flex items-center px-3 py-2 rounded-lg transition-all duration-200 group hover:translate-x-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1" :class="getNavLinkClass('/trash')">
                 <svg class="w-4 h-4 mr-2.5 transition-transform duration-200 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                 <span class="text-sm font-medium">Trash</span>
             </router-link>
         </template>
 
-        <div class="pt-2 mt-2 border-t border-gray-200">
-            <Tooltip v-if="store.isFrontendMode" text="Settings are only available in the WordPress admin area" position="right">
+        <div class="pt-2 mt-2 border-t" :class="store.isDarkTheme ? 'border-gray-700' : 'border-gray-200'">
+             <Tooltip v-if="store.isFrontendMode" text="Settings are only available in the WordPress admin area" position="right">
                 <div class="flex items-center px-3 py-2 rounded-lg text-gray-400 cursor-not-allowed opacity-60">
                     <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                     <span class="text-sm font-medium">Settings</span>
                 </div>
             </Tooltip>
-            <router-link v-else to="/settings" class="flex items-center px-3 py-2 rounded-lg transition-all duration-200 group hover:translate-x-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" :class="$route.path.includes('settings') ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-gray-700 hover:bg-gray-50'">
+            <router-link to="/settings" class="flex items-center px-3 py-2 rounded-lg transition-all duration-200 group hover:translate-x-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1" :class="getNavLinkClass('/settings')">
                 <svg class="w-4 h-4 mr-2.5 transition-transform duration-200 group-hover:rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                 <span class="text-sm font-medium">Settings</span>
             </router-link>
         </div>
       </nav>
 
-      <!-- WordPress Sidebar Toggle Button (only in admin mode) -->
-      <div v-if="!store.isFrontendMode" class="p-3 border-t border-gray-200">
+      <!-- Bottom Actions -->
+      <div v-if="!store.isFrontendMode" class="p-3 border-t flex items-center gap-2" :class="store.isDarkTheme ? 'border-gray-700' : 'border-gray-200'">
+        <!-- WordPress Sidebar Toggle Button -->
           <Tooltip :text="isWordPressSidebarFolded ? 'Expand WordPress Menu' : 'Collapse WordPress Menu'" position="right">
-              <button @click="toggleCompact" class="w-full flex items-center justify-center px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50 transition-all duration-200 group">
+              <button @click="toggleCompact" class="flex-1 flex items-center justify-center px-3 py-2 rounded-lg transition-all duration-200 group" :class="store.isDarkTheme ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'">
                   <svg v-if="!isWordPressSidebarFolded" class="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path></svg>
                   <svg v-else class="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
               </button>
           </Tooltip>
+
+        <!-- Theme Settings Button -->
+          <Tooltip text="Customize Appearance" position="right">
+              <button @click="showAppearancePanel = true" class="flex-1 flex items-center justify-center px-3 py-2 rounded-lg transition-all duration-200 group" :class="store.isDarkTheme ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'">
+                  <svg class="w-4 h-4 transition-transform duration-200 group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>
+              </button>
+          </Tooltip>
+
       </div>
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 flex flex-col overflow-hidden bg-white/70 backdrop-blur-xl rounded-3xl border border-white/50 relative shadow-lg animate-scale-in" :class="store.isFrontendMode ? 'm-0 rounded-none' : 'm-2 mb-2'" :style="store.isFrontendMode ? { maxHeight: '100vh' } : { maxHeight: `calc(100vh - ${adminBarHeight + 16}px)` }">
+    <!-- <main class="flex-1 flex flex-col overflow-hidden bg-white/70 backdrop-blur-xl rounded-3xl border border-white/50 relative shadow-lg animate-scale-in" :class="store.isFrontendMode ? 'm-0 rounded-none' : 'm-2 mb-2'" :style="store.isFrontendMode ? { maxHeight: '100vh' } : { maxHeight: `calc(100vh - ${adminBarHeight + 16}px)` }"> -->
+    <main
+      class="flex-1 flex flex-col overflow-hidden backdrop-blur-md m-2 mb-2 rounded-3xl border relative shadow-lg animate-scale-in"
+      :class="[
+      store.isFrontendMode ? 'm-0 rounded-none border-0' :
+        store.isDarkTheme ? 'bg-gray-900/30 border-white/20' : 'bg-white/30 border-white/50'
+      ]"
+      :style="{ maxHeight: store.isFrontendMode ? '100vh' : `calc(100vh - ${adminBarHeight + 16}px)` }"
+    >
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
           <component :is="Component" />
@@ -94,24 +131,49 @@
         :email-data="store.composeEmailData"
         @close="store.closeCompose"
     />
+
+    <!-- Appearance Panel -->
+    <AppearancePanel
+        :is-open="showAppearancePanel"
+        @close="showAppearancePanel = false"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { useRoute } from 'vue-router';
 import ComposeModal from './components/ComposeModal.vue';
+import AppearancePanel from './components/AppearancePanel.vue';
 import { useAppStore } from './stores/useAppStore';
 import { useEmailCounts } from './composables/useEmailCounts';
 import { useKeyboardShortcuts } from './composables/useKeyboardShortcuts';
 import Tooltip from './components/Tooltip.vue';
 
 const store = useAppStore();
+const route = useRoute();
 const emailCounts = useEmailCounts();
 const adminBarHeight = ref(0);
 const isWordPressSidebarFolded = ref(false);
+const showAppearancePanel = ref(false);
 
 // Enable keyboard shortcuts
 useKeyboardShortcuts();
+
+// Helper to get navigation link classes based on theme and active state
+const getNavLinkClass = (path) => {
+  const isActive = route.path.includes(path.replace('/', ''));
+
+  if (isActive) {
+    return 'fm-nav-active shadow-sm';
+  }
+
+  if (store.isDarkTheme) {
+    return 'text-gray-300 hover:bg-gray-700/50';
+  }
+
+  return 'text-gray-700 hover:bg-gray-100';
+};
 
 const getAdminBarHeight = () => {
   const adminBar = document.getElementById('wpadminbar');

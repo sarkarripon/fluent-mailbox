@@ -1,56 +1,67 @@
 <template>
   <div class="h-full flex flex-col">
-      <header class="py-4 border-b border-gray-200 flex justify-between items-center bg-white/50 backdrop-blur-sm transition-all duration-300" :class="store.isCompact ? 'pl-16 pr-8' : 'px-8'">
+      <header class="py-4 border-b flex justify-between items-center backdrop-blur-sm transition-all duration-300" :class="[store.isCompact ? 'pl-16 pr-8' : 'px-8', store.isDarkTheme ? 'border-gray-700/50 bg-gray-900/30' : 'border-gray-200 bg-white/50']">
           <div class="flex items-center space-x-4">
-              <h1 class="text-xl font-semibold text-gray-800">Trash</h1>
-              <div class="text-sm text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full" v-if="emails.length">{{ emails.length }} messages</div>
+              <h1 class="text-xl font-semibold" :class="store.isDarkTheme ? 'text-gray-100' : 'text-gray-800'">Trash</h1>
+              <div class="text-sm px-2.5 py-1 rounded-full" :class="store.isDarkTheme ? 'text-gray-400 bg-gray-700' : 'text-gray-500 bg-gray-100'" v-if="emails.length">{{ emails.length }} messages</div>
           </div>
-          <button v-if="emails.length" @click="emptyTrash" :disabled="store.isFrontendMode" class="text-red-600 text-sm font-medium hover:text-red-700 hover:bg-red-50 px-4 py-2 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed" :title="store.isFrontendMode ? 'Deleting emails is not available in demo mode' : 'Empty Trash'">Empty Trash</button>
+          <button v-if="emails.length" @click="emptyTrash" :disabled="store.isFrontendMode" class="text-red-500 text-sm font-medium hover:text-red-400 px-4 py-2 rounded-lg transition-all hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed" :title="store.isFrontendMode ? 'Deleting emails is not available in demo mode' : 'Empty Trash' + store.isDarkTheme ? 'hover:bg-red-900/30' : 'hover:bg-red-50'">Empty Trash</button>
       </header>
-      
+
       <div class="flex-1 overflow-auto p-0">
-          <div v-if="loading" class="flex justify-center items-center h-64">
+          <div v-if="loading" class="flex flex-col justify-center items-center h-64 gap-4">
               <div class="relative">
-                  <div class="w-16 h-16 border-4 border-gray-100 border-t-red-400 rounded-full animate-spin"></div>
+                  <div class="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center">
+                      <svg class="w-8 h-8 text-red-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                      </svg>
+                  </div>
+                  <div class="absolute inset-0 w-16 h-16 rounded-2xl bg-red-100 animate-ping"></div>
+              </div>
+              <div class="flex items-center gap-2">
+                  <span class="flex items-center gap-1">
+                      <span class="w-2 h-2 rounded-full bg-red-400 animate-bounce" style="animation-delay: 0ms"></span>
+                      <span class="w-2 h-2 rounded-full bg-red-400 opacity-75 animate-bounce" style="animation-delay: 150ms"></span>
+                      <span class="w-2 h-2 rounded-full bg-red-400 opacity-50 animate-bounce" style="animation-delay: 300ms"></span>
+                  </span>
+                  <span class="text-sm font-medium" :class="store.isDarkTheme ? 'text-gray-400' : 'text-gray-500'">Loading trash...</span>
               </div>
           </div>
 
-          <div v-else-if="emails.length > 0" class="divide-y divide-gray-100">
-              <div 
-                  v-for="email in emails" 
-                  :key="email.id" 
-                  class="px-6 py-3 bg-white hover:bg-gray-50 group transition-colors"
+          <div v-else-if="emails.length > 0" :class="store.isDarkTheme ? 'divide-gray-700/30' : 'divide-gray-200/50'" class="divide-y">
+              <div
+                  v-for="email in emails"
+                  :key="email.id"
+                  class="px-6 py-2.5 group transition-colors"
+                  :class="store.isDarkTheme ? 'bg-white/5 hover:bg-white/10' : 'bg-white/40 hover:bg-white/60'"
               >
-                  <div class="flex items-start gap-4">
+                  <div class="flex items-center gap-2">
                       <div class="flex-shrink-0">
-                          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center text-white font-semibold text-sm">
+                          <div class="w-7 h-7 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center text-white font-semibold text-xs">
                               {{ email.sender ? email.sender[0].toUpperCase() : '?' }}
                           </div>
                       </div>
                       <div class="flex-1 min-w-0">
-                          <div class="flex items-center justify-between gap-3 mb-1">
-                              <div class="flex items-center gap-2 min-w-0 flex-1">
-                                  <span @click="$router.push(`/emails/${email.id}`)" class="text-sm font-medium text-gray-900 truncate cursor-pointer">
-                                      {{ email.sender }}
-                                  </span>
-                              </div>
-                              <div class="flex items-center gap-2 flex-shrink-0">
-                                  <span class="text-xs text-gray-500">{{ formatRelativeDate(email.created_at) }}</span>
-                                  <button 
+                          <div class="flex items-center justify-between gap-2">
+                              <span @click="$router.push(`/emails/${email.id}`)" class="text-sm font-medium truncate cursor-pointer" :class="store.isDarkTheme ? 'text-gray-100' : 'text-gray-900'">
+                                  {{ email.sender }}
+                              </span>
+                              <div class="flex items-center gap-1.5 flex-shrink-0">
+                                  <span class="text-sm" :class="store.isDarkTheme ? 'text-gray-400' : 'text-gray-500'">{{ formatRelativeDate(email.created_at) }}</span>
+                                  <button
                                       @click.stop="deleteEmail(email)"
-                                      class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                                      class="p-1 rounded transition-colors opacity-0 group-hover:opacity-100"
+                                      :class="store.isDarkTheme ? 'text-gray-500 hover:text-red-400 hover:bg-red-900/30' : 'text-gray-400 hover:text-red-600 hover:bg-red-50'"
                                       title="Permanently delete"
                                   >
-                                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                   </button>
                               </div>
                           </div>
-                          <h4 @click="$router.push(`/emails/${email.id}`)" class="text-sm font-medium text-gray-900 mb-1 truncate cursor-pointer">
-                              {{ email.subject || '(No Subject)' }}
-                          </h4>
-                          <p @click="$router.push(`/emails/${email.id}`)" class="text-sm text-gray-500 truncate line-clamp-1 cursor-pointer">
-                              {{ getEmailSnippet(email.body) }}
-                          </p>
+                          <div @click="$router.push(`/emails/${email.id}`)" class="cursor-pointer">
+                              <span class="text-sm font-medium" :class="store.isDarkTheme ? 'text-gray-200' : 'text-gray-900'">{{ email.subject || '(No Subject)' }}</span>
+                              <span class="text-sm ml-1" :class="store.isDarkTheme ? 'text-gray-300' : 'text-gray-500'">{{ getEmailSnippet(email.body) }}</span>
+                          </div>
                       </div>
                   </div>
               </div>
@@ -118,12 +129,12 @@ const formatRelativeDate = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now - date) / 1000);
-    
+
     if (diffInSeconds < 60) return 'Just now';
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
     if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-    
+
     return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 };
 

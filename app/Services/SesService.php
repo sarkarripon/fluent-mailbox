@@ -105,6 +105,8 @@ class SesService
         $bccAddresses = $bcc ? (is_array($bcc) ? $bcc : explode(',', $bcc)) : [];
 
         $headers = "From: {$this->senderEmail}\r\n";
+        $headers .= "To: " . implode(', ', $toAddresses) . "\r\n";
+        $headers .= "Subject: {$subject}\r\n";
         $headers .= "Reply-To: {$this->senderEmail}\r\n";
         if (!empty($ccAddresses)) {
             $headers .= "Cc: " . implode(', ', $ccAddresses) . "\r\n";

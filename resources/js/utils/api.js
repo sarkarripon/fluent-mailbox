@@ -17,6 +17,9 @@ export default {
     getEmails(page = 1, status = 'all') {
         return api.get('/emails', { params: { page, status } });
     },
+    getUnreadCount() {
+        return api.get('/emails/unread-count');
+    },
     saveConnection(data) {
         return api.post('/settings/save-connection', data);
     },
@@ -40,6 +43,12 @@ export default {
     },
     saveSettings(data) {
         return api.post('/settings', data);
+    },
+    getThemeSettings() {
+        return api.get('/settings/theme');
+    },
+    saveThemeSettings(data) {
+        return api.post('/settings/theme', data);
     },
     getEmail(id) {
         return api.get(`/emails/${id}`);

@@ -36,6 +36,14 @@ class Router
             ]
         ]);
 
+        register_rest_route($namespace, '/emails/unread-count', [
+            [
+                'methods' => \WP_REST_Server::READABLE,
+                'callback' => [new MailController(), 'getUnreadCount'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
         register_rest_route($namespace, '/emails/fetch', [
             [
                 'methods' => \WP_REST_Server::CREATABLE,
@@ -221,6 +229,19 @@ class Router
                 'methods' => \WP_REST_Server::CREATABLE,
                 'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'cleanDebugLog'],
                 'permission_callback' => [$this, 'checkSettingsPermission']
+            ]
+        ]);
+
+        register_rest_route($namespace, '/settings/theme', [
+            [
+                'methods' => \WP_REST_Server::READABLE,
+                'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'getThemeSettings'],
+                'permission_callback' => [$this, 'checkPermission']
+            ],
+            [
+                'methods' => \WP_REST_Server::CREATABLE,
+                'callback' => [new \FluentMailbox\Http\Controllers\SettingsController(), 'saveThemeSettings'],
+                'permission_callback' => [$this, 'checkPermission']
             ]
         ]);
 

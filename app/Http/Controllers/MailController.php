@@ -559,4 +559,21 @@ class MailController
             'tags' => $tags
         ]);
     }
+
+    /**
+     * Get unread email count for inbox
+     */
+    public function getUnreadCount($request)
+    {
+        global $wpdb;
+        $table = Email::getTable();
+
+        $count = $wpdb->get_var(
+            "SELECT COUNT(*) FROM `$table` WHERE is_read = 0 AND (status = 'inbox' OR status IS NULL OR status = '')"
+        );
+
+        return rest_ensure_response([
+            'unread_count' => (int) $count
+        ]);
+    }
 }
