@@ -46,7 +46,7 @@ class Email
         // Build format array dynamically based on data keys
         $format = [];
         foreach ($data as $key => $value) {
-            if (in_array($key, ['is_read', 'is_draft', 'assigned_to'])) {
+            if (in_array($key, ['is_read', 'is_draft', 'assigned_to', 'mailbox_id'])) {
                 $format[] = '%d'; // Integer
             } else {
                 $format[] = '%s'; // String
@@ -57,7 +57,7 @@ class Email
         return $wpdb->insert_id;
     }
 
-    public static function paginate($page = 1, $perPage = 20, $status = 'all')
+    public static function paginate($page = 1, $perPage = 20, $status = 'all', $mailboxId = null)
     {
         global $wpdb;
         $table = self::getTable();
@@ -74,6 +74,10 @@ class Email
         } else {
              // If all, we probably don't want trash unless specified
             $where .= " AND status != 'trash'";
+        }
+
+        if ($mailboxId) {
+            $where .= $wpdb->prepare(" AND mailbox_id = %d", (int) $mailboxId);
         }
 
         // Build query - need to handle the WHERE clause separately from prepare
@@ -117,7 +121,7 @@ class Email
 
         $format = [];
         foreach ($data as $key => $value) {
-            if (in_array($key, ['is_read', 'is_draft', 'assigned_to'])) {
+            if (in_array($key, ['is_read', 'is_draft', 'assigned_to', 'mailbox_id'])) {
                 $format[] = '%d';
             } else {
                 $format[] = '%s';
@@ -174,10 +178,13 @@ class Email
         return $wpdb->delete($table, ['id' => (int)$noteId], ['%d']);
     }
 
-    public static function deleteTrash()
+    public static function deleteTrash($mailboxId = null)
     {
         global $wpdb;
         $table = self::getTable();
+        if ($mailboxId) {
+            return $wpdb->query($wpdb->prepare("DELETE FROM $table WHERE status = 'trash' AND mailbox_id = %d", (int) $mailboxId));
+        }
         return $wpdb->query("DELETE FROM $table WHERE status = 'trash'");
     }
 

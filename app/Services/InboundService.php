@@ -41,16 +41,6 @@ class InboundService
             // Use fallback ID if header is missing
             $messageId = $message->getHeaderValue('message-id') ?: $fallbackId;
 
-            if ($checkDuplicate && $messageId) {
-                global $wpdb;
-                $table = $wpdb->prefix . 'fluent_mailbox_emails';
-                // Check if already exists
-                $exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table WHERE message_id = %s LIMIT 1", $messageId));
-                if ($exists) {
-                    return false; // Skipped
-                }
-            }
-
             $subject = $message->getHeaderValue('subject') ?: '(No Subject)';
             $from = $message->getHeaderValue('from');
             $toHeader = $message->getHeader('to');
@@ -65,6 +55,25 @@ class InboundService
             // Assign to a mailbox: explicit id, recipient match, then default mailbox
             if (!$mailboxId) {
                 $mailboxId = Mailbox::routeInbound($recipients);
+            }
+
+            if ($checkDuplicate && $messageId) {
+                global $wpdb;
+                $table = $wpdb->prefix . 'fluent_mailbox_emails';
+                // Dedup per mailbox: the same Message-ID may legitimately arrive
+                // in several mailboxes (e.g. an email CC'd to two connected addresses)
+                if ($mailboxId) {
+                    $exists = $wpdb->get_var($wpdb->prepare(
+                        "SELECT id FROM $table WHERE message_id = %s AND mailbox_id = %d LIMIT 1",
+                        $messageId,
+                        (int) $mailboxId
+                    ));
+                } else {
+                    $exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table WHERE message_id = %s LIMIT 1", $messageId));
+                }
+                if ($exists) {
+                    return false; // Skipped
+                }
             }
 
             // Prefer HTML, fallback to Text

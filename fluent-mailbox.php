@@ -1,8 +1,10 @@
 <?php
 /**
  * Plugin Name: Fluent Mailbox
- * Description: A Gmail-like mailbox plugin for WordPress using AWS SES.
- * Version: 1.0.0
+ * Description: A Gmail-like mailbox plugin for WordPress. Connect mailboxes via IMAP/SMTP, Amazon SES, Mailgun or Postmark.
+ * Version: 1.1.0
+ * Requires at least: 5.8
+ * Requires PHP: 8.0
  * Author: Fluent Mailbox Team
  * Text Domain: fluent-mailbox
  */
@@ -10,7 +12,7 @@
 defined('ABSPATH') || exit;
 defined('WP_ENV') || define('WP_ENV', 'production');
 
-define('FLUENT_MAILBOX_VERSION', '1.0.0');
+define('FLUENT_MAILBOX_VERSION', '1.1.0');
 define('FLUENT_MAILBOX_PATH', plugin_dir_path(__FILE__));
 define('FLUENT_MAILBOX_URL', plugin_dir_url(__FILE__));
 
@@ -34,10 +36,24 @@ final class FluentMailbox
     {
         register_activation_hook(__FILE__, [__CLASS__, 'activate']);
         register_deactivation_hook(__FILE__, [__CLASS__, 'deactivate']);
+        add_filter('cron_schedules', [__CLASS__, 'registerCronInterval']);
+        add_action('fluent_mailbox_sync_event', [\FluentMailbox\Services\SyncService::class, 'syncFromCron']);
         add_action('admin_menu', [$this, 'registerMenu']);
         add_action('admin_enqueue_scripts', [$this, 'enqueueAssets']);
         // Run migration check on init so REST requests are covered too
         add_action('init', [__CLASS__, 'checkMigration']);
+    }
+
+    /**
+     * Custom cron interval for the inbound polling sync.
+     */
+    public static function registerCronInterval($schedules)
+    {
+        $schedules['fluent_mailbox_five_minutes'] = [
+            'interval' => 5 * MINUTE_IN_SECONDS,
+            'display'  => __('Every 5 minutes (Fluent Mailbox)', 'fluent-mailbox'),
+        ];
+        return $schedules;
     }
 
     public static function checkMigration()
@@ -61,6 +77,7 @@ final class FluentMailbox
         if ($needsMigration) {
             \FluentMailbox\Common\DatabaseMigration::migrate();
             update_option('fluent_mailbox_db_version', FLUENT_MAILBOX_VERSION);
+            \FluentMailbox\Services\SyncService::ensureCronSchedule();
         }
     }
 
@@ -71,11 +88,12 @@ final class FluentMailbox
         }
         \FluentMailbox\Common\DatabaseMigration::migrate();
         update_option('fluent_mailbox_db_version', FLUENT_MAILBOX_VERSION);
+        \FluentMailbox\Services\SyncService::ensureCronSchedule();
     }
 
     public static function deactivate()
     {
-        // Cleanup if needed
+        wp_clear_scheduled_hook('fluent_mailbox_sync_event');
     }
 
     public function registerMenu()
@@ -199,7 +217,7 @@ final class FluentMailbox
             'root' => esc_url_raw(rest_url('fluent-mailbox/v1')),
             'nonce' => wp_create_nonce('wp_rest'),
             'assets' => FLUENT_MAILBOX_URL . 'assets/',
-            'is_configured' => (get_option('fluent_mailbox_aws_key') && get_option('fluent_mailbox_from_email'))
+            'is_configured' => \FluentMailbox\Models\Mailbox::hasActive()
         ]);
 
         add_filter('script_loader_tag', [$this, 'addModuleType'], 10, 3);

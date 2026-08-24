@@ -4,7 +4,9 @@ namespace FluentMailbox\Http\Controllers;
 
 use FluentMailbox\Models\Email;
 use FluentMailbox\Models\Tag;
-use FluentMailbox\Services\SesService;
+use FluentMailbox\Models\Mailbox;
+use FluentMailbox\Services\DriverManager;
+use FluentMailbox\Services\SyncService;
 
 class MailController
 {
@@ -29,9 +31,10 @@ class MailController
     {
         $page = $request->get_param('page') ?: 1;
         $status = $request->get_param('status') ?: 'all';
+        $mailboxId = (int) $request->get_param('mailbox_id') ?: null;
         $perPage = 20;
 
-        $response = Email::paginate($page, $perPage, $status);
+        $response = Email::paginate($page, $perPage, $status, $mailboxId);
 
         return rest_ensure_response($response);
     }
@@ -50,7 +53,17 @@ class MailController
             return new \WP_Error('missing_params', 'To, Subject and Body are required', ['status' => 400]);
         }
 
-        $sesService = new SesService();
+        $mailboxId = (int) $request->get_param('mailbox_id');
+        $mailbox = $mailboxId ? Mailbox::find($mailboxId) : Mailbox::getDefault();
+
+        if (!$mailbox || !$mailbox->is_active) {
+            return new \WP_Error('not_configured', 'No active mailbox is configured to send from', ['status' => 400]);
+        }
+
+        $driver = DriverManager::make($mailbox);
+        if (is_wp_error($driver)) {
+            return $driver;
+        }
 
         // Prepare attachment paths if provided
         $attachmentPaths = [];
@@ -63,7 +76,16 @@ class MailController
             }
         }
 
-        $messageId = $sesService->sendEmail($to, $subject, $body, $cc, $bcc, $attachmentPaths);
+        $messageId = $driver->send([
+            'to' => $to,
+            'subject' => $subject,
+            'body' => $body,
+            'cc' => $cc,
+            'bcc' => $bcc,
+            'attachments' => $attachmentPaths,
+            'from_email' => $mailbox->email,
+            'from_name' => $mailbox->from_name,
+        ], Mailbox::settingsOf($mailbox));
 
         if (is_wp_error($messageId)) {
             return $messageId;
@@ -83,8 +105,9 @@ class MailController
 
         $emailId = Email::create([
             'message_id' => $messageId,
+            'mailbox_id' => (int) $mailbox->id,
             'subject' => sanitize_text_field($subject),
-            'sender' => sanitize_email(get_option('fluent_mailbox_from_email', get_bloginfo('admin_email'))),
+            'sender' => sanitize_email($mailbox->email),
             'recipients' => json_encode(is_array($to) ? $to : explode(',', $to)),
             'cc' => $cc ? json_encode(is_array($cc) ? $cc : explode(',', $cc)) : null,
             'bcc' => $bcc ? json_encode(is_array($bcc) ? $bcc : explode(',', $bcc)) : null,
@@ -98,7 +121,8 @@ class MailController
         return rest_ensure_response([
             'message' => 'Email sent successfully',
             'email_id' => $emailId,
-            'aws_message_id' => $messageId
+            'message_id' => $messageId,
+            'aws_message_id' => $messageId // Back-compat for pre-driver frontend builds
         ]);
     }
 
@@ -307,23 +331,39 @@ class MailController
 
     public function fetchEmails($request)
     {
-        $service = new \FluentMailbox\Services\InboundService();
-        $count = $service->fetchNewEmails();
+        if (!Mailbox::hasActive()) {
+            return new \WP_Error('not_configured', 'No active mailbox configured', ['status' => 400]);
+        }
 
-        if (is_wp_error($count)) {
-            return $count;
+        $summary = SyncService::syncAll(true);
+
+        $count = 0;
+        $errors = [];
+        foreach ($summary as $mailboxId => $result) {
+            if (is_wp_error($result)) {
+                $errors[$mailboxId] = $result->get_error_message();
+            } else {
+                $count += (int) $result;
+            }
+        }
+
+        // Every polling mailbox failed and nothing was imported
+        if ($errors && $count === 0 && count($errors) === count($summary)) {
+            return new \WP_Error('sync_error', implode('; ', $errors), ['status' => 500]);
         }
 
         return rest_ensure_response([
             'success' => true,
             'imported_count' => $count,
-            'message' => $count > 0 ? "Imported $count new emails." : "No new emails found in S3."
+            'errors' => $errors,
+            'message' => $count > 0 ? "Imported $count new emails." : 'No new emails found.'
         ]);
     }
 
     public function emptyTrash($request)
     {
-        $deleted = Email::deleteTrash();
+        $mailboxId = (int) $request->get_param('mailbox_id') ?: null;
+        $deleted = Email::deleteTrash($mailboxId);
 
         return rest_ensure_response([
             'message' => 'All emails in trash deleted successfully',
@@ -349,12 +389,17 @@ class MailController
         $attachments = $request->get_param('attachments');
         $draftId = $request->get_param('draft_id'); // For updating existing draft
 
+        $mailboxId = (int) $request->get_param('mailbox_id');
+        // Explicit mailbox wins; new drafts fall back to the default mailbox;
+        // updates without a mailbox param keep their existing assignment
+        $mailbox = $mailboxId ? Mailbox::find($mailboxId) : ($draftId ? null : Mailbox::getDefault());
+
         // Ensure body is a string
         $bodyContent = is_string($body) ? $body : (string)($body ?: '');
 
         $data = [
             'subject' => $subject ?: '(No Subject)',
-            'sender' => get_option('fluent_mailbox_from_email', get_bloginfo('admin_email')),
+            'sender' => $mailbox ? $mailbox->email : get_option('fluent_mailbox_from_email', get_bloginfo('admin_email')),
             'recipients' => $to ? json_encode(is_array($to) ? $to : explode(',', $to)) : json_encode([]),
             'cc' => $cc ? json_encode(is_array($cc) ? $cc : explode(',', $cc)) : null,
             'bcc' => $bcc ? json_encode(is_array($bcc) ? $bcc : explode(',', $bcc)) : null,
@@ -364,6 +409,10 @@ class MailController
             'is_draft' => 1,
             'is_read' => 1
         ];
+
+        if ($mailbox) {
+            $data['mailbox_id'] = (int) $mailbox->id;
+        }
 
         if ($draftId) {
             // Update existing draft

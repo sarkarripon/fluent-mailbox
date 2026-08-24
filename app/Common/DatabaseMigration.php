@@ -155,6 +155,12 @@ class DatabaseMigration
         if (empty($indexes)) {
             $wpdb->query("ALTER TABLE $table ADD INDEX mailbox_id (mailbox_id)");
         }
+
+        // Composite index for per-mailbox de-duplication lookups
+        $indexes = $wpdb->get_results("SHOW INDEX FROM $table WHERE Key_name = 'message_mailbox'");
+        if (empty($indexes)) {
+            $wpdb->query("ALTER TABLE $table ADD INDEX message_mailbox (message_id(191), mailbox_id)");
+        }
     }
 
     /**
