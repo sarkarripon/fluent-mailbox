@@ -123,13 +123,16 @@ class MailgunDriver implements MailDriverInterface
     }
 
     /**
-     * Verify a Mailgun webhook post (timestamp+token signed with the
-     * domain signing key) and import the message it carries.
+     * Verify a Mailgun webhook post (timestamp+token signed with this
+     * mailbox's signing key) and import the message it carries. Point the
+     * Mailgun Route at the /mime variant of the webhook URL so the full
+     * raw MIME (attachments, CC, headers) arrives in body-mime.
      *
      * @param \WP_REST_Request $request Multipart form POST from Mailgun Routes.
+     * @param object $mailbox Mailbox row (secret already verified by the router).
      * @return \WP_Error|true|string WP_Error on failure, true if imported, 'duplicate' if skipped.
      */
-    public function handleWebhook($request)
+    public function handleWebhook($request, $mailbox)
     {
         $params = $request->get_params();
 
@@ -141,40 +144,53 @@ class MailgunDriver implements MailDriverInterface
             return new \WP_Error('invalid_payload', 'Missing Mailgun signature fields', ['status' => 400]);
         }
 
-        $verified = false;
-        foreach (Mailbox::findAllByDriver('mailgun') as $mailbox) {
-            $settings = Mailbox::settingsOf($mailbox);
-            if (empty($settings['signing_key'])) {
-                continue;
-            }
-            $expected = hash_hmac('sha256', $timestamp . $token, $settings['signing_key']);
-            if (hash_equals($expected, $signature)) {
-                $verified = true;
-                $recipientMailbox = Mailbox::routeInbound([$params['recipient'] ?? '']) ?: (int) $mailbox->id;
-                break;
-            }
+        // Verify against this mailbox's signing key only — the URL already
+        // identifies the mailbox, so no key needs to be guessed
+        $settings = Mailbox::settingsOf($mailbox);
+        if (empty($settings['signing_key'])) {
+            Logger::log('Mailgun webhook rejected: mailbox has no signing key', ['mailbox' => $mailbox->email]);
+            return new \WP_Error('invalid_signature', 'Mailbox has no signing key configured', ['status' => 403]);
         }
 
-        if (!$verified) {
-            Logger::log('Mailgun webhook signature verification failed');
+        $expected = hash_hmac('sha256', $timestamp . $token, $settings['signing_key']);
+        if (!hash_equals($expected, $signature)) {
+            Logger::log('Mailgun webhook signature verification failed', ['mailbox' => $mailbox->email]);
             return new \WP_Error('invalid_signature', 'Invalid webhook signature', ['status' => 403]);
         }
 
-        if (empty($params['recipient']) || empty($params['from'])) {
-            return new \WP_Error('invalid_payload', 'Missing recipient or from', ['status' => 400]);
+        // Reject replayed notifications (Mailgun signs a fresh timestamp per post)
+        if (abs(time() - (int) $timestamp) > 5 * MINUTE_IN_SECONDS) {
+            return new \WP_Error('invalid_signature', 'Stale webhook timestamp', ['status' => 403]);
         }
 
-        $messageId = $params['Message-Id'] ?? ('mg_' . $token);
+        // A recipient address may belong to another connected mailbox (e.g. CC)
+        $recipientMailbox = Mailbox::routeInbound([$params['recipient'] ?? '']) ?: (int) $mailbox->id;
 
-        $raw = 'From: ' . $params['from'] . "\r\n"
-            . 'To: ' . $params['recipient'] . "\r\n"
-            . 'Subject: ' . ($params['subject'] ?? '(No Subject)') . "\r\n"
-            . 'Message-ID: ' . $messageId . "\r\n"
-            . 'Date: ' . ($params['Date'] ?? '') . "\r\n"
-            . "Content-Type: text/html; charset=UTF-8\r\n\r\n"
-            . ($params['body-html'] ?? nl2br($params['body-plain'] ?? ''));
+        if (!empty($params['body-mime'])) {
+            // Preferred: full raw MIME — attachments, CC and headers intact
+            $fallbackId = $params['Message-Id'] ?? ('mg_' . $token);
+            $result = (new InboundService())->processFromContent($params['body-mime'], $fallbackId, true, $recipientMailbox);
+        } else {
+            // Fallback: rebuild a minimal MIME from Mailgun's parsed fields
+            // (attachments are lost — the Route should target the /mime URL)
+            if (empty($params['recipient']) || empty($params['from'])) {
+                return new \WP_Error('invalid_payload', 'Missing recipient or from', ['status' => 400]);
+            }
 
-        $result = (new InboundService())->processFromContent($raw, 'mg_' . $token, true, $recipientMailbox);
+            Logger::log('Mailgun webhook without body-mime — attachments not imported; point the Route at the /mime webhook URL', ['mailbox' => $mailbox->email]);
+
+            $messageId = $params['Message-Id'] ?? ('mg_' . $token);
+
+            $raw = 'From: ' . $params['from'] . "\r\n"
+                . 'To: ' . $params['recipient'] . "\r\n"
+                . 'Subject: ' . ($params['subject'] ?? '(No Subject)') . "\r\n"
+                . 'Message-ID: ' . $messageId . "\r\n"
+                . 'Date: ' . ($params['Date'] ?? '') . "\r\n"
+                . "Content-Type: text/html; charset=UTF-8\r\n\r\n"
+                . ($params['body-html'] ?? nl2br($params['body-plain'] ?? ''));
+
+            $result = (new InboundService())->processFromContent($raw, 'mg_' . $token, true, $recipientMailbox);
+        }
 
         if (is_wp_error($result)) {
             return $result;

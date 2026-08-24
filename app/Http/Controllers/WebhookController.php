@@ -2,10 +2,55 @@
 
 namespace FluentMailbox\Http\Controllers;
 
-use FluentMailbox\Models\Email;
+use FluentMailbox\Models\Mailbox;
+use FluentMailbox\Services\DriverManager;
+use FluentMailbox\Services\Logger;
 
 class WebhookController
 {
+    /**
+     * Unified per-mailbox webhook endpoint:
+     * POST /webhook/{driver}/{mailbox_id}?secret=... (Mailgun Routes use
+     * the /mime suffix variant to deliver raw MIME). The per-mailbox
+     * inbound secret is verified before the driver sees the request.
+     */
+    public function handleDriver($request)
+    {
+        $driverSlug = (string) $request->get_param('driver');
+        $mailboxId = (int) $request->get_param('mailbox_id');
+        $secret = (string) $request->get_param('secret');
+
+        $mailbox = Mailbox::find($mailboxId);
+        if (!$mailbox || $mailbox->driver !== $driverSlug || !$mailbox->is_active) {
+            Logger::log('Webhook rejected: unknown mailbox', ['driver' => $driverSlug, 'mailbox_id' => $mailboxId]);
+            return new \WP_Error('invalid_mailbox', 'Unknown mailbox', ['status' => 404]);
+        }
+
+        $settings = Mailbox::settingsOf($mailbox);
+        if (empty($settings['inbound_secret']) || !$secret || !hash_equals($settings['inbound_secret'], $secret)) {
+            Logger::log('Webhook rejected: invalid secret', ['driver' => $driverSlug, 'mailbox_id' => $mailboxId]);
+            return new \WP_Error('invalid_secret', 'Invalid webhook secret', ['status' => 403]);
+        }
+
+        $driver = DriverManager::make($mailbox);
+        if (is_wp_error($driver)) {
+            return $driver;
+        }
+
+        $result = $driver->handleWebhook($request, $mailbox);
+
+        if (is_wp_error($result)) {
+            Logger::log('Webhook processing failed', ['driver' => $driverSlug, 'mailbox_id' => $mailboxId, 'error' => $result->get_error_message()]);
+            return $result;
+        }
+
+        if ($result === 'duplicate') {
+            return rest_ensure_response(['message' => 'Email already exists']);
+        }
+
+        return rest_ensure_response(['message' => 'Webhook processed']);
+    }
+
     public function handle($request)
     {
         $body = $request->get_body();
@@ -91,22 +136,6 @@ class WebhookController
                 \FluentMailbox\Services\Logger::log('Unsupported action type or missing content', $message);
                 return rest_ensure_response(['message' => 'Unsupported action type or missing content'], 200);
             }
-        }
-
-        // Allow direct posting for simple testing/integration (e.g. from a custom form or other service)
-        $params = $request->get_params();
-        if (!empty($params['subject']) && !empty($params['sender'])) {
-             \FluentMailbox\Services\Logger::log('Direct Post Received', $params);
-             Email::create([
-                'message_id' => uniqid('ext_'),
-                'subject' => $params['subject'],
-                'sender' => $params['sender'],
-                'recipients' => json_encode($params['recipients'] ?? [get_site_url()]),
-                'body' => $params['body'] ?? '',
-                'status' => 'inbox',
-                'is_read' => 0
-            ]);
-            return rest_ensure_response(['message' => 'Email received']);
         }
 
         return rest_ensure_response(['message' => 'Webhook processed']);

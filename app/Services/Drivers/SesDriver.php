@@ -7,6 +7,7 @@ use Aws\Exception\AwsException;
 use FluentMailbox\Models\Mailbox;
 use FluentMailbox\Services\Contracts\MailDriverInterface;
 use FluentMailbox\Services\InboundService;
+use FluentMailbox\Services\Logger;
 use FluentMailbox\Services\SesService;
 
 /**
@@ -83,16 +84,82 @@ class SesDriver implements MailDriverInterface
 
     public function fetchNewEmails($mailbox)
     {
+        $settings = $this->settingsWithLegacyFallback($mailbox);
+
+        $service = new InboundService($settings);
+        return $service->fetchNewEmails(20, $mailbox);
+    }
+
+    /**
+     * Handle an SNS push notification for this mailbox (receipt-rule S3
+     * action or direct SNS content). The router has already verified the
+     * webhook URL's per-mailbox secret.
+     *
+     * @return \WP_Error|true|string WP_Error on failure, true if handled, 'duplicate' if skipped.
+     */
+    public function handleWebhook($request, $mailbox)
+    {
+        $payload = json_decode($request->get_body(), true);
+        if (!is_array($payload)) {
+            return new \WP_Error('invalid_payload', 'Invalid JSON', ['status' => 400]);
+        }
+
+        // SNS sends a subscription confirmation first — auto-confirm it
+        if (($payload['Type'] ?? '') === 'SubscriptionConfirmation' && !empty($payload['SubscribeURL'])) {
+            Logger::log('SNS subscription confirmation', ['mailbox' => $mailbox->email]);
+            wp_remote_get($payload['SubscribeURL']);
+            return true;
+        }
+
+        if (($payload['Type'] ?? '') !== 'Notification') {
+            return new \WP_Error('invalid_payload', 'Unsupported SNS message type', ['status' => 400]);
+        }
+
+        $message = json_decode($payload['Message'] ?? '', true);
+        if (!is_array($message) || ($message['notificationType'] ?? '') !== 'Received') {
+            return new \WP_Error('invalid_payload', 'Not a receipt notification', ['status' => 400]);
+        }
+
+        $settings = $this->settingsWithLegacyFallback($mailbox);
+        $receipt = $message['receipt'] ?? [];
+
+        if (($receipt['action']['type'] ?? '') === 'S3' && !empty($receipt['action']['bucketName'])) {
+            $result = (new InboundService($settings))->processFromS3(
+                $receipt['action']['bucketName'],
+                $receipt['action']['objectKey'],
+                true,
+                (int) $mailbox->id,
+                $settings
+            );
+        } elseif (isset($message['content'])) {
+            // Direct SNS content (small emails, no S3 action configured)
+            $fallbackId = $message['mail']['messageId'] ?? uniqid('sns_');
+            $result = (new InboundService())->processFromContent($message['content'], $fallbackId, true, (int) $mailbox->id);
+        } else {
+            return new \WP_Error('invalid_payload', 'Unsupported receipt action', ['status' => 400]);
+        }
+
+        if (is_wp_error($result)) {
+            return $result;
+        }
+
+        return $result === false ? 'duplicate' : true;
+    }
+
+    /**
+     * Mailbox settings, falling back to the pre-1.1 global AWS options
+     * for mailboxes migrated from single-account installs.
+     */
+    private function settingsWithLegacyFallback($mailbox)
+    {
         $settings = Mailbox::settingsOf($mailbox);
 
-        // Global options remain the fallback for mailboxes migrated from 1.0
         if (empty($settings['key']) && get_option('fluent_mailbox_aws_key')) {
             $settings['key'] = get_option('fluent_mailbox_aws_key');
             $settings['secret'] = get_option('fluent_mailbox_aws_secret');
             $settings['region'] = get_option('fluent_mailbox_aws_region', 'us-east-1');
         }
 
-        $service = new InboundService($settings);
-        return $service->fetchNewEmails(20, $mailbox);
+        return $settings;
     }
 }

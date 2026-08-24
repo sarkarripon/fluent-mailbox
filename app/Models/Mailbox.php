@@ -92,6 +92,7 @@ class Mailbox
     {
         global $wpdb;
 
+        $data = self::ensureInboundSecret($data);
         $data = self::normalize($data);
         $data['created_at'] = current_time('mysql');
         $data['updated_at'] = current_time('mysql');
@@ -210,6 +211,44 @@ class Mailbox
              GROUP BY mailbox_id",
             OBJECT_K
         );
+    }
+
+    /**
+     * Every mailbox gets a random inbound secret at creation; it
+     * authenticates the public /webhook/{driver}/{id} endpoint.
+     */
+    private static function ensureInboundSecret($data)
+    {
+        $settings = $data['driver_settings'] ?? [];
+        if (is_string($settings)) {
+            $decoded = json_decode($settings, true);
+            $settings = is_array($decoded) ? $decoded : [];
+        }
+        if (!is_array($settings)) {
+            $settings = [];
+        }
+        if (empty($settings['inbound_secret'])) {
+            $settings['inbound_secret'] = wp_generate_password(32, false);
+        }
+        $data['driver_settings'] = $settings;
+        return $data;
+    }
+
+    /**
+     * Public webhook URL (incl. secret) for a mailbox's push inbound.
+     * Mailgun Routes should use the $mime variant to receive raw MIME.
+     */
+    public static function webhookUrl($mailbox, $mime = false)
+    {
+        $settings = self::settingsOf($mailbox);
+        if (empty($settings['inbound_secret'])) {
+            return null;
+        }
+        $path = sprintf('fluent-mailbox/v1/webhook/%s/%d', $mailbox->driver, (int) $mailbox->id);
+        if ($mime) {
+            $path .= '/mime';
+        }
+        return add_query_arg('secret', $settings['inbound_secret'], rest_url($path));
     }
 
     private static function clearDefaults()

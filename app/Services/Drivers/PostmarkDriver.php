@@ -121,29 +121,14 @@ class PostmarkDriver implements MailDriverInterface
     }
 
     /**
-     * Import a Postmark inbound webhook post. The webhook URL carries
-     * ?mailbox=ID&secret=... which is verified against the mailbox's
-     * stored inbound secret before anything is imported.
+     * Import a Postmark inbound webhook post. The router has already
+     * resolved the mailbox from the webhook URL and verified its
+     * per-mailbox inbound secret.
      *
      * @return \WP_Error|true|string WP_Error on failure, true if imported, 'duplicate' if skipped.
      */
-    public function handleWebhook($request)
+    public function handleWebhook($request, $mailbox)
     {
-        $params = $request->get_params();
-        $mailboxId = isset($params['mailbox']) ? (int) $params['mailbox'] : 0;
-        $secret = (string) ($params['secret'] ?? '');
-
-        $mailbox = $mailboxId ? Mailbox::find($mailboxId) : null;
-        if (!$mailbox || $mailbox->driver !== 'postmark') {
-            return new \WP_Error('invalid_mailbox', 'Unknown mailbox', ['status' => 404]);
-        }
-
-        $settings = Mailbox::settingsOf($mailbox);
-        if (empty($settings['inbound_secret']) || !hash_equals($settings['inbound_secret'], $secret)) {
-            Logger::log('Postmark webhook secret verification failed', ['mailbox' => $mailbox->email]);
-            return new \WP_Error('invalid_signature', 'Invalid webhook secret', ['status' => 403]);
-        }
-
         $payload = json_decode($request->get_body(), true);
         if (!is_array($payload)) {
             return new \WP_Error('invalid_payload', 'Invalid JSON', ['status' => 400]);

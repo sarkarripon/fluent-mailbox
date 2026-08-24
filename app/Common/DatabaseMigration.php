@@ -102,6 +102,9 @@ class DatabaseMigration
 
         // Upgrade single-account installs to the mailbox model
         self::migrateLegacyAwsMailbox();
+
+        // Every mailbox needs an inbound secret for the public webhook endpoint
+        self::backfillInboundSecrets();
     }
 
     private static function addMissingColumns()
@@ -212,6 +215,33 @@ class DatabaseMigration
                 "UPDATE $emailsTable SET mailbox_id = %d WHERE mailbox_id IS NULL OR mailbox_id = 0",
                 $mailboxId
             ));
+        }
+    }
+
+    /**
+     * Adds an inbound_secret to any mailbox created before the unified
+     * webhook endpoint existed. Idempotent.
+     */
+    private static function backfillInboundSecrets()
+    {
+        global $wpdb;
+
+        if (!self::mailboxesTableExists()) {
+            return;
+        }
+
+        $table = $wpdb->prefix . 'fluent_mailbox_mailboxes';
+        $rows = $wpdb->get_results("SELECT id, driver_settings FROM $table");
+        foreach ($rows as $row) {
+            $settings = json_decode((string) $row->driver_settings, true);
+            if (!is_array($settings)) {
+                $settings = [];
+            }
+            if (!empty($settings['inbound_secret'])) {
+                continue;
+            }
+            $settings['inbound_secret'] = wp_generate_password(32, false);
+            $wpdb->update($table, ['driver_settings' => wp_json_encode($settings)], ['id' => (int) $row->id], ['%s'], ['%d']);
         }
     }
 

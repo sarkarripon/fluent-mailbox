@@ -152,11 +152,24 @@ class Router
             ]
         ]);
 
+        // Legacy SNS endpoint — kept for SES subscriptions provisioned
+        // before 1.1; new mailboxes use /webhook/{driver}/{mailbox_id}
         register_rest_route($namespace, '/webhook', [
             [
                 'methods' => \WP_REST_Server::CREATABLE,
                 'callback' => [new \FluentMailbox\Http\Controllers\WebhookController(), 'handle'],
                 'permission_callback' => '__return_true' // Public webhook
+            ]
+        ]);
+
+        // Unified per-mailbox inbound webhook. Public by design: the
+        // handler verifies the per-mailbox secret, then the driver
+        // verifies the provider signature. /mime suffix = Mailgun raw MIME.
+        register_rest_route($namespace, '/webhook/(?P<driver>[a-z0-9_-]+)/(?P<mailbox_id>\d+)(?:/(?P<mode>mime))?', [
+            [
+                'methods' => \WP_REST_Server::CREATABLE,
+                'callback' => [new \FluentMailbox\Http\Controllers\WebhookController(), 'handleDriver'],
+                'permission_callback' => '__return_true' // Secret + signature verified in handler
             ]
         ]);
 

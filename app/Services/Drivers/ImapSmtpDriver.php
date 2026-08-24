@@ -234,6 +234,14 @@ class ImapSmtpDriver implements MailDriverInterface
         }
     }
 
+    /**
+     * IMAP is polling-only; it has no inbound webhook.
+     */
+    public function handleWebhook($request, $mailbox)
+    {
+        return new \WP_Error('not_supported', __('IMAP mailboxes receive mail by polling, not webhooks.', 'fluent-mailbox'), ['status' => 404]);
+    }
+
     private function connect(array $settings)
     {
         if (empty($settings['imap_host']) || empty($settings['imap_username'])) {

@@ -37,4 +37,15 @@ interface MailDriverInterface
      * @return int|\WP_Error Number of newly imported emails.
      */
     public function fetchNewEmails($mailbox);
+
+    /**
+     * Handle an inbound webhook POST addressed to a mailbox (push drivers).
+     * The router has already verified the URL's per-mailbox inbound secret
+     * before this is called; drivers add their own provider verification.
+     *
+     * @param \WP_REST_Request $request
+     * @param object $mailbox Mailbox row the webhook URL addresses.
+     * @return \WP_Error|true|string WP_Error on failure, true if handled, 'duplicate' if skipped.
+     */
+    public function handleWebhook($request, $mailbox);
 }
