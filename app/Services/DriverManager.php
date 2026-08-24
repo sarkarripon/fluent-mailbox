@@ -77,15 +77,36 @@ class DriverManager
     {
         $list = [];
         foreach (self::registeredDrivers() as $slug => $meta) {
-            $list[$slug] = [
+            $entry = [
                 'slug' => $slug,
                 'label' => $meta['label'],
                 'description' => $meta['description'],
                 'capabilities' => isset($meta['capabilities']) ? $meta['capabilities'] : [],
                 'fields' => isset($meta['fields']) ? $meta['fields'] : [],
             ];
+            // Server auto-fill presets (currently only the IMAP driver)
+            if (!empty($meta['class']) && method_exists($meta['class'], 'presets')) {
+                $entry['presets'] = call_user_func([$meta['class'], 'presets']);
+            }
+            $list[$slug] = $entry;
         }
         return array_values($list);
+    }
+
+    /**
+     * Keys of a driver's settings fields flagged as secret — used to
+     * mask values in API responses.
+     */
+    public static function secretFields($slug)
+    {
+        $meta = self::driverMeta($slug);
+        $keys = [];
+        foreach (($meta['fields'] ?? []) as $field) {
+            if (!empty($field['secret']) && !empty($field['key'])) {
+                $keys[] = $field['key'];
+            }
+        }
+        return $keys;
     }
 
     /**

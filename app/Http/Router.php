@@ -173,6 +173,61 @@ class Router
             ]
         ]);
 
+        register_rest_route($namespace, '/drivers', [
+            [
+                'methods' => \WP_REST_Server::READABLE,
+                'callback' => [new \FluentMailbox\Http\Controllers\MailboxController(), 'drivers'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
+        register_rest_route($namespace, '/mailboxes', [
+            [
+                'methods' => \WP_REST_Server::READABLE,
+                'callback' => [new \FluentMailbox\Http\Controllers\MailboxController(), 'index'],
+                'permission_callback' => [$this, 'checkPermission']
+            ],
+            [
+                'methods' => \WP_REST_Server::CREATABLE,
+                'callback' => [new \FluentMailbox\Http\Controllers\MailboxController(), 'store'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
+        register_rest_route($namespace, '/mailboxes/(?P<id>\d+)', [
+            [
+                'methods' => \WP_REST_Server::READABLE,
+                'callback' => [new \FluentMailbox\Http\Controllers\MailboxController(), 'show'],
+                'permission_callback' => [$this, 'checkPermission']
+            ],
+            [
+                'methods' => \WP_REST_Server::EDITABLE,
+                'callback' => [new \FluentMailbox\Http\Controllers\MailboxController(), 'update'],
+                'permission_callback' => [$this, 'checkPermission']
+            ],
+            [
+                'methods' => \WP_REST_Server::DELETABLE,
+                'callback' => [new \FluentMailbox\Http\Controllers\MailboxController(), 'destroy'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
+        register_rest_route($namespace, '/mailboxes/(?P<id>\d+)/test', [
+            [
+                'methods' => \WP_REST_Server::CREATABLE,
+                'callback' => [new \FluentMailbox\Http\Controllers\MailboxController(), 'test'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
+        register_rest_route($namespace, '/mailboxes/(?P<id>\d+)/sync', [
+            [
+                'methods' => \WP_REST_Server::CREATABLE,
+                'callback' => [new \FluentMailbox\Http\Controllers\MailboxController(), 'sync'],
+                'permission_callback' => [$this, 'checkPermission']
+            ]
+        ]);
+
         register_rest_route($namespace, '/settings/verify', [
             [
                 'methods' => \WP_REST_Server::CREATABLE,
