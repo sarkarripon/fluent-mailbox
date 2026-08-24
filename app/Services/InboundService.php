@@ -6,16 +6,17 @@ use Aws\S3\S3Client;
 use Aws\Exception\AwsException;
 use ZBateson\MailMimeParser\MailMimeParser;
 use FluentMailbox\Models\Email;
+use FluentMailbox\Models\Mailbox;
 
 class InboundService
 {
     private $s3Config;
 
-    public function __construct()
+    public function __construct($config = [])
     {
-        $region = get_option('fluent_mailbox_aws_region', 'us-east-1');
-        $key = get_option('fluent_mailbox_aws_key', '');
-        $secret = get_option('fluent_mailbox_aws_secret', '');
+        $region = $config['region'] ?? get_option('fluent_mailbox_aws_region', 'us-east-1');
+        $key = $config['key'] ?? get_option('fluent_mailbox_aws_key', '');
+        $secret = $config['secret'] ?? get_option('fluent_mailbox_aws_secret', '');
 
         if ($key && $secret) {
             $this->s3Config = [
@@ -29,7 +30,7 @@ class InboundService
         }
     }
 
-    public function processFromContent($rawContent, $fallbackId = null, $checkDuplicate = false)
+    public function processFromContent($rawContent, $fallbackId = null, $checkDuplicate = false, $mailboxId = null)
     {
         try {
             // 2. Parse MIME
@@ -61,6 +62,11 @@ class InboundService
                 }
             }
 
+            // Assign to a mailbox: explicit id, recipient match, then default mailbox
+            if (!$mailboxId) {
+                $mailboxId = Mailbox::routeInbound($recipients);
+            }
+
             // Prefer HTML, fallback to Text
             $body = $message->getHtmlContent();
             if (!$body) {
@@ -75,7 +81,8 @@ class InboundService
                 'recipients' => json_encode($recipients),
                 'body' => $body,
                 'status' => 'inbox',
-                'is_read' => 0
+                'is_read' => 0,
+                'mailbox_id' => $mailboxId
             ]);
             
             \FluentMailbox\Services\Logger::log('Email Saved to DB', ['id' => $emailId, 'subject' => $subject]);
@@ -87,16 +94,17 @@ class InboundService
         }
     }
 
-    public function processFromS3($bucket, $key, $checkDuplicate = false)
+    public function processFromS3($bucket, $key, $checkDuplicate = false, $mailboxId = null, $config = [])
     {
-        if (!$this->s3Config) {
+        $s3Config = $this->resolveS3Config($config);
+        if (!$s3Config) {
             \FluentMailbox\Services\Logger::log('Error: AWS Credentials missing in InboundService');
             return new \WP_Error('config_error', 'AWS Credentials not configured');
         }
 
         try {
-            $s3 = new S3Client($this->s3Config);
-            
+            $s3 = new S3Client($s3Config);
+
             \FluentMailbox\Services\Logger::log("Fetching from S3 via InboundService", ['bucket' => $bucket, 'key' => $key]);
 
             // 1. Get object from S3
@@ -108,7 +116,7 @@ class InboundService
             $rawContent = $result['Body'];
 
             // Use S3 key as fallback ID
-            return $this->processFromContent($rawContent, $key, $checkDuplicate);
+            return $this->processFromContent($rawContent, $key, $checkDuplicate, $mailboxId);
 
         } catch (AwsException $e) {
             \FluentMailbox\Services\Logger::log('S3 Fetch Error', ['error' => $e->getMessage()]);
@@ -116,19 +124,28 @@ class InboundService
         }
     }
 
-    public function fetchNewEmails($limit = 20)
+    public function fetchNewEmails($limit = 20, $mailbox = null)
     {
-        if (!$this->s3Config) {
+        $config = [];
+        if ($mailbox) {
+            $config = Mailbox::settingsOf($mailbox);
+        }
+        $s3Config = $this->resolveS3Config($config);
+        if (!$s3Config) {
             return new \WP_Error('config_error', 'AWS Credentials not configured');
         }
 
-        $bucket = get_option('fluent_mailbox_s3_bucket');
+        $bucket = $mailbox
+            ? ($config['inbound_bucket'] ?? get_option('fluent_mailbox_s3_bucket'))
+            : get_option('fluent_mailbox_s3_bucket');
         if (!$bucket) {
             return new \WP_Error('config_error', 'Inbound S3 Bucket not configured');
         }
 
+        $mailboxId = $mailbox ? (int) $mailbox->id : null;
+
         try {
-            $s3 = new S3Client($this->s3Config);
+            $s3 = new S3Client($s3Config);
 
             // List objects in the bucket
             $objects = $s3->listObjectsV2([
@@ -146,8 +163,8 @@ class InboundService
                 $key = $object['Key'];
 
                 // Check duplicate logic handled in processFromS3
-                $result = $this->processFromS3($bucket, $key, true); 
-                
+                $result = $this->processFromS3($bucket, $key, true, $mailboxId, $config);
+
                 if (!is_wp_error($result) && $result !== false) {
                     $count++;
                 }
@@ -158,5 +175,29 @@ class InboundService
         } catch (AwsException $e) {
             return new \WP_Error('s3_error', $e->getMessage());
         }
+    }
+
+    private function resolveS3Config(array $config)
+    {
+        if ($this->s3Config && empty($config)) {
+            return $this->s3Config;
+        }
+
+        $region = $config['region'] ?? get_option('fluent_mailbox_aws_region', 'us-east-1');
+        $key = $config['key'] ?? get_option('fluent_mailbox_aws_key', '');
+        $secret = $config['secret'] ?? get_option('fluent_mailbox_aws_secret', '');
+
+        if (!$key || !$secret) {
+            return null;
+        }
+
+        return [
+            'version' => 'latest',
+            'region'  => $region,
+            'credentials' => [
+                'key'    => $key,
+                'secret' => $secret,
+            ],
+        ];
     }
 }

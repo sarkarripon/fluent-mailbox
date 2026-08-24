@@ -10,13 +10,14 @@ class SesService
     private $client;
     private $senderEmail;
 
-    public function __construct()
+    public function __construct($config = [])
     {
         // Settings should ideally come from WP Options
-        $region = get_option('fluent_mailbox_aws_region', 'us-east-1');
-        $key = get_option('fluent_mailbox_aws_key', '');
-        $secret = get_option('fluent_mailbox_aws_secret', '');
-        $sender = get_option('fluent_mailbox_from_email', get_bloginfo('admin_email'));
+        // Per-mailbox overrides take precedence over the global options
+        $region = $config['region'] ?? get_option('fluent_mailbox_aws_region', 'us-east-1');
+        $key = $config['key'] ?? get_option('fluent_mailbox_aws_key', '');
+        $secret = $config['secret'] ?? get_option('fluent_mailbox_aws_secret', '');
+        $sender = $config['from_email'] ?? get_option('fluent_mailbox_from_email', get_bloginfo('admin_email'));
         
         // If sender is just a domain (verified domain identity), assume a default user
         if (strpos($sender, '@') === false) {
@@ -24,7 +25,7 @@ class SesService
         }
 
         // Add friendly name if set
-        $name = get_option('fluent_mailbox_from_name', '');
+        $name = $config['from_name'] ?? get_option('fluent_mailbox_from_name', '');
         if ($name) {
             $sender = "$name <$sender>";
         }

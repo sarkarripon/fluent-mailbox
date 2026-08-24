@@ -139,7 +139,7 @@
               </div>
 
               <!-- Step 3: Dashboard / Connected State -->
-              <div v-else-if="step === 'dashboard' || true" class="space-y-4">
+              <div v-else-if="step === 'dashboard'" class="space-y-4">
                   <!-- Success Banner -->
                    <div class="bg-gradient-to-br from-green-600 via-emerald-500 to-teal-600 rounded-2xl p-5 text-white relative overflow-hidden">
                        <div class="absolute inset-0">
@@ -267,7 +267,7 @@ import Tooltip from '../components/Tooltip.vue';
 import { triggerConfetti } from '../utils/confetti';
 
 const store = useAppStore();
-const step = ref('credentials'); // credentials, identity, dashboard
+const step = ref(store.isConfigured ? 'dashboard' : 'credentials'); // credentials, identity, dashboard
 const loading = ref(false);
 const error = ref('');
 const identities = ref([]);
@@ -301,6 +301,11 @@ onMounted(async () => {
              form.region = data.region;
              form.key = data.key;
              form.secret = data.secret;
+             // Ensure we are on credentials step if we are not fully configured
+             step.value = 'credentials';
+        } else {
+            // Not configured at all
+            step.value = 'credentials';
         }
 
     } catch (e) {

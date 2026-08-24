@@ -3,8 +3,9 @@
     "description": "Fluent Mailbox Plugin",
     "type": "wordpress-plugin",
     "require": {
-        "php": ">=7.4",
+        "php": ">=8.0",
         "aws/aws-sdk-php": "^3.200",
+        "webklex/php-imap": "^5.5",
         "zbateson/mail-mime-parser": "^3.0"
     },
     "autoload": {

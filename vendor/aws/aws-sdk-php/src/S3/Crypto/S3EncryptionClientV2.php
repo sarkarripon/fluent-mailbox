@@ -107,6 +107,14 @@ class S3EncryptionClientV2 extends AbstractCryptoClientV2
         S3Client $client,
         $instructionFileSuffix = null
     ) {
+        trigger_error(
+            'S3EncryptionClientV2 will be deprecated soon and will be removed in a future ' .
+            'release due to security vulnerabilities (CVE-2024-56473). Please ' .
+            'migrate to S3EncryptionClientV3 as soon as possible.' . "\n" .
+            'See https://docs.aws.amazon.com/sdk-for-php/v3/developer-guide/' .
+            'security.html for upgrade guidance.',
+            E_USER_DEPRECATED
+        );
         $this->client = $client;
         $this->instructionFileSuffix = $instructionFileSuffix;
         $this->legacyWarningCount = 0;
@@ -181,8 +189,15 @@ class S3EncryptionClientV2 extends AbstractCryptoClientV2
 
         $envelope = new MetadataEnvelope();
 
+        $bodyStream = Psr7\Utils::streamFor($args['Body']);
+        // User-owned resource which should be detached instead of closed
+        // during garbage-collection
+        if (is_resource($args['Body'])) {
+            $bodyStream = \Aws\detach_on_close_stream($bodyStream);
+        }
+
         return Promise\Create::promiseFor($this->encrypt(
-            Psr7\Utils::streamFor($args['Body']),
+            $bodyStream,
             $args,
             $provider,
             $envelope
