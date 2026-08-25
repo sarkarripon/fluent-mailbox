@@ -69,7 +69,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import api from '../utils/api';
 import { useAppStore } from '../stores/useAppStore';
 
@@ -81,7 +81,7 @@ const loading = ref(true);
 const fetchEmails = async () => {
     loading.value = true;
     try {
-        const response = await api.getEmails(1, 'trash');
+        const response = await api.getEmails(1, 'trash', store.selectedMailboxId);
         emails.value = response.data.data || [];
     } catch (e) {
         console.error(e);
@@ -89,6 +89,8 @@ const fetchEmails = async () => {
         loading.value = false;
     }
 };
+
+watch(() => store.selectedMailboxId, fetchEmails);
 
 const deleteEmail = async (email) => {
     if (!confirm('Are you sure you want to permanently delete this email? This action cannot be undone.')) return;
@@ -103,7 +105,8 @@ const deleteEmail = async (email) => {
 const emptyTrash = async () => {
     if(!confirm('Are you sure you want to permanently delete all items in Trash? This action cannot be undone.')) return;
     try {
-        await api.emptyTrash();
+        // Scoped to the selected mailbox; empties everything under "All Inboxes"
+        await api.emptyTrash(store.selectedMailboxId);
         await fetchEmails();
     } catch (e) {
         alert('Failed to empty trash');

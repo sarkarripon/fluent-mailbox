@@ -33,6 +33,7 @@ import Settings from './views/Settings.vue';
 import EmailDetail from './views/EmailDetail.vue';
 import Trash from './views/Trash.vue';
 import Drafts from './views/Drafts.vue';
+import Mailboxes from './views/Mailboxes.vue';
 
 const routes = [
     { path: '/', redirect: '/inbox' },
@@ -40,6 +41,7 @@ const routes = [
     { path: '/sent', component: Sent, name: 'Sent' },
     { path: '/drafts', component: Drafts, name: 'Drafts' },
     { path: '/trash', component: Trash, name: 'Trash' },
+    { path: '/mailboxes', component: Mailboxes, name: 'Mailboxes' },
     { path: '/settings', component: Settings, name: 'Settings' },
     { path: '/emails/:id', component: EmailDetail, name: 'EmailDetail' },
 ];
@@ -60,8 +62,10 @@ app.directive('click-outside', clickOutside);
 router.beforeEach((to, from, next) => {
     const store = useAppStore();
 
-    if (to.path !== '/settings' && !store.isConfigured) {
-        next('/settings');
+    // Until a mailbox is connected, only the setup pages are reachable
+    const setupPages = ['/mailboxes', '/settings'];
+    if (!setupPages.includes(to.path) && !store.isConfigured) {
+        next('/mailboxes');
     } else {
         next();
     }

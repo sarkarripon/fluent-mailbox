@@ -70,7 +70,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '../utils/api';
 import { useAppStore } from '../stores/useAppStore';
@@ -84,7 +84,7 @@ const loading = ref(true);
 const fetchDrafts = async () => {
     loading.value = true;
     try {
-        const response = await api.getDrafts();
+        const response = await api.getDrafts(1, store.selectedMailboxId);
         drafts.value = response.data.data || [];
     } catch (e) {
         console.error(e);
@@ -92,6 +92,8 @@ const fetchDrafts = async () => {
         loading.value = false;
     }
 };
+
+watch(() => store.selectedMailboxId, fetchDrafts);
 
 const formatRelativeDate = (dateString) => {
     const date = new Date(dateString);

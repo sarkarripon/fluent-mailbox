@@ -36,7 +36,7 @@
                     <svg class="w-4 h-4 mr-2.5 transition-transform duration-200 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
                     <span class="text-sm font-medium">Inbox</span>
                 </div>
-                <span v-if="emailCounts.inboxUnreadCount > 0" class="text-xs font-semibold bg-blue-600 text-white px-2 py-0.5 rounded-full min-w-[20px] text-center animate-scale-in">{{ emailCounts.inboxUnreadCount }}</span>
+                <span v-if="store.inboxUnreadCount > 0" class="text-xs font-semibold bg-blue-600 text-white px-2 py-0.5 rounded-full min-w-[20px] text-center animate-scale-in">{{ store.inboxUnreadCount }}</span>
             </router-link>
             <router-link to="/sent" class="flex items-center px-3 py-2 rounded-lg transition-all duration-200 group hover:translate-x-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" :class="$route.path.includes('sent') ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-gray-700 hover:bg-gray-50'">
                 <svg class="w-4 h-4 mr-2.5 transition-transform duration-200 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
@@ -52,9 +52,45 @@
                 <svg class="w-4 h-4 mr-2.5 transition-transform duration-200 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                 <span class="text-sm font-medium">Trash</span>
             </router-link>
+            <!-- Mailbox switcher -->
+            <div class="pt-3 mt-2 border-t border-gray-200">
+                <div class="flex items-center justify-between px-3 mb-1">
+                    <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Mailboxes</span>
+                    <router-link to="/mailboxes" class="text-gray-400 hover:text-blue-600 p-0.5 rounded transition-colors" title="Manage mailboxes">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    </router-link>
+                </div>
+
+                <button
+                    @click="selectMailbox(null)"
+                    class="w-full flex items-center justify-between px-3 py-1.5 rounded-lg transition-all duration-200 text-left"
+                    :class="!store.selectedMailboxId ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'"
+                >
+                    <span class="text-sm font-medium truncate">All Inboxes</span>
+                    <span v-if="store.inboxUnreadCount > 0 && store.selectedMailboxId" class="text-xs font-semibold text-gray-500">{{ allInboxesUnread }}</span>
+                </button>
+
+                <button
+                    v-for="mailbox in store.activeMailboxes"
+                    :key="mailbox.id"
+                    @click="selectMailbox(mailbox.id)"
+                    class="w-full flex items-center justify-between px-3 py-1.5 rounded-lg transition-all duration-200 text-left"
+                    :class="store.selectedMailboxId === mailbox.id ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'"
+                >
+                    <span class="flex items-center min-w-0">
+                        <span class="w-2 h-2 rounded-full mr-2 flex-shrink-0" :style="{ backgroundColor: mailbox.color || '#9ca3af' }"></span>
+                        <span class="text-sm truncate" :title="mailbox.email">{{ mailbox.name }}</span>
+                    </span>
+                    <span v-if="mailbox.unread > 0" class="text-xs font-semibold bg-blue-600 text-white px-1.5 py-0.5 rounded-full min-w-[18px] text-center ml-1 flex-shrink-0">{{ mailbox.unread }}</span>
+                </button>
+            </div>
         </template>
 
         <div class="pt-2 mt-2 border-t border-gray-200">
+            <router-link to="/mailboxes" class="flex items-center px-3 py-2 rounded-lg transition-all duration-200 group hover:translate-x-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" :class="$route.path.includes('mailboxes') ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-gray-700 hover:bg-gray-50'">
+                <svg class="w-4 h-4 mr-2.5 transition-transform duration-200 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a2 2 0 00-2-2h-4l-2 3h-2l-2-3H5a2 2 0 00-2 2m18 0v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5m18 0V7a2 2 0 00-2-2h-3M8 5H5a2 2 0 00-2 2v5"></path></svg>
+                <span class="text-sm font-medium">Mailboxes</span>
+            </router-link>
             <router-link to="/settings" class="flex items-center px-3 py-2 rounded-lg transition-all duration-200 group hover:translate-x-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" :class="$route.path.includes('settings') ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-gray-700 hover:bg-gray-50'">
                 <svg class="w-4 h-4 mr-2.5 transition-transform duration-200 group-hover:rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                 <span class="text-sm font-medium">Settings</span>
@@ -92,7 +128,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import ComposeModal from './components/ComposeModal.vue';
 import { useAppStore } from './stores/useAppStore';
 import { useEmailCounts } from './composables/useEmailCounts';
@@ -101,8 +138,25 @@ import Tooltip from './components/Tooltip.vue';
 
 const store = useAppStore();
 const emailCounts = useEmailCounts();
+const router = useRouter();
+const route = useRoute();
 const adminBarHeight = ref(0);
 const isWordPressSidebarFolded = ref(false);
+
+// Total unread across every mailbox (shown next to "All Inboxes"
+// while a specific mailbox is selected)
+const allInboxesUnread = computed(() =>
+  store.mailboxes.reduce((sum, m) => sum + (m.unread || 0), 0) + store.unassignedUnread
+);
+
+const selectMailbox = (id) => {
+  store.setSelectedMailbox(id);
+  // Folder views react to the selection; from anywhere else, jump to the inbox
+  const folderViews = ['/inbox', '/sent', '/drafts', '/trash'];
+  if (!folderViews.includes(route.path)) {
+    router.push('/inbox');
+  }
+};
 
 // Enable keyboard shortcuts
 useKeyboardShortcuts();
@@ -184,7 +238,9 @@ onMounted(() => {
   updateAdminBarHeight();
   // Load WordPress sidebar state from localStorage on mount
   loadWordPressSidebarState();
-  emailCounts.fetchCounts();
+  if (store.isConfigured) {
+    store.loadMailboxes();
+  }
 
   // Prevent body scroll when app is active
   document.body.style.overflow = 'hidden';
@@ -192,7 +248,9 @@ onMounted(() => {
 
   // Refresh counts every 30 seconds
   setInterval(() => {
-    emailCounts.fetchCounts();
+    if (store.isConfigured) {
+      emailCounts.fetchCounts();
+    }
   }, 30000);
 
   // Watch for admin bar changes

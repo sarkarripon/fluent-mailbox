@@ -188,14 +188,19 @@ class Email
         return $wpdb->query("DELETE FROM $table WHERE status = 'trash'");
     }
 
-    public static function getDrafts($page = 1, $perPage = 20)
+    public static function getDrafts($page = 1, $perPage = 20, $mailboxId = null)
     {
         global $wpdb;
         $table = self::getTable();
         $offset = ($page - 1) * $perPage;
 
+        $where = "WHERE is_draft = 1 AND status = 'draft'";
+        if ($mailboxId) {
+            $where .= $wpdb->prepare(" AND mailbox_id = %d", (int) $mailboxId);
+        }
+
         $items = $wpdb->get_results(
-            $wpdb->prepare("SELECT * FROM $table WHERE is_draft = 1 AND status = 'draft' ORDER BY updated_at DESC LIMIT %d OFFSET %d", $perPage, $offset)
+            $wpdb->prepare("SELECT * FROM $table $where ORDER BY updated_at DESC LIMIT %d OFFSET %d", $perPage, $offset)
         );
 
         foreach ($items as $item) {
@@ -203,7 +208,7 @@ class Email
             $item->is_draft = (int) $item->is_draft;
         }
 
-        $total = $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE is_draft = 1 AND status = 'draft'");
+        $total = $wpdb->get_var("SELECT COUNT(*) FROM $table $where");
 
         return [
             'data' => $items,

@@ -60,7 +60,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import api from '../utils/api';
 import { useAppStore } from '../stores/useAppStore';
 
@@ -72,7 +72,7 @@ const loading = ref(true);
 const fetchEmails = async () => {
     loading.value = true;
     try {
-        const response = await api.getEmails(1, 'sent');
+        const response = await api.getEmails(1, 'sent', store.selectedMailboxId);
         emails.value = response.data.data || [];
     } catch (e) {
         console.error(e);
@@ -80,6 +80,8 @@ const fetchEmails = async () => {
         loading.value = false;
     }
 };
+
+watch(() => store.selectedMailboxId, fetchEmails);
 
 const formatRelativeDate = (dateString) => {
     const date = new Date(dateString);

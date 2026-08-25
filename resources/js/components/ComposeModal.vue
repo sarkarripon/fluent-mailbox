@@ -37,6 +37,20 @@
 
            <div class="flex-1 overflow-y-auto">
                <form @submit.prevent="send" class="flex flex-col h-full">
+                   <div v-if="store.activeMailboxes.length > 1" class="px-4 py-2 border-b border-gray-200">
+                       <div class="flex items-center">
+                           <span class="text-sm text-gray-600 w-16 flex-shrink-0">From</span>
+                           <select
+                               v-model="form.mailbox_id"
+                               class="flex-1 px-2 py-1.5 bg-transparent border-none focus:ring-0 focus:outline-none text-sm text-gray-800 cursor-pointer"
+                           >
+                               <option v-for="mailbox in store.activeMailboxes" :key="mailbox.id" :value="mailbox.id">
+                                   {{ mailbox.name }} &lt;{{ mailbox.email }}&gt;
+                               </option>
+                           </select>
+                       </div>
+                   </div>
+
                    <div class="px-4 py-2 border-b border-gray-200">
                        <div class="flex items-center">
                            <span class="text-sm text-gray-600 w-16 flex-shrink-0">To</span>
@@ -231,6 +245,9 @@
 import { ref, reactive, watch, onMounted, onBeforeUnmount, onUnmounted } from 'vue';
 import api from '../utils/api';
 import WpEditor from './WpEditor.vue';
+import { useAppStore } from '../stores/useAppStore';
+
+const store = useAppStore();
 
 const props = defineProps({
   isOpen: Boolean,
@@ -261,8 +278,24 @@ const form = reactive({
   cc: '',
   bcc: '',
   subject: '',
-  body: ''
+  body: '',
+  mailbox_id: null
 });
+
+// Which mailbox to send from: the one the original email belongs to
+// (replies/forwards/drafts), else the sidebar selection, else the default
+const resolveMailboxId = (emailData = null) => {
+  const active = store.activeMailboxes;
+  const isActive = (id) => active.some(m => m.id === id);
+
+  if (emailData?.mailbox_id && isActive(Number(emailData.mailbox_id))) {
+    return Number(emailData.mailbox_id);
+  }
+  if (store.selectedMailboxId && isActive(store.selectedMailboxId)) {
+    return store.selectedMailboxId;
+  }
+  return store.defaultMailbox?.id || null;
+};
 
 const attachments = ref([]);
 const showCcBcc = ref(false);
@@ -376,6 +409,13 @@ watch(() => props.isOpen, (newValue) => {
     sidebarWidth.value = getSidebarWidth();
     adminBarHeight.value = getAdminBarHeight();
 
+    if (!store.mailboxesLoaded) {
+      store.loadMailboxes().then(() => {
+        form.mailbox_id = resolveMailboxId(props.emailData);
+      });
+    }
+    form.mailbox_id = resolveMailboxId(props.emailData);
+
     // Pre-fill form for reply/forward or draft
     if (props.emailData) {
       if (props.emailData.is_draft) {
@@ -435,6 +475,7 @@ watch(() => props.isOpen, (newValue) => {
     form.bcc = '';
     form.subject = '';
     form.body = '';
+    form.mailbox_id = null;
     attachments.value = [];
     draftId.value = null;
     hasChanges.value = false;
@@ -586,7 +627,8 @@ const saveDraft = async (silent = false) => {
       subject: form.subject,
       body: form.body,
       attachments: attachments.value.map(a => a.id),
-      draft_id: draftId.value
+      draft_id: draftId.value,
+      mailbox_id: form.mailbox_id || null
     });
 
     draftId.value = data.draft_id;
@@ -708,7 +750,8 @@ const send = async () => {
         cc: form.cc || null,
         bcc: form.bcc || null,
         attachments: attachments.value.map(a => a.id),
-        draft_id: draftId.value || null
+        draft_id: draftId.value || null,
+        mailbox_id: form.mailbox_id || null
       };
 
       await api.sendEmail(emailData);

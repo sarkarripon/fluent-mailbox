@@ -374,8 +374,9 @@ class MailController
     public function getDrafts($request)
     {
         $page = $request->get_param('page') ?: 1;
+        $mailboxId = (int) $request->get_param('mailbox_id') ?: null;
         $perPage = 20;
-        $response = Email::getDrafts($page, $perPage);
+        $response = Email::getDrafts($page, $perPage, $mailboxId);
         return rest_ensure_response($response);
     }
 

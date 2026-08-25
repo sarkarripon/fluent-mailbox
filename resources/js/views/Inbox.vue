@@ -468,13 +468,14 @@ const fetchEmails = async (page = 1, silent = false) => {
     loading.value = true;
     }
     try {
-        // Get inbox emails - request with 'inbox' status
-        let response = await api.getEmails(page, 'inbox');
+        // Get inbox emails - request with 'inbox' status, scoped to the
+        // sidebar's selected mailbox (null = all inboxes)
+        let response = await api.getEmails(page, 'inbox', store.selectedMailboxId);
         let allEmails = response.data.data || [];
 
         // If no emails found with 'inbox' status, try 'all' and filter manually
         if (allEmails.length === 0 && page === 1) {
-            response = await api.getEmails(page, 'all');
+            response = await api.getEmails(page, 'all', store.selectedMailboxId);
             const allStatusEmails = response.data.data || [];
 
             // Filter for inbox: status = 'inbox', null, empty, or not sent/trash/draft
@@ -936,6 +937,12 @@ watch(() => router.currentRoute.value.path, () => {
     if (isSelectionMode.value) {
         exitSelectionMode();
     }
+});
+
+// Refetch when the sidebar mailbox selection changes
+watch(() => store.selectedMailboxId, () => {
+    exitSelectionMode();
+    fetchEmails(1, false);
 });
 
 // Watch for emails changes to load tags - only when email IDs change, not deep watching

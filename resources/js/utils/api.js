@@ -14,8 +14,10 @@ export default {
     getUsers() {
         return api.get('/users');
     },
-    getEmails(page = 1, status = 'all') {
-        return api.get('/emails', { params: { page, status } });
+    getEmails(page = 1, status = 'all', mailboxId = null) {
+        const params = { page, status };
+        if (mailboxId) params.mailbox_id = mailboxId;
+        return api.get('/emails', { params });
     },
     saveConnection(data) {
         return api.post('/settings/save-connection', data);
@@ -65,8 +67,10 @@ export default {
     updateEmail(id, data) {
         return api.put(`/emails/${id}`, data);
     },
-    emptyTrash() {
-        return api.delete('/emails/trash');
+    emptyTrash(mailboxId = null) {
+        const params = {};
+        if (mailboxId) params.mailbox_id = mailboxId;
+        return api.delete('/emails/trash', { params });
     },
     uploadAttachment(file) {
         const formData = new FormData();
@@ -77,8 +81,10 @@ export default {
             }
         });
     },
-    getDrafts(page = 1) {
-        return api.get('/drafts', { params: { page } });
+    getDrafts(page = 1, mailboxId = null) {
+        const params = { page };
+        if (mailboxId) params.mailbox_id = mailboxId;
+        return api.get('/drafts', { params });
     },
     saveDraft(data) {
         return api.post('/drafts', data);
@@ -112,6 +118,31 @@ export default {
     },
     cleanDebugLog() {
         return api.post('/settings/debug-log/clean');
+    },
+    // Mailbox APIs
+    getMailboxes() {
+        return api.get('/mailboxes');
+    },
+    getMailbox(id) {
+        return api.get(`/mailboxes/${id}`);
+    },
+    createMailbox(data) {
+        return api.post('/mailboxes', data);
+    },
+    updateMailbox(id, data) {
+        return api.put(`/mailboxes/${id}`, data);
+    },
+    deleteMailbox(id, params = {}) {
+        return api.delete(`/mailboxes/${id}`, { params });
+    },
+    testMailbox(id) {
+        return api.post(`/mailboxes/${id}/test`);
+    },
+    syncMailbox(id) {
+        return api.post(`/mailboxes/${id}/sync`);
+    },
+    getDrivers() {
+        return api.get('/drivers');
     },
     // Tag APIs
     getTags() {
