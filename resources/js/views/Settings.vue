@@ -343,16 +343,21 @@ const saveIdentity = async () => {
     }
 
     try {
+        // Creates/updates a SES-type mailbox row server-side
         await api.saveConnection(payload);
         // Update local form
         form.from_email = payload.from_email;
-        store.setConfigured(true);
+
+        // The configured flag mirrors the backend's "an active mailbox
+        // exists" — refresh the store and derive it from there
+        await store.loadMailboxes();
+        store.setConfigured(store.activeMailboxes.length > 0);
         step.value = 'dashboard';
-        
+
         // Trigger confetti celebration!
         triggerConfetti();
     } catch (e) {
-        error.value = 'Failed to save configuration.';
+        error.value = e.response?.data?.message || 'Failed to save configuration.';
     } finally {
         loading.value = false;
     }
@@ -372,15 +377,16 @@ const setupInbound = async () => {
 };
 
 const disconnect = async () => {
-    if(!confirm('Are you sure you want to disconnect? This will clear your AWS credentials from this site.')) return;
-    
-    // Disconnect credentials
+    if(!confirm('Are you sure you want to disconnect? This deactivates the SES mailbox — its emails and credentials are kept, and reconnecting reactivates it.')) return;
+
     try {
+        // Deactivates the SES mailbox row server-side
         await api.saveConnection({ key: '', secret: '', from_email: '' });
         form.key = '';
         form.secret = '';
         form.from_email = '';
-        store.setConfigured(false);
+        await store.loadMailboxes();
+        store.setConfigured(store.activeMailboxes.length > 0);
         step.value = 'credentials';
     } catch(e) {
         alert('Failed to disconnect');

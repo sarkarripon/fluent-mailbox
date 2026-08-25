@@ -75,9 +75,6 @@ class AwsSetupService
                 'Policy' => $policy
             ]);
             $log[] = "Applied Bucket Policy (Restricted to Account: $accountId)";
-            
-            update_option('fluent_mailbox_s3_bucket', $bucketName);
-
 
             // 2. SNS Setup
             $sns = new SnsClient([
@@ -105,9 +102,6 @@ class AwsSetupService
                     throw $e;
                 }
             }
-            
-            update_option('fluent_mailbox_sns_topic_arn', $topicArn);
-
 
             // 3. SES Rule Setup
             $ses = new SesClient([

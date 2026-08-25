@@ -84,7 +84,7 @@ class SesDriver implements MailDriverInterface
 
     public function fetchNewEmails($mailbox)
     {
-        $settings = $this->settingsWithLegacyFallback($mailbox);
+        $settings = Mailbox::settingsOf($mailbox);
 
         $service = new InboundService($settings);
         return $service->fetchNewEmails(20, $mailbox);
@@ -120,7 +120,7 @@ class SesDriver implements MailDriverInterface
             return new \WP_Error('invalid_payload', 'Not a receipt notification', ['status' => 400]);
         }
 
-        $settings = $this->settingsWithLegacyFallback($mailbox);
+        $settings = Mailbox::settingsOf($mailbox);
         $receipt = $message['receipt'] ?? [];
 
         if (($receipt['action']['type'] ?? '') === 'S3' && !empty($receipt['action']['bucketName'])) {
@@ -144,22 +144,5 @@ class SesDriver implements MailDriverInterface
         }
 
         return $result === false ? 'duplicate' : true;
-    }
-
-    /**
-     * Mailbox settings, falling back to the pre-1.1 global AWS options
-     * for mailboxes migrated from single-account installs.
-     */
-    private function settingsWithLegacyFallback($mailbox)
-    {
-        $settings = Mailbox::settingsOf($mailbox);
-
-        if (empty($settings['key']) && get_option('fluent_mailbox_aws_key')) {
-            $settings['key'] = get_option('fluent_mailbox_aws_key');
-            $settings['secret'] = get_option('fluent_mailbox_aws_secret');
-            $settings['region'] = get_option('fluent_mailbox_aws_region', 'us-east-1');
-        }
-
-        return $settings;
     }
 }

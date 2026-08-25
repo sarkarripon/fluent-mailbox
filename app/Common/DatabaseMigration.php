@@ -103,6 +103,10 @@ class DatabaseMigration
         // Upgrade single-account installs to the mailbox model
         self::migrateLegacyAwsMailbox();
 
+        // Copy any remaining legacy AWS options into SES mailbox rows —
+        // after this, runtime code never reads the legacy options
+        self::backfillSesSettings();
+
         // Every mailbox needs an inbound secret for the public webhook endpoint
         self::backfillInboundSecrets();
     }
@@ -215,6 +219,61 @@ class DatabaseMigration
                 "UPDATE $emailsTable SET mailbox_id = %d WHERE mailbox_id IS NULL OR mailbox_id = 0",
                 $mailboxId
             ));
+        }
+    }
+
+    /**
+     * The legacy fluent_mailbox_aws_* / s3_bucket / sns_topic options are
+     * read ONLY here: any SES mailbox still missing credentials or the
+     * inbound bucket gets them copied into driver_settings. Covers 1.1.0
+     * installs migrated before the bucket/topic moved into the mailbox
+     * row (the runtime option fallbacks are gone). Idempotent.
+     */
+    private static function backfillSesSettings()
+    {
+        global $wpdb;
+
+        if (!self::mailboxesTableExists()) {
+            return;
+        }
+
+        $legacy = [
+            'key' => get_option('fluent_mailbox_aws_key', ''),
+            'secret' => get_option('fluent_mailbox_aws_secret', ''),
+            'region' => get_option('fluent_mailbox_aws_region', 'us-east-1'),
+            'inbound_bucket' => get_option('fluent_mailbox_s3_bucket', ''),
+            'sns_topic_arn' => get_option('fluent_mailbox_sns_topic_arn', ''),
+        ];
+        if (!$legacy['key'] && !$legacy['inbound_bucket']) {
+            return;
+        }
+
+        $table = $wpdb->prefix . 'fluent_mailbox_mailboxes';
+        $rows = $wpdb->get_results($wpdb->prepare("SELECT id, driver_settings FROM $table WHERE driver = %s", 'ses'));
+        foreach ($rows as $row) {
+            $settings = json_decode((string) $row->driver_settings, true);
+            if (!is_array($settings)) {
+                $settings = [];
+            }
+
+            $changed = false;
+            if (empty($settings['key']) && $legacy['key']) {
+                $settings['key'] = $legacy['key'];
+                $settings['secret'] = $legacy['secret'];
+                $settings['region'] = $legacy['region'];
+                $changed = true;
+            }
+            if (empty($settings['inbound_bucket']) && $legacy['inbound_bucket']) {
+                $settings['inbound_bucket'] = $legacy['inbound_bucket'];
+                if ($legacy['sns_topic_arn']) {
+                    $settings['sns_topic_arn'] = $legacy['sns_topic_arn'];
+                }
+                $changed = true;
+            }
+
+            if ($changed) {
+                $wpdb->update($table, ['driver_settings' => wp_json_encode($settings)], ['id' => (int) $row->id], ['%s'], ['%d']);
+            }
         }
     }
 

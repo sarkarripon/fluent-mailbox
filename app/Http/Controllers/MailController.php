@@ -400,7 +400,7 @@ class MailController
 
         $data = [
             'subject' => $subject ?: '(No Subject)',
-            'sender' => $mailbox ? $mailbox->email : get_option('fluent_mailbox_from_email', get_bloginfo('admin_email')),
+            'sender' => $mailbox ? $mailbox->email : get_bloginfo('admin_email'),
             'recipients' => $to ? json_encode(is_array($to) ? $to : explode(',', $to)) : json_encode([]),
             'cc' => $cc ? json_encode(is_array($cc) ? $cc : explode(',', $cc)) : null,
             'bcc' => $bcc ? json_encode(is_array($bcc) ? $bcc : explode(',', $bcc)) : null,

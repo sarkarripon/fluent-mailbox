@@ -84,16 +84,27 @@ class WebhookController
                 $mail = $message['mail'];
                 $receipt = $message['receipt'];
 
+                // Pre-1.1 SNS subscriptions carry no mailbox in the URL:
+                // resolve the (single) SES mailbox for credentials/assignment
+                $mailbox = $this->legacySesMailbox();
+                $settings = $mailbox ? Mailbox::settingsOf($mailbox) : [];
+                $mailboxId = $mailbox ? (int) $mailbox->id : null;
+
                 // Check for S3 action
                 if (isset($receipt['action']['type']) && $receipt['action']['type'] === 'S3') {
+                    if (!$mailbox) {
+                        \FluentMailbox\Services\Logger::log('Error: no SES mailbox configured for legacy webhook');
+                        return rest_ensure_response(['message' => 'No SES mailbox configured'], 500);
+                    }
+
                     $bucket = $receipt['action']['bucketName'];
                     $key = $receipt['action']['objectKey'];
 
                     \FluentMailbox\Services\Logger::log("Processing from S3", ['bucket' => $bucket, 'key' => $key]);
 
-                    $service = new \FluentMailbox\Services\InboundService();
+                    $service = new \FluentMailbox\Services\InboundService($settings);
                     // Pass true for checkDuplicate
-                    $result = $service->processFromS3($bucket, $key, true);
+                    $result = $service->processFromS3($bucket, $key, true, $mailboxId, $settings);
 
                     if (is_wp_error($result)) {
                         \FluentMailbox\Services\Logger::log('Error processing inbound S3', ['error' => $result->get_error_message()]);
@@ -115,9 +126,10 @@ class WebhookController
                     $service = new \FluentMailbox\Services\InboundService();
                     // Use SES message ID as fallback if email doesn't have Message-ID header
                     $fallbackId = $message['mail']['messageId'] ?? uniqid('sns_');
-                    
-                    // Pass true for checkDuplicate
-                    $result = $service->processFromContent($message['content'], $fallbackId, true);
+
+                    // Pass true for checkDuplicate; without a SES mailbox the
+                    // content is routed by recipient inside processFromContent
+                    $result = $service->processFromContent($message['content'], $fallbackId, true, $mailboxId);
 
                     if (is_wp_error($result)) {
                          \FluentMailbox\Services\Logger::log('Error processing SNS content', ['error' => $result->get_error_message()]);
@@ -139,5 +151,19 @@ class WebhookController
         }
 
         return rest_ensure_response(['message' => 'Webhook processed']);
+    }
+
+    /**
+     * The SES mailbox a pre-1.1 SNS subscription belongs to — the first
+     * active one (legacy installs only ever had a single SES account).
+     */
+    private function legacySesMailbox()
+    {
+        foreach (Mailbox::findAllByDriver('ses') as $mailbox) {
+            if ($mailbox->is_active) {
+                return $mailbox;
+            }
+        }
+        return null;
     }
 }

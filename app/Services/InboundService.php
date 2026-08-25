@@ -14,9 +14,11 @@ class InboundService
 
     public function __construct($config = [])
     {
-        $region = $config['region'] ?? get_option('fluent_mailbox_aws_region', 'us-east-1');
-        $key = $config['key'] ?? get_option('fluent_mailbox_aws_key', '');
-        $secret = $config['secret'] ?? get_option('fluent_mailbox_aws_secret', '');
+        // AWS config always comes from the mailbox row's driver_settings —
+        // the legacy fluent_mailbox_aws_* options are migration-only
+        $region = $config['region'] ?? 'us-east-1';
+        $key = $config['key'] ?? '';
+        $secret = $config['secret'] ?? '';
 
         if ($key && $secret) {
             $this->s3Config = [
@@ -144,9 +146,7 @@ class InboundService
             return new \WP_Error('config_error', 'AWS Credentials not configured');
         }
 
-        $bucket = $mailbox
-            ? ($config['inbound_bucket'] ?? get_option('fluent_mailbox_s3_bucket'))
-            : get_option('fluent_mailbox_s3_bucket');
+        $bucket = $config['inbound_bucket'] ?? null;
         if (!$bucket) {
             return new \WP_Error('config_error', 'Inbound S3 Bucket not configured');
         }
@@ -192,9 +192,9 @@ class InboundService
             return $this->s3Config;
         }
 
-        $region = $config['region'] ?? get_option('fluent_mailbox_aws_region', 'us-east-1');
-        $key = $config['key'] ?? get_option('fluent_mailbox_aws_key', '');
-        $secret = $config['secret'] ?? get_option('fluent_mailbox_aws_secret', '');
+        $region = $config['region'] ?? 'us-east-1';
+        $key = $config['key'] ?? '';
+        $secret = $config['secret'] ?? '';
 
         if (!$key || !$secret) {
             return null;

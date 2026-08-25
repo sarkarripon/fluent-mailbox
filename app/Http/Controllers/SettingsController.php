@@ -4,22 +4,46 @@ namespace FluentMailbox\Http\Controllers;
 
 use Aws\Ses\SesClient;
 use Aws\Exception\AwsException;
+use FluentMailbox\Models\Mailbox;
 use FluentMailbox\Services\AwsSetupService;
+use FluentMailbox\Services\SyncService;
 
+/**
+ * The AWS wizard reads from and writes to a SES-type mailbox row —
+ * the legacy fluent_mailbox_aws_* options are only ever read by the
+ * database migration.
+ */
 class SettingsController
 {
+    /**
+     * The SES mailbox the settings wizard manages: the first active
+     * SES mailbox, else the first SES mailbox at all.
+     */
+    private function sesMailbox()
+    {
+        $all = Mailbox::findAllByDriver('ses');
+        foreach ($all as $mailbox) {
+            if ($mailbox->is_active) {
+                return $mailbox;
+            }
+        }
+        return $all ? $all[0] : null;
+    }
+
     public function getSettings($request)
     {
-        $settings = [
-            'region' => get_option('fluent_mailbox_aws_region', 'us-east-1'),
-            'key' => $this->mask(get_option('fluent_mailbox_aws_key', '')),
-            'secret' => $this->mask(get_option('fluent_mailbox_aws_secret', '')),
-            'from_email' => get_option('fluent_mailbox_from_email', ''),
-            'sender_name' => get_option('fluent_mailbox_from_name', ''),
-            'inbound_configured' => (bool) get_option('fluent_mailbox_s3_bucket', false)
-        ];
+        $mailbox = $this->sesMailbox();
+        $settings = $mailbox ? Mailbox::settingsOf($mailbox) : [];
 
-        return rest_ensure_response($settings);
+        return rest_ensure_response([
+            'region' => $settings['region'] ?? 'us-east-1',
+            'key' => !empty($settings['key']) ? $this->mask($settings['key']) : '',
+            'secret' => !empty($settings['secret']) ? $this->mask($settings['secret']) : '',
+            'from_email' => ($mailbox && $mailbox->is_active) ? $mailbox->email : '',
+            'sender_name' => $mailbox->from_name ?? '',
+            'mailbox_id' => $mailbox ? (int) $mailbox->id : null,
+            'inbound_configured' => !empty($settings['inbound_bucket'])
+        ]);
     }
 
     public function verifyCredentials($request)
@@ -27,6 +51,19 @@ class SettingsController
         $region = $request->get_param('region');
         $key = $request->get_param('key');
         $secret = $request->get_param('secret');
+
+        // Masked values round-tripped from the UI mean "use what's stored"
+        $stored = null;
+        if (($key && $this->isMasked($key)) || ($secret && $this->isMasked($secret))) {
+            $mailbox = $this->sesMailbox();
+            $stored = $mailbox ? Mailbox::settingsOf($mailbox) : [];
+        }
+        if ($key && $this->isMasked($key) && !empty($stored['key'])) {
+            $key = $stored['key'];
+        }
+        if ($secret && $this->isMasked($secret) && !empty($stored['secret'])) {
+            $secret = $stored['secret'];
+        }
 
         if (empty($key) || empty($secret)) {
             return new \WP_Error('missing_creds', 'Key and Secret are required', ['status' => 400]);
@@ -56,81 +93,115 @@ class SettingsController
     public function saveConnection($request)
     {
         $params = $request->get_params();
+        $mailbox = $this->sesMailbox();
 
-        // Save Credentials
-        if (isset($params['region'])) {
-            if (empty($params['region'])) {
-                delete_option('fluent_mailbox_aws_region');
-            } else {
-                update_option('fluent_mailbox_aws_region', sanitize_text_field($params['region']));
+        // The wizard's "Disconnect" sends empty values: deactivate the
+        // SES mailbox instead of deleting it (emails keep their assignment,
+        // reconnecting reactivates it)
+        if (isset($params['key'], $params['from_email']) && $params['key'] === '' && $params['from_email'] === '') {
+            if ($mailbox) {
+                Mailbox::update($mailbox->id, ['is_active' => 0]);
+                SyncService::ensureCronSchedule();
             }
-        }
-        
-        if (isset($params['key'])) {
-            if (empty($params['key'])) {
-                 delete_option('fluent_mailbox_aws_key');
-            } elseif (!$this->isMasked($params['key'])) {
-                 update_option('fluent_mailbox_aws_key', sanitize_text_field($params['key']));
-            }
+            return rest_ensure_response(['message' => 'Disconnected']);
         }
 
-        if (isset($params['secret'])) {
-            if (empty($params['secret'])) {
-                 delete_option('fluent_mailbox_aws_secret');
-            } elseif (!$this->isMasked($params['secret'])) {
-                 update_option('fluent_mailbox_aws_secret', sanitize_text_field($params['secret']));
+        $fromEmail = !empty($params['from_email']) ? sanitize_email($params['from_email']) : null;
+
+        // Merge driver settings; masked values mean "unchanged"
+        $settings = $mailbox ? Mailbox::settingsOf($mailbox) : [];
+        if (!empty($params['region'])) {
+            $settings['region'] = sanitize_text_field($params['region']);
+        }
+        if (!empty($params['key']) && !$this->isMasked($params['key'])) {
+            $settings['key'] = sanitize_text_field($params['key']);
+        }
+        if (!empty($params['secret']) && !$this->isMasked($params['secret'])) {
+            $settings['secret'] = sanitize_text_field($params['secret']);
+        }
+        if ($fromEmail) {
+            $settings['identity'] = $fromEmail;
+        }
+
+        if ($mailbox) {
+            $data = ['driver_settings' => $settings, 'is_active' => 1];
+            if ($fromEmail) {
+                $data['email'] = $fromEmail;
+            }
+            if (isset($params['sender_name'])) {
+                $data['from_name'] = sanitize_text_field($params['sender_name']);
+            }
+            Mailbox::update($mailbox->id, $data);
+            $mailboxId = (int) $mailbox->id;
+        } else {
+            if (!$fromEmail || empty($settings['key']) || empty($settings['secret'])) {
+                return new \WP_Error('missing_params', 'AWS credentials and a sender identity are required', ['status' => 400]);
+            }
+            $mailboxId = Mailbox::create([
+                'name' => 'Amazon SES',
+                'email' => $fromEmail,
+                'from_name' => sanitize_text_field($params['sender_name'] ?? ''),
+                'driver' => 'ses',
+                'driver_settings' => $settings,
+                'category' => 'business',
+                'is_active' => 1,
+                'is_default' => 0, // Mailbox::create promotes the first mailbox to default
+            ]);
+            if (!$mailboxId) {
+                return new \WP_Error('db_error', 'Could not create mailbox', ['status' => 500]);
             }
         }
 
-        if (isset($params['from_email'])) {
-            if (empty($params['from_email'])) {
-                 delete_option('fluent_mailbox_from_email');
-            } else {
-                 update_option('fluent_mailbox_from_email', sanitize_email($params['from_email']));
-            }
-        }
+        SyncService::ensureCronSchedule();
 
-        if (isset($params['sender_name'])) {
-            if (empty($params['sender_name'])) {
-                 delete_option('fluent_mailbox_from_name');
-            } else {
-                 update_option('fluent_mailbox_from_name', sanitize_text_field($params['sender_name']));
-            }
-        }
-
-        return rest_ensure_response(['message' => 'Settings saved successfully']);
+        return rest_ensure_response(['message' => 'Settings saved successfully', 'mailbox_id' => (int) $mailboxId]);
     }
 
     public function setupInbound($request)
     {
-        $region = get_option('fluent_mailbox_aws_region');
-        $key = get_option('fluent_mailbox_aws_key');
-        $secret = get_option('fluent_mailbox_aws_secret');
-        
-        if (!$key || !$secret) {
+        $mailbox = $this->sesMailbox();
+        $settings = $mailbox ? Mailbox::settingsOf($mailbox) : [];
+
+        if (!$mailbox || empty($settings['key']) || empty($settings['secret'])) {
             return new \WP_Error('params', 'Please save credentials first.', ['status' => 400]);
         }
 
-        $service = new AwsSetupService($region, $key, $secret);
-        $webhookUrl = rest_url('fluent-mailbox/v1/webhook');
-        
-        // For local dev, maybe allow overriding?
-        // $webhookUrl = 'https://mysite.com/webhook';
+        // SNS subscribes to the per-mailbox webhook endpoint, which
+        // carries this mailbox's inbound secret
+        $webhookUrl = Mailbox::webhookUrl($mailbox);
+        if (!$webhookUrl) {
+            return new \WP_Error('params', 'Mailbox has no inbound secret. Re-save the connection first.', ['status' => 400]);
+        }
 
+        $service = new AwsSetupService($settings['region'] ?? 'us-east-1', $settings['key'], $settings['secret']);
         $result = $service->setup($webhookUrl);
 
         if (is_wp_error($result)) {
             return $result;
         }
 
+        // Persist the provisioned resources on the mailbox row
+        $settings['inbound_bucket'] = $result['bucket'];
+        $settings['sns_topic_arn'] = $result['topic'];
+        Mailbox::update($mailbox->id, ['driver_settings' => $settings]);
+
         return rest_ensure_response($result);
     }
 
     public function disconnect($request)
     {
+        // Clear the provisioned inbound resources from the SES mailbox
+        $mailbox = $this->sesMailbox();
+        if ($mailbox) {
+            $settings = Mailbox::settingsOf($mailbox);
+            unset($settings['inbound_bucket'], $settings['sns_topic_arn']);
+            Mailbox::update($mailbox->id, ['driver_settings' => $settings]);
+        }
+
+        // Pre-1.1 installs also stored them in options
         delete_option('fluent_mailbox_s3_bucket');
         delete_option('fluent_mailbox_sns_topic_arn');
-        
+
         return rest_ensure_response(['message' => 'Inbound configuration reset.']);
     }
 

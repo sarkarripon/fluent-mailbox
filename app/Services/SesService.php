@@ -12,20 +12,20 @@ class SesService
 
     public function __construct($config = [])
     {
-        // Settings should ideally come from WP Options
-        // Per-mailbox overrides take precedence over the global options
-        $region = $config['region'] ?? get_option('fluent_mailbox_aws_region', 'us-east-1');
-        $key = $config['key'] ?? get_option('fluent_mailbox_aws_key', '');
-        $secret = $config['secret'] ?? get_option('fluent_mailbox_aws_secret', '');
-        $sender = $config['from_email'] ?? get_option('fluent_mailbox_from_email', get_bloginfo('admin_email'));
-        
+        // Config always comes from the mailbox row's driver_settings —
+        // the legacy fluent_mailbox_aws_* options are migration-only
+        $region = $config['region'] ?? 'us-east-1';
+        $key = $config['key'] ?? '';
+        $secret = $config['secret'] ?? '';
+        $sender = $config['from_email'] ?? get_bloginfo('admin_email');
+
         // If sender is just a domain (verified domain identity), assume a default user
         if (strpos($sender, '@') === false) {
             $sender = 'contact@' . $sender;
         }
 
         // Add friendly name if set
-        $name = $config['from_name'] ?? get_option('fluent_mailbox_from_name', '');
+        $name = $config['from_name'] ?? '';
         if ($name) {
             $sender = "$name <$sender>";
         }
