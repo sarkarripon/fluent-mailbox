@@ -274,6 +274,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '../utils/api';
+import { formatRelativeDate as relativeDate } from '../utils/date';
 import { useAppStore } from '../stores/useAppStore';
 import { useEmailCounts } from '../composables/useEmailCounts';
 import TagPicker from '../components/TagPicker.vue';
@@ -535,18 +536,8 @@ const deleteEmail = async () => {
     }
 };
 
-const formatRelativeDate = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now - date) / 1000);
-
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-
-    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-};
+const formatRelativeDate = (dateString) =>
+    relativeDate(dateString, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
 const handleReply = () => {
     store.openCompose('reply', email.value);

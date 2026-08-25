@@ -3,7 +3,7 @@
       <header class="py-4 border-b border-gray-100/50 flex justify-between items-center bg-white/50 backdrop-blur-sm transition-all duration-300" :class="store.isCompact ? 'pl-16 pr-6' : 'px-6'">
           <div class="flex items-center space-x-3">
               <h1 class="text-xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Mailboxes</h1>
-              <div v-if="mailboxes.length" class="text-sm text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">{{ mailboxes.length }} connected</div>
+              <div v-if="store.mailboxes.length" class="text-sm text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">{{ store.mailboxes.length }} connected</div>
           </div>
           <button @click="openAdd" class="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -19,7 +19,7 @@
               </div>
 
               <!-- Empty state / first-run setup -->
-              <div v-else-if="mailboxes.length === 0" class="flex flex-col items-center justify-center py-16 text-center">
+              <div v-else-if="store.mailboxes.length === 0" class="flex flex-col items-center justify-center py-16 text-center">
                   <div class="w-28 h-28 mb-6 rounded-full bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
                       <svg class="w-14 h-14 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                   </div>
@@ -32,7 +32,7 @@
 
               <!-- Mailbox list -->
               <div
-                  v-for="mailbox in mailboxes"
+                  v-for="mailbox in store.mailboxes"
                   :key="mailbox.id"
                   class="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-4 transition-all hover:shadow-sm"
                   :class="{ 'opacity-60': !mailbox.is_active }"
@@ -51,7 +51,7 @@
                               <div class="text-xs text-gray-400 mt-1 flex items-center gap-2 flex-wrap">
                                   <span>{{ mailbox.driver_label }}</span>
                                   <span v-if="mailbox.unread > 0" class="text-blue-600 font-medium">{{ mailbox.unread }} unread</span>
-                                  <span v-if="mailbox.last_synced_at">Synced {{ formatRelativeDate(mailbox.last_synced_at) }}</span>
+                                  <span v-if="mailbox.last_synced_at">Last sync: {{ formatRelativeDate(mailbox.last_synced_at) }}</span>
                               </div>
                           </div>
                       </div>
@@ -75,7 +75,7 @@
                   </div>
               </div>
 
-              <p v-if="mailboxes.length" class="text-xs text-gray-400 text-center pt-2">
+              <p v-if="store.mailboxes.length" class="text-xs text-gray-400 text-center pt-2">
                   Polling mailboxes are checked every 5 minutes via WP-Cron. For reliable syncing, run a real system cron (<code class="font-mono">DISABLE_WP_CRON</code> + <code class="font-mono">wp cron event run --due-now</code>).
               </p>
           </div>
@@ -239,7 +239,7 @@
                   </label>
                   <label class="flex items-start gap-2 text-sm text-gray-700 cursor-pointer p-3 rounded-xl border transition-colors" :class="deleteEmailsMode === 'trash' ? 'border-blue-400 bg-blue-50/50' : 'border-gray-200'">
                       <input v-model="deleteEmailsMode" type="radio" value="trash" class="mt-0.5 text-blue-600 focus:ring-blue-500">
-                      <span><span class="font-medium">Move them to Trash</span><br><span class="text-xs text-gray-500">You can still restore or empty them from the Trash view.</span></span>
+                      <span><span class="font-medium">Move received mail to Trash</span><br><span class="text-xs text-gray-500">Drafts and sent copies are kept, unassigned. Emptying the Trash deletes the rest permanently.</span></span>
                   </label>
               </div>
               <div v-if="deleteError" class="bg-red-50 text-red-600 p-3 rounded-xl text-sm border border-red-200/50">{{ deleteError }}</div>
@@ -258,11 +258,13 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import api from '../utils/api';
 import { useAppStore } from '../stores/useAppStore';
+import { formatRelativeDate } from '../utils/date';
 
 const store = useAppStore();
 
+// Mailbox rows render straight from the store — the sidebar and this
+// page always show the same list, refreshed by store.loadMailboxes()
 const loading = ref(true);
-const mailboxes = ref([]);
 const drivers = ref([]);
 
 const showModal = ref(false);
@@ -340,26 +342,22 @@ const categoryClass = (category) => {
     }
 };
 
-const formatRelativeDate = (dateString) => {
-    const date = new Date(dateString);
-    const diffInSeconds = Math.floor((new Date() - date) / 1000);
-    if (diffInSeconds < 60) return 'just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-};
-
 const loadAll = async () => {
     try {
-        const [mailboxRes, driverRes] = await Promise.all([api.getMailboxes(), api.getDrivers()]);
-        mailboxes.value = mailboxRes.data.mailboxes || [];
+        // The driver list is static — fetched once here, mailboxes via the store
+        const [driverRes] = await Promise.all([api.getDrivers(), store.loadMailboxes()]);
         drivers.value = driverRes.data || [];
     } catch (e) {
-        console.error('Failed to load mailboxes', e);
+        console.error('Failed to load drivers', e);
     } finally {
         loading.value = false;
     }
+};
+
+// The app is "configured" exactly when an active mailbox exists —
+// mirrors the backend's Mailbox::hasActive()
+const syncConfiguredFlag = () => {
+    store.setConfigured(store.activeMailboxes.length > 0);
 };
 
 const defaultSettingsFor = (slug) => {
@@ -454,11 +452,11 @@ const save = async () => {
             await api.updateMailbox(editing.value.id, payload);
         } else {
             await api.createMailbox(payload);
-            store.setConfigured(true);
         }
 
         closeModal();
-        await Promise.all([loadAll(), store.loadMailboxes()]);
+        await store.loadMailboxes();
+        syncConfiguredFlag();
     } catch (e) {
         modalError.value = e.response?.data?.message || 'Failed to save mailbox.';
     } finally {
@@ -487,7 +485,7 @@ const syncMailbox = async (mailbox) => {
     try {
         const { data } = await api.syncMailbox(mailbox.id);
         rowMessage.value = { id: mailbox.id, text: data.message || 'Sync complete', error: false };
-        await Promise.all([loadAll(), store.loadMailboxes()]);
+        await store.loadMailboxes();
     } catch (e) {
         rowMessage.value = { id: mailbox.id, text: e.response?.data?.message || 'Sync failed', error: true };
     } finally {
@@ -508,10 +506,8 @@ const confirmDelete = async () => {
         const params = deleteEmailsMode.value === 'trash' ? { emails: 'trash' } : {};
         await api.deleteMailbox(deleting.value.id, params);
         deleting.value = null;
-        await Promise.all([loadAll(), store.loadMailboxes()]);
-        if (!mailboxes.value.some(m => m.is_active)) {
-            store.setConfigured(false);
-        }
+        await store.loadMailboxes();
+        syncConfiguredFlag();
     } catch (e) {
         deleteError.value = e.response?.data?.message || 'Failed to delete mailbox.';
     } finally {

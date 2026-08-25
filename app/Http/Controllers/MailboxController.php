@@ -167,19 +167,21 @@ class MailboxController
         Mailbox::delete($mailbox->id);
 
         // What happens to this mailbox's emails: keep them unassigned
-        // (default) or move them to trash
+        // (default) or move received mail to trash. Drafts and sent copies
+        // are never trashed — trashed drafts would vanish from the Drafts
+        // view (it requires status = 'draft') and there is no restore path.
         $emailsTable = Email::getTable();
         if ($request->get_param('emails') === 'trash') {
             $wpdb->query($wpdb->prepare(
-                "UPDATE $emailsTable SET mailbox_id = NULL, status = 'trash' WHERE mailbox_id = %d",
-                (int) $mailbox->id
-            ));
-        } else {
-            $wpdb->query($wpdb->prepare(
-                "UPDATE $emailsTable SET mailbox_id = NULL WHERE mailbox_id = %d",
+                "UPDATE $emailsTable SET status = 'trash'
+                 WHERE mailbox_id = %d AND is_draft = 0 AND status NOT IN ('sent', 'draft')",
                 (int) $mailbox->id
             ));
         }
+        $wpdb->query($wpdb->prepare(
+            "UPDATE $emailsTable SET mailbox_id = NULL WHERE mailbox_id = %d",
+            (int) $mailbox->id
+        ));
 
         SyncService::ensureCronSchedule();
 

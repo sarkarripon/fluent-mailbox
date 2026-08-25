@@ -67,7 +67,7 @@
                     :class="!store.selectedMailboxId ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'"
                 >
                     <span class="text-sm font-medium truncate">All Inboxes</span>
-                    <span v-if="store.inboxUnreadCount > 0 && store.selectedMailboxId" class="text-xs font-semibold text-gray-500">{{ allInboxesUnread }}</span>
+                    <span v-if="store.totalUnread > 0 && store.selectedMailboxId" class="text-xs font-semibold text-gray-500">{{ store.totalUnread }}</span>
                 </button>
 
                 <button
@@ -128,7 +128,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import ComposeModal from './components/ComposeModal.vue';
 import { useAppStore } from './stores/useAppStore';
@@ -142,12 +142,6 @@ const router = useRouter();
 const route = useRoute();
 const adminBarHeight = ref(0);
 const isWordPressSidebarFolded = ref(false);
-
-// Total unread across every mailbox (shown next to "All Inboxes"
-// while a specific mailbox is selected)
-const allInboxesUnread = computed(() =>
-  store.mailboxes.reduce((sum, m) => sum + (m.unread || 0), 0) + store.unassignedUnread
-);
 
 const selectMailbox = (id) => {
   store.setSelectedMailbox(id);

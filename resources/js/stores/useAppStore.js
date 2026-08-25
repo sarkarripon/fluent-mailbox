@@ -31,7 +31,8 @@ export const useAppStore = defineStore('app', () => {
     const unassignedUnread = ref(0);
     const mailboxesLoaded = ref(false);
     const selectedMailboxId = ref(loadSelectedMailbox());
-    let loadingMailboxes = false;
+    let currentLoad = null;
+    let queuedLoad = null;
 
     function loadSelectedMailbox() {
         const saved = localStorage.getItem(MAILBOX_KEY);
@@ -51,18 +52,21 @@ export const useAppStore = defineStore('app', () => {
             : null
     );
 
+    // Total unread across every mailbox, including unassigned rows
+    const totalUnread = computed(() =>
+        mailboxes.value.reduce((sum, m) => sum + (m.unread || 0), 0) + unassignedUnread.value
+    );
+
     // Unread badge for the Inbox nav item: the selected mailbox's count,
-    // or everything (incl. unassigned rows) under "All Inboxes"
+    // or everything under "All Inboxes"
     const inboxUnreadCount = computed(() => {
         if (selectedMailboxId.value) {
             return selectedMailbox.value?.unread || 0;
         }
-        return mailboxes.value.reduce((sum, m) => sum + (m.unread || 0), 0) + unassignedUnread.value;
+        return totalUnread.value;
     });
 
-    async function loadMailboxes() {
-        if (loadingMailboxes) return;
-        loadingMailboxes = true;
+    async function fetchMailboxes() {
         try {
             const { data } = await api.getMailboxes();
             mailboxes.value = data.mailboxes || [];
@@ -75,9 +79,26 @@ export const useAppStore = defineStore('app', () => {
             }
         } catch (error) {
             console.error('Failed to load mailboxes:', error);
-        } finally {
-            loadingMailboxes = false;
         }
+    }
+
+    // Coalesces overlapping calls: a call arriving while a fetch is in
+    // flight gets one trailing fetch after it, so a caller refreshing
+    // after a mutation never resolves with pre-mutation data.
+    function loadMailboxes() {
+        if (currentLoad) {
+            if (!queuedLoad) {
+                queuedLoad = currentLoad.then(() => {
+                    queuedLoad = null;
+                    return loadMailboxes();
+                });
+            }
+            return queuedLoad;
+        }
+        currentLoad = fetchMailboxes().finally(() => {
+            currentLoad = null;
+        });
+        return currentLoad;
     }
 
     function setSelectedMailbox(id) {
@@ -163,6 +184,7 @@ export const useAppStore = defineStore('app', () => {
         activeMailboxes,
         defaultMailbox,
         selectedMailbox,
+        totalUnread,
         inboxUnreadCount,
         loadMailboxes,
         setSelectedMailbox,

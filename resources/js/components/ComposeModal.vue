@@ -37,15 +37,15 @@
 
            <div class="flex-1 overflow-y-auto">
                <form @submit.prevent="send" class="flex flex-col h-full">
-                   <div v-if="store.activeMailboxes.length > 1" class="px-4 py-2 border-b border-gray-200">
+                   <div v-if="composeMailboxes.length > 1" class="px-4 py-2 border-b border-gray-200">
                        <div class="flex items-center">
                            <span class="text-sm text-gray-600 w-16 flex-shrink-0">From</span>
                            <select
                                v-model="form.mailbox_id"
                                class="flex-1 px-2 py-1.5 bg-transparent border-none focus:ring-0 focus:outline-none text-sm text-gray-800 cursor-pointer"
                            >
-                               <option v-for="mailbox in store.activeMailboxes" :key="mailbox.id" :value="mailbox.id">
-                                   {{ mailbox.name }} &lt;{{ mailbox.email }}&gt;
+                               <option v-for="mailbox in composeMailboxes" :key="mailbox.id" :value="mailbox.id">
+                                   {{ mailbox.name }} &lt;{{ mailbox.email }}&gt;{{ mailbox.is_active ? '' : ' (inactive)' }}
                                </option>
                            </select>
                        </div>
@@ -242,7 +242,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch, onMounted, onBeforeUnmount, onUnmounted } from 'vue';
+import { ref, reactive, computed, watch, onMounted, onBeforeUnmount, onUnmounted } from 'vue';
 import api from '../utils/api';
 import WpEditor from './WpEditor.vue';
 import { useAppStore } from '../stores/useAppStore';
@@ -283,12 +283,14 @@ const form = reactive({
 });
 
 // Which mailbox to send from: the one the original email belongs to
-// (replies/forwards/drafts), else the sidebar selection, else the default
+// (replies/forwards/drafts), else the sidebar selection, else the default.
+// The originating mailbox is kept even when inactive — silently
+// reassigning a draft/reply to another account is worse than letting
+// the send fail with a clear error.
 const resolveMailboxId = (emailData = null) => {
-  const active = store.activeMailboxes;
-  const isActive = (id) => active.some(m => m.id === id);
+  const isActive = (id) => store.activeMailboxes.some(m => m.id === id);
 
-  if (emailData?.mailbox_id && isActive(Number(emailData.mailbox_id))) {
+  if (emailData?.mailbox_id && store.mailboxes.some(m => m.id === Number(emailData.mailbox_id))) {
     return Number(emailData.mailbox_id);
   }
   if (store.selectedMailboxId && isActive(store.selectedMailboxId)) {
@@ -296,6 +298,17 @@ const resolveMailboxId = (emailData = null) => {
   }
   return store.defaultMailbox?.id || null;
 };
+
+// Options for the From picker: active mailboxes, plus the currently
+// assigned mailbox when it is inactive (so the assignment stays visible)
+const composeMailboxes = computed(() => {
+  const list = [...store.activeMailboxes];
+  if (form.mailbox_id && !list.some(m => m.id === form.mailbox_id)) {
+    const assigned = store.mailboxes.find(m => m.id === form.mailbox_id);
+    if (assigned) list.push(assigned);
+  }
+  return list;
+});
 
 const attachments = ref([]);
 const showCcBcc = ref(false);
@@ -410,8 +423,12 @@ watch(() => props.isOpen, (newValue) => {
     adminBarHeight.value = getAdminBarHeight();
 
     if (!store.mailboxesLoaded) {
+      // loadMailboxes() coalesces with any in-flight fetch and resolves
+      // only after fresh data lands, so this re-resolve is reliable
       store.loadMailboxes().then(() => {
-        form.mailbox_id = resolveMailboxId(props.emailData);
+        if (props.isOpen && !form.mailbox_id) {
+          form.mailbox_id = resolveMailboxId(props.emailData);
+        }
       });
     }
     form.mailbox_id = resolveMailboxId(props.emailData);
