@@ -38,6 +38,8 @@ final class FluentMailbox
         register_deactivation_hook(__FILE__, [__CLASS__, 'deactivate']);
         add_filter('cron_schedules', [__CLASS__, 'registerCronInterval']);
         add_action('fluent_mailbox_sync_event', [\FluentMailbox\Services\SyncService::class, 'syncFromCron']);
+        // Retry any attachment purge a crashed/timed-out deletion left pending
+        add_action('fluent_mailbox_sync_event', [\FluentMailbox\Http\Controllers\AttachmentController::class, 'flushPurgeQueue']);
         add_action('admin_menu', [$this, 'registerMenu']);
         add_action('wp_ajax_fluent_mailbox_attachment', [\FluentMailbox\Http\Controllers\AttachmentController::class, 'streamProtected']);
         add_action('admin_enqueue_scripts', [$this, 'enqueueAssets']);

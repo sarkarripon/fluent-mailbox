@@ -122,34 +122,97 @@ class AttachmentController
     }
 
     /**
+     * Durable pending-purge queue: attachment ids are recorded here
+     * BEFORE their email row is deleted, so an interruption (timeout,
+     * dying worker, failed file removal) can never strand confidential
+     * files with no record of them — the queue is flushed on every
+     * delete/empty-trash call and on the sync cron until each purge
+     * verifiably completes.
+     */
+    const PURGE_QUEUE_OPTION = 'fluent_mailbox_pending_attachment_purge';
+
+    /**
      * Permanently delete one protected inbound attachment (file, media
      * row, and its now-empty random directory). Non-protected ids are
      * left alone — compose uploads live in the regular media library.
+     *
+     * @return bool true when the media row AND file are verifiably gone.
      */
     public static function deleteProtected($id)
     {
+        if (!get_post($id)) {
+            return true; // already gone
+        }
         if (!get_post_meta($id, '_fluent_mailbox_protected', true)) {
-            return;
+            return true; // not ours to delete
         }
         $file = get_attached_file($id);
         wp_delete_attachment($id, true);
-        if ($file) {
+        if ($file && file_exists($file)) {
+            @unlink($file); // a deletion hook may have vetoed wp_delete_attachment
+        }
+        $gone = !get_post($id) && (!$file || !file_exists($file));
+        if ($gone && $file) {
             @rmdir(dirname($file)); // only removes the random dir if empty
         }
+        return $gone;
     }
 
     /**
-     * Delete every protected attachment referenced by an email row's
-     * attachments JSON (used on permanent email deletion / empty trash).
+     * Record attachment ids as pending purge. Called BEFORE the email
+     * row delete; flushPurgeQueue() only ever purges ids no surviving
+     * email references, so queued ids for a failed row-delete are
+     * simply dropped, never destroyed.
      */
-    public static function purgeEmailAttachments($attachmentsJson)
+    public static function queuePurge($attachmentsJson)
     {
-        $ids = json_decode((string) $attachmentsJson, true);
-        foreach ((array) $ids as $id) {
-            if (is_numeric($id)) {
-                self::deleteProtected((int) $id);
+        $ids = array_values(array_filter(array_map('intval', (array) json_decode((string) $attachmentsJson, true))));
+        if (!$ids) {
+            return;
+        }
+        $queue = array_map('intval', (array) get_option(self::PURGE_QUEUE_OPTION, []));
+        update_option(self::PURGE_QUEUE_OPTION, array_values(array_unique(array_merge($queue, $ids))), false);
+    }
+
+    /**
+     * Purge every queued attachment whose email row is gone; ids still
+     * referenced by a surviving email are dropped from the queue
+     * untouched, ids whose purge fails stay queued for the next flush.
+     */
+    public static function flushPurgeQueue()
+    {
+        $queue = array_map('intval', (array) get_option(self::PURGE_QUEUE_OPTION, []));
+        if (!$queue) {
+            return;
+        }
+
+        $remaining = [];
+        foreach ($queue as $id) {
+            if (self::isReferencedByEmail($id)) {
+                continue; // its email survived — keep the attachment, drop the entry
+            }
+            if (!self::deleteProtected($id)) {
+                $remaining[] = $id;
             }
         }
+        update_option(self::PURGE_QUEUE_OPTION, array_values($remaining), false);
+    }
+
+    private static function isReferencedByEmail($id)
+    {
+        global $wpdb;
+        $table = $wpdb->prefix . 'fluent_mailbox_emails';
+        $candidates = $wpdb->get_col($wpdb->prepare(
+            "SELECT attachments FROM $table WHERE attachments LIKE %s",
+            '%' . $wpdb->esc_like((string) (int) $id) . '%'
+        ));
+        foreach ($candidates as $json) {
+            $ids = json_decode((string) $json, true);
+            if (is_array($ids) && in_array((int) $id, array_map('intval', $ids), true)) {
+                return true;
+            }
+        }
+        return false;
     }
     
     public function getAttachmentInfo($request)

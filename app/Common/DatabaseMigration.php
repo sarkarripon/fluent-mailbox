@@ -110,6 +110,12 @@ class DatabaseMigration
         // Every mailbox needs an inbound secret for the public webhook endpoint
         self::backfillInboundSecrets();
 
+        // MUST run after migrateLegacyAwsMailbox(): the legacy upgrade
+        // assigns mailbox_id to every pre-mailbox row, and that bulk
+        // assignment has to happen before the unique dedup constraint
+        // exists — otherwise legacy duplicate rows would make it fail
+        self::ensureDedupIndex();
+
         return self::verifySchema();
     }
 
@@ -166,14 +172,30 @@ class DatabaseMigration
             $wpdb->query("ALTER TABLE $table ADD INDEX mailbox_id (mailbox_id)");
         }
 
-        // DB-enforced per-mailbox de-duplication on a FULL-VALUE key: the
-        // unique index pairs SHA-256(message_id) with mailbox_id, so two
-        // distinct ids can never be conflated the way a length-limited
-        // index prefix could. NON-DESTRUCTIVE migration: no row is ever
-        // deleted — where existing rows would collide, the newer rows
-        // simply keep a NULL hash (NULL tuples never participate in a
-        // unique constraint), so uniqueness applies to future inserts
-        // while all existing data, notes, and tags stay untouched.
+    }
+
+    /**
+     * DB-enforced per-mailbox de-duplication on a FULL-VALUE key: the
+     * unique index pairs SHA-256(message_id) with mailbox_id, so two
+     * distinct ids can never be conflated the way a length-limited
+     * index prefix could. NON-DESTRUCTIVE: no row is ever deleted —
+     * where existing rows would collide, the newer rows simply keep a
+     * NULL hash (NULL tuples never participate in a unique constraint),
+     * so uniqueness applies to future inserts while all existing data,
+     * notes, and tags stay untouched.
+     *
+     * Runs after migrateLegacyAwsMailbox() so legacy rows already carry
+     * their mailbox_id before the constraint exists.
+     */
+    private static function ensureDedupIndex()
+    {
+        global $wpdb;
+        $table = $wpdb->prefix . 'fluent_mailbox_emails';
+
+        if ($wpdb->get_var("SHOW TABLES LIKE '$table'") !== $table) {
+            return;
+        }
+
         $unique = $wpdb->get_results("SHOW INDEX FROM $table WHERE Key_name = 'uniq_message_mailbox'");
         $onHash = false;
         foreach ($unique as $indexRow) {
@@ -191,10 +213,12 @@ class DatabaseMigration
             $wpdb->query("UPDATE $table SET message_id = NULL WHERE message_id = ''");
             $wpdb->query("UPDATE $table SET dedup_hash = SHA2(message_id, 256) WHERE message_id IS NOT NULL AND dedup_hash IS NULL");
             // Neutralize (not delete) collisions: the oldest row keeps its
-            // hash, later ones get NULL so the unique index can be created
+            // hash, later ones get NULL so the unique index can be created.
+            // NULL-safe mailbox comparison (<=>) so still-unassigned rows
+            // are neutralized too and can never trip the constraint later
             $wpdb->query("UPDATE $table e2 JOIN $table e1
                 ON e1.dedup_hash = e2.dedup_hash
-                AND e1.mailbox_id = e2.mailbox_id
+                AND e1.mailbox_id <=> e2.mailbox_id
                 AND e2.id > e1.id
                 SET e2.dedup_hash = NULL");
             $legacy = $wpdb->get_results("SHOW INDEX FROM $table WHERE Key_name = 'message_mailbox'");
@@ -270,12 +294,17 @@ class DatabaseMigration
         ]);
 
         if ($mailboxId) {
-            // Existing emails belong to the migrated mailbox
+            // Existing emails belong to the migrated mailbox. Runs before
+            // ensureDedupIndex(), so the bulk assignment cannot collide
+            // with the unique dedup constraint.
             $emailsTable = $wpdb->prefix . 'fluent_mailbox_emails';
-            $wpdb->query($wpdb->prepare(
+            $assigned = $wpdb->query($wpdb->prepare(
                 "UPDATE $emailsTable SET mailbox_id = %d WHERE mailbox_id IS NULL OR mailbox_id = 0",
                 $mailboxId
             ));
+            if ($assigned === false) {
+                \FluentMailbox\Services\Logger::log('Legacy mailbox assignment failed', ['error' => $wpdb->last_error]);
+            }
         }
     }
 

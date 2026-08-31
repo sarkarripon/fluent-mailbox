@@ -317,15 +317,20 @@ class MailController
 
         // If email is already in trash OR permanent flag is set, permanently delete
         if ($email->status === 'trash' || $permanent) {
-            // Permanent delete: remove the row FIRST and only purge its
-            // protected attachment files once the delete is confirmed —
-            // a surviving email row must never point at destroyed files
+            // Permanent delete. Ordering guarantees both invariants:
+            // (1) the attachment ids are queued DURABLY before anything
+            //     is destroyed, so an interruption can never strand files
+            //     with no record of them (the flush retries later);
+            // (2) files are only purged once the row delete is confirmed —
+            //     the flush skips ids a surviving email still references.
+            AttachmentController::queuePurge($email->attachments ?? null);
             global $wpdb;
             $table = Email::getTable();
             if (!$wpdb->delete($table, ['id' => $id], ['%d'])) {
+                AttachmentController::flushPurgeQueue(); // drops the still-referenced ids
                 return new \WP_Error('delete_failed', 'Could not delete the email; nothing was removed.', ['status' => 500]);
             }
-            AttachmentController::purgeEmailAttachments($email->attachments ?? null);
+            AttachmentController::flushPurgeQueue();
             return rest_ensure_response(['message' => 'Email permanently deleted']);
         } else {
             // Soft delete - move to trash
@@ -375,24 +380,31 @@ class MailController
         $deleted = 0;
         $failed = 0;
 
-        // Row by row, in bounded batches: a row's attachment files are
-        // purged only AFTER its DB delete is confirmed, so an interrupted
-        // or partially failed run is always consistent (surviving rows
-        // keep their files) and simply resumable by emptying trash again
+        // Retry any purge left over from a previously interrupted run
+        AttachmentController::flushPurgeQueue();
+
+        // Row by row, in bounded batches. Per row: queue its attachment
+        // ids durably, then delete the row. Files are only purged by the
+        // flush below, which skips ids a surviving email still references
+        // — so an interrupted or partially failed run is always consistent
+        // and resumable, and no file can be stranded without a record.
         do {
             $rows = $mailboxId
                 ? $wpdb->get_results($wpdb->prepare("SELECT id, attachments FROM $table WHERE status = 'trash' AND mailbox_id = %d ORDER BY id LIMIT %d", $mailboxId, $batchSize))
                 : $wpdb->get_results($wpdb->prepare("SELECT id, attachments FROM $table WHERE status = 'trash' ORDER BY id LIMIT %d", $batchSize));
 
             foreach ($rows as $row) {
+                AttachmentController::queuePurge($row->attachments);
                 if ($wpdb->delete($table, ['id' => (int) $row->id], ['%d'])) {
-                    AttachmentController::purgeEmailAttachments($row->attachments);
                     $deleted++;
                 } else {
                     $failed++;
                 }
             }
         } while (count($rows) === $batchSize && $failed === 0);
+
+        AttachmentController::flushPurgeQueue();
+        $pendingCleanup = count((array) get_option(AttachmentController::PURGE_QUEUE_OPTION, []));
 
         if ($failed) {
             return new \WP_Error(
@@ -403,8 +415,11 @@ class MailController
         }
 
         return rest_ensure_response([
-            'message' => 'All emails in trash deleted successfully',
-            'deleted_count' => $deleted
+            'message' => $pendingCleanup
+                ? sprintf('All emails in trash deleted; %d attachment file(s) still pending cleanup and will be retried automatically.', $pendingCleanup)
+                : 'All emails in trash deleted successfully',
+            'deleted_count' => $deleted,
+            'pending_attachment_cleanup' => $pendingCleanup
         ]);
     }
 

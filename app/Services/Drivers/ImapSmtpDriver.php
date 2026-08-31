@@ -200,16 +200,30 @@ class ImapSmtpDriver implements MailDriverInterface
             $imported = 0;
             $maxUid = $lastUid;
 
+            // Process in ascending UID order and advance the cursor only
+            // across contiguous successful (or confirmed-duplicate) imports:
+            // a transient failure (full disk, DB error) stops the run so the
+            // failed message is retried next poll instead of being skipped
+            // forever once the cursor moves past it
+            $byUid = [];
             foreach ($messages as $message) {
                 $uid = (int) $message->getUid();
-                if ($uid <= $lastUid) {
-                    continue;
+                if ($uid > $lastUid) {
+                    $byUid[$uid] = $message;
                 }
+            }
+            ksort($byUid);
 
+            foreach ($byUid as $uid => $message) {
                 $raw = trim($message->getHeader()->raw) . "\r\n\r\n" . $message->getRawBody();
                 $result = $inbound->processFromContent($raw, 'imap_' . $mailbox->id . '_' . $uid, true, (int) $mailbox->id);
 
-                if (!is_wp_error($result) && $result !== false) {
+                if (is_wp_error($result)) {
+                    Logger::log('IMAP import failed — cursor held for retry', ['uid' => $uid, 'error' => $result->get_error_message()]);
+                    break;
+                }
+
+                if ($result !== false) {
                     $imported++;
                     if (!empty($settings['mark_as_read']) && method_exists($message, 'setFlag')) {
                         try {
@@ -220,7 +234,7 @@ class ImapSmtpDriver implements MailDriverInterface
                     }
                 }
 
-                $maxUid = max($maxUid, $uid);
+                $maxUid = $uid;
             }
 
             $state['last_uid'] = $maxUid;
