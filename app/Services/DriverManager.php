@@ -8,6 +8,7 @@ use FluentMailbox\Services\Drivers\SesDriver;
 use FluentMailbox\Services\Drivers\MailgunDriver;
 use FluentMailbox\Services\Drivers\PostmarkDriver;
 use FluentMailbox\Services\Drivers\ElasticEmailDriver;
+use FluentMailbox\Services\Drivers\BrevoDriver;
 
 /**
  * Registry + factory for mail drivers. Third parties can register
@@ -62,6 +63,13 @@ class DriverManager
                 'class' => ElasticEmailDriver::class,
                 'capabilities' => ['polling' => false, 'push' => true],
                 'fields' => ElasticEmailDriver::fields(),
+            ],
+            'brevo' => [
+                'label' => __('Brevo (API)', 'fluent-mailbox'),
+                'description' => __('Send via the Brevo (formerly Sendinblue) v3 API and receive via an Inbound Parsing webhook posting to your webhook.', 'fluent-mailbox'),
+                'class' => BrevoDriver::class,
+                'capabilities' => ['polling' => false, 'push' => true],
+                'fields' => BrevoDriver::fields(),
             ],
         ];
 

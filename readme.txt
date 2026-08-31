@@ -1,23 +1,23 @@
 === Fluent Mailbox ===
 Contributors: fluentmailbox
-Tags: email, mailbox, imap, smtp, ses, mailgun, postmark, email-client, gmail-like
+Tags: email, mailbox, imap, smtp, ses, mailgun, postmark, brevo, email-client, gmail-like
 Requires at least: 5.8
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.1.3
+Stable tag: 1.1.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-A modern, Gmail-like email client for WordPress. Connect any mailbox via IMAP/SMTP, Amazon SES, Mailgun, Postmark, or Elastic Email — and manage multiple mailboxes from your admin panel.
+A modern, Gmail-like email client for WordPress. Connect any mailbox via IMAP/SMTP, Amazon SES, Mailgun, Postmark, Elastic Email, or Brevo — and manage multiple mailboxes from your admin panel.
 
 == Description ==
 
-Fluent Mailbox is a powerful email management plugin that transforms your WordPress admin into a modern email client. Built with Vue.js, it connects to the mailboxes you already own — cPanel/hosting email, Zoho, or Gmail via IMAP/SMTP, plus Amazon SES, Mailgun, Postmark, and Elastic Email — and provides a seamless email experience similar to Gmail.
+Fluent Mailbox is a powerful email management plugin that transforms your WordPress admin into a modern email client. Built with Vue.js, it connects to the mailboxes you already own — cPanel/hosting email, Zoho, or Gmail via IMAP/SMTP, plus Amazon SES, Mailgun, Postmark, Elastic Email, and Brevo — and provides a seamless email experience similar to Gmail.
 
 = Key Features =
 
 * **Modern Email Interface**: Clean, intuitive Gmail-like interface built with Vue.js
-* **Multiple Providers**: Connect via IMAP/SMTP (cPanel, Zoho, Gmail presets), Amazon SES, Mailgun, Postmark, or Elastic Email
+* **Multiple Providers**: Connect via IMAP/SMTP (cPanel, Zoho, Gmail presets), Amazon SES, Mailgun, Postmark, Elastic Email, or Brevo
 * **Multiple Mailboxes**: Manage marketing@, business@, support@ side by side, each with its own connection, unread counts, and sidebar switcher
 * **Email Management**:
   * Inbox, Sent, Drafts, and Trash folders
@@ -79,7 +79,7 @@ Fluent Mailbox is a powerful email management plugin that transforms your WordPr
 
 * WordPress 5.8 or higher
 * PHP 8.0 or higher
-* At least one email connection: an IMAP/SMTP mailbox (cPanel/hosting email, Zoho, Gmail with an app password), or an Amazon SES, Mailgun, Postmark, or Elastic Email account
+* At least one email connection: an IMAP/SMTP mailbox (cPanel/hosting email, Zoho, Gmail with an app password), or an Amazon SES, Mailgun, Postmark, Elastic Email, or Brevo account
 
 == Frequently Asked Questions ==
 
@@ -89,7 +89,7 @@ No. An AWS account is only needed if you choose the Amazon SES driver. You can i
 
 = Can I use this with other email services? =
 
-Yes. Fluent Mailbox supports IMAP/SMTP (works with most providers), Amazon SES, Mailgun, Postmark, and Elastic Email. Third-party drivers can be registered via the `fluent_mailbox_drivers` filter. Gmail/Microsoft OAuth2 is planned for a future version.
+Yes. Fluent Mailbox supports IMAP/SMTP (works with most providers), Amazon SES, Mailgun, Postmark, Elastic Email, and Brevo. Third-party drivers can be registered via the `fluent_mailbox_drivers` filter. Gmail/Microsoft OAuth2 is planned for a future version.
 
 = Can I connect more than one mailbox? =
 
@@ -97,7 +97,7 @@ Yes. Add as many mailboxes as you like (e.g. marketing@, business@, support@), e
 
 = How do I receive emails? =
 
-IMAP mailboxes are polled every 5 minutes via WP-Cron. Amazon SES uses S3 and SNS (the plugin sets up the bucket, topic, and receipt rule for you). Mailgun, Postmark, and Elastic Email deliver via secured per-mailbox webhooks.
+IMAP mailboxes are polled every 5 minutes via WP-Cron. Amazon SES uses S3 and SNS (the plugin sets up the bucket, topic, and receipt rule for you). Mailgun, Postmark, Elastic Email, and Brevo deliver via secured per-mailbox webhooks.
 
 = How are inbound attachments protected? =
 
@@ -140,6 +140,9 @@ Yes! Use keyboard shortcuts for faster navigation:
 6. Drafts management
 
 == Changelog ==
+
+= 1.1.4 =
+* New driver: Brevo (formerly Sendinblue) — send via the v3 transactional API, receive via an Inbound Parsing webhook; inbound attachments are fetched through the Brevo attachments API with the same size bounds as other drivers
 
 = 1.1.3 =
 * Per-mailbox de-duplication is now enforced by a unique database index, so concurrent deliveries (webhook retries, overlapping syncs) can no longer import the same message twice
@@ -187,6 +190,9 @@ Yes! Use keyboard shortcuts for faster navigation:
 * Unread indicators and badges
 
 == Upgrade Notice ==
+
+= 1.1.4 =
+Adds the Brevo driver.
 
 = 1.1.3 =
 Hardens inbound de-duplication with a unique database index and makes deletion failure-aware.
@@ -245,6 +251,7 @@ fluent-mailbox/
 │       │   └── MailDriverInterface.php
 │       ├── DriverManager.php
 │       ├── Drivers/
+│       │   ├── BrevoDriver.php
 │       │   ├── ElasticEmailDriver.php
 │       │   ├── ImapSmtpDriver.php
 │       │   ├── MailgunDriver.php

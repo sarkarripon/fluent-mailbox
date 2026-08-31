@@ -1730,6 +1730,7 @@ class ComposerStaticInit7ff96fb920f8940253a0c88370506468
         'FluentMailbox\\Services\\AwsSetupService' => __DIR__ . '/../..' . '/app/Services/AwsSetupService.php',
         'FluentMailbox\\Services\\Contracts\\MailDriverInterface' => __DIR__ . '/../..' . '/app/Services/Contracts/MailDriverInterface.php',
         'FluentMailbox\\Services\\DriverManager' => __DIR__ . '/../..' . '/app/Services/DriverManager.php',
+        'FluentMailbox\\Services\\Drivers\\BrevoDriver' => __DIR__ . '/../..' . '/app/Services/Drivers/BrevoDriver.php',
         'FluentMailbox\\Services\\Drivers\\ElasticEmailDriver' => __DIR__ . '/../..' . '/app/Services/Drivers/ElasticEmailDriver.php',
         'FluentMailbox\\Services\\Drivers\\ImapSmtpDriver' => __DIR__ . '/../..' . '/app/Services/Drivers/ImapSmtpDriver.php',
         'FluentMailbox\\Services\\Drivers\\MailgunDriver' => __DIR__ . '/../..' . '/app/Services/Drivers/MailgunDriver.php',
