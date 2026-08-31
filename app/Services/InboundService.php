@@ -176,9 +176,18 @@ class InboundService
             return new \WP_Error('attachment_error', 'Failed to store inbound attachment: ' . $error);
         };
 
+        // Sender-controlled sizes must be BOUNDED: parts are streamed to
+        // disk in chunks (never fully decoded into a PHP string), capped
+        // per part and per message. An oversized part is skipped WITH A
+        // LOG — not an error — so a legitimate-but-huge message can still
+        // import and IMAP/webhook retries cannot livelock on it.
+        $maxPart = (int) apply_filters('fluent_mailbox_max_attachment_bytes', 25 * MB_IN_BYTES);
+        $maxTotal = (int) apply_filters('fluent_mailbox_max_attachments_total_bytes', 50 * MB_IN_BYTES);
+        $totalBytes = 0;
+
         foreach ($message->getAllAttachmentParts() as $index => $part) {
-            $content = $part->getContent();
-            if ($content === null || $content === '') {
+            $stream = $part->getContentStream();
+            if (!$stream) {
                 continue;
             }
 
@@ -186,6 +195,12 @@ class InboundService
                 $dir = self::protectedDir();
                 if (is_wp_error($dir)) {
                     return $abort($dir->get_error_message());
+                }
+                // Keep a storage reserve: refuse (fail-closed, retryable)
+                // rather than fill the volume to the last byte
+                $free = @disk_free_space($dir);
+                if ($free !== false && $free < $maxTotal + 100 * MB_IN_BYTES) {
+                    return $abort('insufficient free disk space for inbound attachments');
                 }
             }
 
@@ -201,9 +216,44 @@ class InboundService
             $storedName = wp_generate_password(16, false, false) . ($ext !== '' ? '.' . $ext : '');
             $path = $dir . '/' . $storedName;
 
-            if (file_put_contents($path, $content) === false) {
+            $out = @fopen($path, 'wb');
+            if (!$out) {
+                return $abort('could not open ' . $filename . ' for writing');
+            }
+            $written = 0;
+            $oversized = false;
+            $writeFailed = false;
+            while (!$stream->eof()) {
+                $chunk = $stream->read(256 * 1024);
+                if ($chunk === '') {
+                    break;
+                }
+                $written += strlen($chunk);
+                if ($written > $maxPart || $totalBytes + $written > $maxTotal) {
+                    $oversized = true;
+                    break;
+                }
+                if (fwrite($out, $chunk) !== strlen($chunk)) {
+                    $writeFailed = true;
+                    break;
+                }
+            }
+            fclose($out);
+
+            if ($writeFailed) {
+                @unlink($path);
                 return $abort('could not write ' . $filename);
             }
+            if ($oversized) {
+                @unlink($path);
+                \FluentMailbox\Services\Logger::log('Inbound attachment skipped: exceeds size limit', ['file' => $filename, 'limit_bytes' => $maxPart]);
+                continue;
+            }
+            if ($written === 0) {
+                @unlink($path);
+                continue;
+            }
+            $totalBytes += $written;
 
             $type = wp_check_filetype($filename);
             $attachmentId = wp_insert_attachment([
@@ -287,7 +337,19 @@ class InboundService
             . "Content-Type: text/html; charset=UTF-8\r\n\r\n"
             . $html . "\r\n";
 
+        // Same size bounds as the storage layer, applied up front from the
+        // base64 length so oversized parts never inflate the rebuilt MIME
+        $maxPart = (int) apply_filters('fluent_mailbox_max_attachment_bytes', 25 * MB_IN_BYTES);
+        $maxTotal = (int) apply_filters('fluent_mailbox_max_attachments_total_bytes', 50 * MB_IN_BYTES);
+        $totalBytes = 0;
+
         foreach (array_values($attachments) as $i => $att) {
+            $estimatedBytes = (int) (strlen((string) ($att['content'] ?? '')) * 0.75);
+            if ($estimatedBytes > $maxPart || $totalBytes + $estimatedBytes > $maxTotal) {
+                Logger::log('Inbound attachment skipped: exceeds size limit', ['name' => (string) ($att['name'] ?? ''), 'estimated_bytes' => $estimatedBytes, 'limit_bytes' => $maxPart]);
+                continue;
+            }
+            $totalBytes += $estimatedBytes;
             // Sender-controlled name/type land inside part headers —
             // strip quotes, backslashes, and control characters
             $filename = preg_replace('/[\x00-\x1f"\\\\]/', '', (string) ($att['name'] ?? ''));
