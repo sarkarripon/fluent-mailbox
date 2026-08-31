@@ -24,6 +24,8 @@ class BrevoDriver implements MailDriverInterface
         return [
             ['key' => 'api_key', 'label' => __('API key', 'fluent-mailbox'), 'type' => 'password', 'group' => 'brevo', 'secret' => true,
              'help' => __('Brevo → SMTP & API → API Keys. For receiving, point your receiving (sub)domain\'s MX records at inbound1.sendinblue.com and inbound2.sendinblue.com, then create an inbound webhook (POST /v3/webhooks with type "inbound", event "inboundEmailProcessed", your domain, and this mailbox\'s webhook URL).', 'fluent-mailbox'), 'default' => ''],
+            ['key' => 'sender_email', 'label' => __('Verified sender address', 'fluent-mailbox'), 'type' => 'text', 'group' => 'brevo',
+             'help' => __('Address on your verified Brevo sending domain, used as the From address. Brevo\'s inbound-parsing domain must differ from your sending domain, so when this mailbox\'s address lives on the inbound domain, set a verified sender here — replies are still directed back to the mailbox address via Reply-To. Leave empty to send from the mailbox address itself.', 'fluent-mailbox'), 'default' => ''],
         ];
     }
 
@@ -58,7 +60,13 @@ class BrevoDriver implements MailDriverInterface
             return new \WP_Error('brevo_error', __('Brevo API key is required.', 'fluent-mailbox'));
         }
 
-        $sender = ['email' => $args['from_email']];
+        // The mailbox address usually lives on the inbound-parsing domain,
+        // which Brevo does not allow as a sending domain — so the From
+        // address may be a separate verified sender, with Reply-To pointed
+        // back at the mailbox address so replies return through the
+        // inbound webhook instead of dead-ending on the sending domain
+        $senderEmail = trim((string) ($settings['sender_email'] ?? '')) ?: $args['from_email'];
+        $sender = ['email' => $senderEmail];
         if (!empty($args['from_name'])) {
             $sender['name'] = $args['from_name'];
         }
@@ -69,6 +77,11 @@ class BrevoDriver implements MailDriverInterface
             'subject' => $args['subject'],
             'htmlContent' => $args['body'],
             'textContent' => wp_strip_all_tags($args['body']),
+            // Content-derived idempotency key (UUID shape, 30-minute TTL at
+            // Brevo): a user retry after an ambiguous failure — e.g. a
+            // timeout after Brevo already accepted the request — re-sends
+            // the same content under the same key and cannot deliver twice
+            'headers' => ['idempotencyKey' => $this->idempotencyKey($args)],
         ];
         if (!empty($args['cc'])) {
             $payload['cc'] = $this->addressList($args['cc']);
@@ -76,8 +89,9 @@ class BrevoDriver implements MailDriverInterface
         if (!empty($args['bcc'])) {
             $payload['bcc'] = $this->addressList($args['bcc']);
         }
-        if (!empty($args['reply_to'])) {
-            $payload['replyTo'] = ['email' => $args['reply_to']];
+        $replyTo = trim((string) ($args['reply_to'] ?? '')) ?: (string) $args['from_email'];
+        if ($replyTo !== '' && $replyTo !== $senderEmail) {
+            $payload['replyTo'] = ['email' => $replyTo];
         }
 
         $attachments = array_filter((array) ($args['attachments'] ?? []), 'file_exists');
@@ -109,6 +123,12 @@ class BrevoDriver implements MailDriverInterface
         $result = is_array($result) ? $result : [];
 
         if ($code < 200 || $code >= 300) {
+            // duplicate_parameter = this idempotency key was already
+            // accepted within its TTL: the earlier (timed-out) attempt
+            // delivered, so report success instead of provoking another retry
+            if (($result['code'] ?? '') === 'duplicate_parameter') {
+                return 'brevo_dedup_' . $this->idempotencyKey($args);
+            }
             $message = $result['message'] ?? 'Brevo send failed (HTTP ' . $code . ')';
             Logger::log('Brevo send failed', ['error' => $message]);
             return new \WP_Error('brevo_error', $message);
@@ -117,6 +137,23 @@ class BrevoDriver implements MailDriverInterface
         // Any 2xx means accepted — a missing/renamed id field must not
         // read as failure, or the user resends and delivers twice
         return $result['messageId'] ?? ($result['messageIds'][0] ?? ('brevo_sent_' . uniqid()));
+    }
+
+    /**
+     * Deterministic UUID-shaped key from the message content, so an
+     * identical retry reuses the key while any content change gets a
+     * fresh one.
+     */
+    private function idempotencyKey(array $args)
+    {
+        $material = wp_json_encode([
+            $args['from_email'] ?? '', $args['to'] ?? '', $args['cc'] ?? '', $args['bcc'] ?? '',
+            $args['subject'] ?? '', $args['body'] ?? '',
+            array_map('basename', (array) ($args['attachments'] ?? [])),
+        ]);
+        $hash = md5($material);
+        return sprintf('%s-%s-%s-%s-%s',
+            substr($hash, 0, 8), substr($hash, 8, 4), substr($hash, 12, 4), substr($hash, 16, 4), substr($hash, 20, 12));
     }
 
     /**
@@ -168,6 +205,10 @@ class BrevoDriver implements MailDriverInterface
         }
 
         $settings = Mailbox::settingsOf($mailbox);
+
+        // Attachment-bearing imports briefly hold base64 + rebuilt-MIME
+        // copies of the parts — allow the admin-level memory budget
+        wp_raise_memory_limit('admin');
 
         $imported = false;
         foreach ($items as $item) {
@@ -241,14 +282,22 @@ class BrevoDriver implements MailDriverInterface
 
         $raw = InboundService::buildRawMime($headers, $html, $attachments);
 
-        // A recipient address may belong to another connected mailbox (e.g. CC),
+        // A recipient address may belong to another connected mailbox,
         // but the URL-addressed mailbox wins whenever it is itself among the
         // recipients — and stays authoritative when nothing matches
-        // (routeInbound()'s default-mailbox fallback must not override it)
+        // (routeInbound()'s default-mailbox fallback must not override it).
+        // `Recipients` is the envelope (RCPT TO) list, the only place a
+        // Bcc delivery shows up — the visible To/Cc headers are just a
+        // fallback for payloads that omit it. Entries appear both as bare
+        // strings and as {Address} mailbox objects.
         $recipientMailbox = (int) $mailbox->id;
         $recipients = [];
-        foreach (array_merge((array) ($item['To'] ?? []), (array) ($item['Cc'] ?? [])) as $entry) {
-            $address = is_array($entry) ? trim((string) ($entry['Address'] ?? '')) : '';
+        $candidates = (array) ($item['Recipients'] ?? []);
+        if (!$candidates) {
+            $candidates = array_merge((array) ($item['To'] ?? []), (array) ($item['Cc'] ?? []));
+        }
+        foreach ($candidates as $entry) {
+            $address = is_array($entry) ? trim((string) ($entry['Address'] ?? '')) : trim((string) $entry);
             if ($address !== '' && strpos($address, '@') !== false) {
                 $recipients[] = $address;
             }
@@ -268,10 +317,14 @@ class BrevoDriver implements MailDriverInterface
 
     /**
      * Fetch attachment bodies through the attachments API using each
-     * part's DownloadToken. Oversized parts are skipped up front (same
-     * bounds buildRawMime enforces) so they are never downloaded; a
-     * failed download aborts the import fail-closed so the provider
-     * retry re-imports the whole message.
+     * part's DownloadToken. Downloads stream to temp files with a hard
+     * byte cap enforced by the transport (`limit_response_size`), so a
+     * response is never buffered in memory and the declared
+     * ContentLength — which is only an estimate — cannot be used to
+     * sneak an oversized body past the shared size bounds: the actual
+     * on-disk size is what's checked. Oversized parts are skipped (same
+     * semantics as buildRawMime); a failed download aborts the import
+     * fail-closed so the provider retry re-imports the whole message.
      *
      * @return array|\WP_Error [['name','content','type'], ...] with base64 content.
      */
@@ -293,31 +346,52 @@ class BrevoDriver implements MailDriverInterface
             if (!is_array($part) || empty($part['DownloadToken'])) {
                 continue;
             }
+            $name = (string) ($part['Name'] ?? '');
+            $budget = min($maxPart, $maxTotal - $totalBytes);
             $declaredBytes = (int) ($part['ContentLength'] ?? 0);
-            if ($declaredBytes > $maxPart || $totalBytes + $declaredBytes > $maxTotal) {
-                Logger::log('Inbound attachment skipped: exceeds size limit', ['name' => (string) ($part['Name'] ?? ''), 'declared_bytes' => $declaredBytes, 'limit_bytes' => $maxPart]);
+            if ($budget <= 0 || $declaredBytes > $budget) {
+                Logger::log('Inbound attachment skipped: exceeds size limit', ['name' => $name, 'declared_bytes' => $declaredBytes, 'limit_bytes' => $maxPart]);
                 continue;
+            }
+
+            $tmpFile = wp_tempnam('fm-brevo-attachment');
+            if (!$tmpFile) {
+                return new \WP_Error('brevo_error', 'Cannot create temp file for attachment download');
             }
 
             $response = wp_remote_get(self::API_BASE . '/inbound/attachments/' . rawurlencode((string) $part['DownloadToken']), [
                 'headers' => ['api-key' => $settings['api_key']],
                 'timeout' => 30,
+                'stream' => true,
+                'filename' => $tmpFile,
+                // +1 so an at-the-cap response is distinguishable from a
+                // truncated over-cap one
+                'limit_response_size' => $budget + 1,
             ]);
             if (is_wp_error($response)) {
+                @unlink($tmpFile);
                 return $response;
             }
             $code = wp_remote_retrieve_response_code($response);
             if ($code !== 200) {
+                @unlink($tmpFile);
                 return new \WP_Error('brevo_error', 'Brevo attachment download failed (HTTP ' . $code . ')');
             }
 
-            $body = wp_remote_retrieve_body($response);
-            $totalBytes += strlen($body);
+            $actualBytes = (int) filesize($tmpFile);
+            if ($actualBytes > $budget) {
+                @unlink($tmpFile);
+                Logger::log('Inbound attachment skipped: exceeds size limit', ['name' => $name, 'actual_bytes' => $actualBytes, 'limit_bytes' => $maxPart]);
+                continue;
+            }
+
+            $totalBytes += $actualBytes;
             $attachments[] = [
-                'name' => (string) ($part['Name'] ?? ''),
-                'content' => base64_encode($body),
+                'name' => $name,
+                'content' => base64_encode((string) file_get_contents($tmpFile)),
                 'type' => (string) ($part['ContentType'] ?? ''),
             ];
+            @unlink($tmpFile);
         }
 
         return $attachments;
