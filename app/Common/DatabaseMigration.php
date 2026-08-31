@@ -13,7 +13,7 @@ class DatabaseMigration
 
         $sql = "CREATE TABLE $table (
             id bigint(20) NOT NULL AUTO_INCREMENT,
-            message_id varchar(255) DEFAULT '',
+            message_id varchar(255) DEFAULT NULL,
             subject varchar(255) NOT NULL,
             sender varchar(255) NOT NULL,
             recipients longtext NOT NULL,
@@ -163,10 +163,29 @@ class DatabaseMigration
             $wpdb->query("ALTER TABLE $table ADD INDEX mailbox_id (mailbox_id)");
         }
 
-        // Composite index for per-mailbox de-duplication lookups
-        $indexes = $wpdb->get_results("SHOW INDEX FROM $table WHERE Key_name = 'message_mailbox'");
-        if (empty($indexes)) {
-            $wpdb->query("ALTER TABLE $table ADD INDEX message_mailbox (message_id(191), mailbox_id)");
+        // DB-enforced per-mailbox de-duplication: concurrent deliveries of
+        // the same message must not double-insert, so the dedup key is a
+        // UNIQUE index and the application treats a duplicate-key insert
+        // as "already imported". Empty message ids become NULL first —
+        // NULL tuples never collide, which keeps drafts and legacy rows
+        // (no message id) out of the constraint.
+        $unique = $wpdb->get_results("SHOW INDEX FROM $table WHERE Key_name = 'uniq_message_mailbox'");
+        if (empty($unique)) {
+            $wpdb->query("ALTER TABLE $table MODIFY message_id varchar(255) NULL DEFAULT NULL");
+            $wpdb->query("UPDATE $table SET message_id = NULL WHERE message_id = ''");
+            // Collapse pre-existing duplicates (keep the oldest row) so the
+            // unique index can be created; match on the index's 191-char
+            // prefix, exactly what the constraint will enforce
+            $wpdb->query("DELETE e2 FROM $table e1 JOIN $table e2
+                ON LEFT(e1.message_id, 191) = LEFT(e2.message_id, 191)
+                AND e1.mailbox_id = e2.mailbox_id
+                AND e2.id > e1.id
+                WHERE e1.message_id IS NOT NULL AND e1.mailbox_id IS NOT NULL");
+            $legacy = $wpdb->get_results("SHOW INDEX FROM $table WHERE Key_name = 'message_mailbox'");
+            if (!empty($legacy)) {
+                $wpdb->query("ALTER TABLE $table DROP INDEX message_mailbox");
+            }
+            $wpdb->query("ALTER TABLE $table ADD UNIQUE INDEX uniq_message_mailbox (message_id(191), mailbox_id)");
         }
     }
 

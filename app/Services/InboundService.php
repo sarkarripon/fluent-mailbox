@@ -104,7 +104,10 @@ class InboundService
                 return $attachmentIds;
             }
 
-            // 3. Save to DB
+            // 3. Save to DB. The uniq_message_mailbox unique index is the
+            // real dedup guard: when concurrent deliveries both pass the
+            // SELECT above, the second insert fails with a duplicate key —
+            // treat that as "already imported" and release its attachments
             $emailId = Email::create([
                 'message_id' => $messageId,
                 'subject' => $subject,
@@ -117,7 +120,19 @@ class InboundService
                 'is_read' => 0,
                 'mailbox_id' => $mailboxId
             ]);
-            
+
+            if ($emailId === false) {
+                global $wpdb;
+                foreach ((array) $attachmentIds as $savedId) {
+                    \FluentMailbox\Http\Controllers\AttachmentController::deleteProtected($savedId);
+                }
+                if (stripos((string) $wpdb->last_error, 'duplicate') !== false) {
+                    return false; // Concurrent delivery lost the race — duplicate
+                }
+                \FluentMailbox\Services\Logger::log('Email insert failed', ['error' => $wpdb->last_error]);
+                return new \WP_Error('db_error', 'Failed to save inbound email: ' . $wpdb->last_error);
+            }
+
             \FluentMailbox\Services\Logger::log('Email Saved to DB', ['id' => $emailId, 'subject' => $subject]);
             return $emailId;
 

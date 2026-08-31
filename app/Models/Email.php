@@ -43,6 +43,12 @@ class Email
         $data['created_at'] = current_time('mysql');
         $data['updated_at'] = current_time('mysql');
 
+        // Empty message ids must be NULL: the uniq_message_mailbox index
+        // treats NULL tuples as never-colliding, '' as a real value
+        if (array_key_exists('message_id', $data) && $data['message_id'] === '') {
+            $data['message_id'] = null;
+        }
+
         // Build format array dynamically based on data keys
         $format = [];
         foreach ($data as $key => $value) {
@@ -53,7 +59,9 @@ class Email
             }
         }
 
-        $wpdb->insert(self::getTable(), $data, $format);
+        if ($wpdb->insert(self::getTable(), $data, $format) === false) {
+            return false;
+        }
         return $wpdb->insert_id;
     }
 

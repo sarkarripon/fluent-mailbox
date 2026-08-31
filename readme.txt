@@ -4,7 +4,7 @@ Tags: email, mailbox, imap, smtp, ses, mailgun, postmark, email-client, gmail-li
 Requires at least: 5.8
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.1.2
+Stable tag: 1.1.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -141,6 +141,10 @@ Yes! Use keyboard shortcuts for faster navigation:
 
 == Changelog ==
 
+= 1.1.3 =
+* Per-mailbox de-duplication is now enforced by a unique database index, so concurrent deliveries (webhook retries, overlapping syncs) can no longer import the same message twice
+* Permanent deletion and empty-trash are failure-aware: attachment files are removed only after their email row is confirmed deleted
+
 = 1.1.2 =
 * New driver: Elastic Email — send via the v4 API, receive via an Inbound Route notification webhook
 * Inbound emails now persist attachments (stored as protected media) and CC recipients — for every driver
@@ -183,6 +187,9 @@ Yes! Use keyboard shortcuts for faster navigation:
 * Unread indicators and badges
 
 == Upgrade Notice ==
+
+= 1.1.3 =
+Hardens inbound de-duplication with a unique database index and makes deletion failure-aware.
 
 = 1.1.2 =
 Adds the Elastic Email driver.
