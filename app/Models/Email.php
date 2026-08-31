@@ -178,15 +178,6 @@ class Email
         return $wpdb->delete($table, ['id' => (int)$noteId], ['%d']);
     }
 
-    public static function deleteTrash($mailboxId = null)
-    {
-        global $wpdb;
-        $table = self::getTable();
-        if ($mailboxId) {
-            return $wpdb->query($wpdb->prepare("DELETE FROM $table WHERE status = 'trash' AND mailbox_id = %d", (int) $mailboxId));
-        }
-        return $wpdb->query("DELETE FROM $table WHERE status = 'trash'");
-    }
 
     public static function getDrafts($page = 1, $perPage = 20, $mailboxId = null)
     {

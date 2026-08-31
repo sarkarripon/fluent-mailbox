@@ -317,12 +317,15 @@ class MailController
 
         // If email is already in trash OR permanent flag is set, permanently delete
         if ($email->status === 'trash' || $permanent) {
-            // Permanent delete - remove from database, incl. its protected
-            // inbound attachment files (they must not outlive the email)
-            AttachmentController::purgeEmailAttachments($email->attachments ?? null);
+            // Permanent delete: remove the row FIRST and only purge its
+            // protected attachment files once the delete is confirmed —
+            // a surviving email row must never point at destroyed files
             global $wpdb;
             $table = Email::getTable();
-            $wpdb->delete($table, ['id' => $id], ['%d']);
+            if (!$wpdb->delete($table, ['id' => $id], ['%d'])) {
+                return new \WP_Error('delete_failed', 'Could not delete the email; nothing was removed.', ['status' => 500]);
+            }
+            AttachmentController::purgeEmailAttachments($email->attachments ?? null);
             return rest_ensure_response(['message' => 'Email permanently deleted']);
         } else {
             // Soft delete - move to trash
@@ -366,17 +369,38 @@ class MailController
     {
         $mailboxId = (int) $request->get_param('mailbox_id') ?: null;
 
-        // Purge protected inbound attachment files before the rows go
         global $wpdb;
         $table = Email::getTable();
-        $rows = $mailboxId
-            ? $wpdb->get_col($wpdb->prepare("SELECT attachments FROM $table WHERE status = 'trash' AND mailbox_id = %d AND attachments IS NOT NULL", $mailboxId))
-            : $wpdb->get_col("SELECT attachments FROM $table WHERE status = 'trash' AND attachments IS NOT NULL");
-        foreach ($rows as $attachmentsJson) {
-            AttachmentController::purgeEmailAttachments($attachmentsJson);
-        }
+        $batchSize = 200;
+        $deleted = 0;
+        $failed = 0;
 
-        $deleted = Email::deleteTrash($mailboxId);
+        // Row by row, in bounded batches: a row's attachment files are
+        // purged only AFTER its DB delete is confirmed, so an interrupted
+        // or partially failed run is always consistent (surviving rows
+        // keep their files) and simply resumable by emptying trash again
+        do {
+            $rows = $mailboxId
+                ? $wpdb->get_results($wpdb->prepare("SELECT id, attachments FROM $table WHERE status = 'trash' AND mailbox_id = %d ORDER BY id LIMIT %d", $mailboxId, $batchSize))
+                : $wpdb->get_results($wpdb->prepare("SELECT id, attachments FROM $table WHERE status = 'trash' ORDER BY id LIMIT %d", $batchSize));
+
+            foreach ($rows as $row) {
+                if ($wpdb->delete($table, ['id' => (int) $row->id], ['%d'])) {
+                    AttachmentController::purgeEmailAttachments($row->attachments);
+                    $deleted++;
+                } else {
+                    $failed++;
+                }
+            }
+        } while (count($rows) === $batchSize && $failed === 0);
+
+        if ($failed) {
+            return new \WP_Error(
+                'partial_delete',
+                sprintf('%d emails deleted; %d could not be deleted and remain in trash with their attachments intact.', $deleted, $failed),
+                ['status' => 500, 'deleted_count' => $deleted, 'failed_count' => $failed]
+            );
+        }
 
         return rest_ensure_response([
             'message' => 'All emails in trash deleted successfully',
