@@ -77,12 +77,17 @@ class BrevoDriver implements MailDriverInterface
             'subject' => $args['subject'],
             'htmlContent' => $args['body'],
             'textContent' => wp_strip_all_tags($args['body']),
-            // Content-derived idempotency key (UUID shape, 30-minute TTL at
-            // Brevo): a user retry after an ambiguous failure — e.g. a
-            // timeout after Brevo already accepted the request — re-sends
-            // the same content under the same key and cannot deliver twice
-            'headers' => ['idempotencyKey' => $this->idempotencyKey($args)],
         ];
+        // Idempotency key (UUID shape, 30-minute TTL at Brevo) derived from
+        // the compose operation (draft id) plus the content: a user retry
+        // after an ambiguous failure — e.g. a timeout after Brevo already
+        // accepted the request — re-sends under the same key and cannot
+        // deliver twice, while an edited resend or a separate compose with
+        // identical content gets a fresh key and always sends
+        $idempotencyKey = $this->idempotencyKey($args);
+        if ($idempotencyKey !== null) {
+            $payload['headers'] = ['idempotencyKey' => $idempotencyKey];
+        }
         if (!empty($args['cc'])) {
             $payload['cc'] = $this->addressList($args['cc']);
         }
@@ -124,10 +129,12 @@ class BrevoDriver implements MailDriverInterface
 
         if ($code < 200 || $code >= 300) {
             // duplicate_parameter = this idempotency key was already
-            // accepted within its TTL: the earlier (timed-out) attempt
-            // delivered, so report success instead of provoking another retry
-            if (($result['code'] ?? '') === 'duplicate_parameter') {
-                return 'brevo_dedup_' . $this->idempotencyKey($args);
+            // accepted within its TTL. The key encodes both the compose
+            // operation and its content, so this can only be a retry of an
+            // already-delivered send — report success instead of provoking
+            // another retry
+            if ($idempotencyKey !== null && ($result['code'] ?? '') === 'duplicate_parameter') {
+                return 'brevo_dedup_' . $idempotencyKey;
             }
             $message = $result['message'] ?? 'Brevo send failed (HTTP ' . $code . ')';
             Logger::log('Brevo send failed', ['error' => $message]);
@@ -140,13 +147,22 @@ class BrevoDriver implements MailDriverInterface
     }
 
     /**
-     * Deterministic UUID-shaped key from the message content, so an
-     * identical retry reuses the key while any content change gets a
-     * fresh one.
+     * Deterministic UUID-shaped key identifying one send operation: the
+     * compose's draft id plus the exact content. A retry of the same
+     * unchanged compose reuses the key; editing the draft or composing a
+     * separate message — even with identical content — yields a fresh
+     * one. Without a draft id there is no operation identity, so no key
+     * is used (a legitimate repeat send must never be suppressed).
+     *
+     * @return string|null
      */
     private function idempotencyKey(array $args)
     {
+        if (empty($args['draft_id'])) {
+            return null;
+        }
         $material = wp_json_encode([
+            get_site_url(), (int) $args['draft_id'],
             $args['from_email'] ?? '', $args['to'] ?? '', $args['cc'] ?? '', $args['bcc'] ?? '',
             $args['subject'] ?? '', $args['body'] ?? '',
             array_map('basename', (array) ($args['attachments'] ?? [])),
