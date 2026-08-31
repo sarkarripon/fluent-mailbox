@@ -1492,6 +1492,7 @@ return array(
     'FluentMailbox\\Services\\AwsSetupService' => $baseDir . '/app/Services/AwsSetupService.php',
     'FluentMailbox\\Services\\Contracts\\MailDriverInterface' => $baseDir . '/app/Services/Contracts/MailDriverInterface.php',
     'FluentMailbox\\Services\\DriverManager' => $baseDir . '/app/Services/DriverManager.php',
+    'FluentMailbox\\Services\\Drivers\\BrevoDriver' => $baseDir . '/app/Services/Drivers/BrevoDriver.php',
     'FluentMailbox\\Services\\Drivers\\ElasticEmailDriver' => $baseDir . '/app/Services/Drivers/ElasticEmailDriver.php',
     'FluentMailbox\\Services\\Drivers\\ImapSmtpDriver' => $baseDir . '/app/Services/Drivers/ImapSmtpDriver.php',
     'FluentMailbox\\Services\\Drivers\\MailgunDriver' => $baseDir . '/app/Services/Drivers/MailgunDriver.php',

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Fluent Mailbox
  * Description: A Gmail-like mailbox plugin for WordPress. Connect mailboxes via IMAP/SMTP, Amazon SES, Mailgun, Postmark or Elastic Email.
- * Version: 1.1.3
+ * Version: 1.1.4
  * Requires at least: 5.8
  * Requires PHP: 8.0
  * Author: Fluent Mailbox Team
@@ -12,7 +12,7 @@
 defined('ABSPATH') || exit;
 defined('WP_ENV') || define('WP_ENV', 'production');
 
-define('FLUENT_MAILBOX_VERSION', '1.1.3');
+define('FLUENT_MAILBOX_VERSION', '1.1.4');
 define('FLUENT_MAILBOX_PATH', plugin_dir_path(__FILE__));
 define('FLUENT_MAILBOX_URL', plugin_dir_url(__FILE__));
 

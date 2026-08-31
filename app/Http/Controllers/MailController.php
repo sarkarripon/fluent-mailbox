@@ -85,6 +85,9 @@ class MailController
             'attachments' => $attachmentPaths,
             'from_email' => $mailbox->email,
             'from_name' => $mailbox->from_name,
+            // Operation identity for drivers with idempotent send support:
+            // stable across retries of one compose, distinct between composes
+            'draft_id' => $draftId ? (int) $draftId : null,
         ], Mailbox::settingsOf($mailbox));
 
         if (is_wp_error($messageId)) {
