@@ -7,6 +7,7 @@ use FluentMailbox\Services\Drivers\ImapSmtpDriver;
 use FluentMailbox\Services\Drivers\SesDriver;
 use FluentMailbox\Services\Drivers\MailgunDriver;
 use FluentMailbox\Services\Drivers\PostmarkDriver;
+use FluentMailbox\Services\Drivers\ElasticEmailDriver;
 
 /**
  * Registry + factory for mail drivers. Third parties can register
@@ -54,6 +55,13 @@ class DriverManager
                 'class' => PostmarkDriver::class,
                 'capabilities' => ['polling' => false, 'push' => true],
                 'fields' => PostmarkDriver::fields(),
+            ],
+            'elasticemail' => [
+                'label' => __('Elastic Email (API)', 'fluent-mailbox'),
+                'description' => __('Send via the Elastic Email v4 API and receive via an Inbound Route posting to your webhook.', 'fluent-mailbox'),
+                'class' => ElasticEmailDriver::class,
+                'capabilities' => ['polling' => false, 'push' => true],
+                'fields' => ElasticEmailDriver::fields(),
             ],
         ];
 

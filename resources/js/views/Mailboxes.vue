@@ -328,7 +328,8 @@ const GROUP_LABELS = {
     options: 'Options',
     aws: 'AWS credentials',
     mailgun: 'Mailgun API',
-    postmark: 'Postmark API'
+    postmark: 'Postmark API',
+    elasticemail: 'Elastic Email API'
 };
 
 const groupLabel = (group) => GROUP_LABELS[group] || (group.charAt(0).toUpperCase() + group.slice(1));

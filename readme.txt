@@ -4,20 +4,20 @@ Tags: email, mailbox, imap, smtp, ses, mailgun, postmark, email-client, gmail-li
 Requires at least: 5.8
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.1.1
+Stable tag: 1.1.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-A modern, Gmail-like email client for WordPress. Connect any mailbox via IMAP/SMTP, Amazon SES, Mailgun, or Postmark — and manage multiple mailboxes from your admin panel.
+A modern, Gmail-like email client for WordPress. Connect any mailbox via IMAP/SMTP, Amazon SES, Mailgun, Postmark, or Elastic Email — and manage multiple mailboxes from your admin panel.
 
 == Description ==
 
-Fluent Mailbox is a powerful email management plugin that transforms your WordPress admin into a modern email client. Built with Vue.js, it connects to the mailboxes you already own — cPanel/hosting email, Zoho, or Gmail via IMAP/SMTP, plus Amazon SES, Mailgun, and Postmark — and provides a seamless email experience similar to Gmail.
+Fluent Mailbox is a powerful email management plugin that transforms your WordPress admin into a modern email client. Built with Vue.js, it connects to the mailboxes you already own — cPanel/hosting email, Zoho, or Gmail via IMAP/SMTP, plus Amazon SES, Mailgun, Postmark, and Elastic Email — and provides a seamless email experience similar to Gmail.
 
 = Key Features =
 
 * **Modern Email Interface**: Clean, intuitive Gmail-like interface built with Vue.js
-* **Multiple Providers**: Connect via IMAP/SMTP (cPanel, Zoho, Gmail presets), Amazon SES, Mailgun, or Postmark
+* **Multiple Providers**: Connect via IMAP/SMTP (cPanel, Zoho, Gmail presets), Amazon SES, Mailgun, Postmark, or Elastic Email
 * **Multiple Mailboxes**: Manage marketing@, business@, support@ side by side, each with its own connection, unread counts, and sidebar switcher
 * **Email Management**:
   * Inbox, Sent, Drafts, and Trash folders
@@ -79,7 +79,7 @@ Fluent Mailbox is a powerful email management plugin that transforms your WordPr
 
 * WordPress 5.8 or higher
 * PHP 8.0 or higher
-* At least one email connection: an IMAP/SMTP mailbox (cPanel/hosting email, Zoho, Gmail with an app password), or an Amazon SES, Mailgun, or Postmark account
+* At least one email connection: an IMAP/SMTP mailbox (cPanel/hosting email, Zoho, Gmail with an app password), or an Amazon SES, Mailgun, Postmark, or Elastic Email account
 
 == Frequently Asked Questions ==
 
@@ -89,7 +89,7 @@ No. An AWS account is only needed if you choose the Amazon SES driver. You can i
 
 = Can I use this with other email services? =
 
-Yes. Fluent Mailbox supports IMAP/SMTP (works with most providers), Amazon SES, Mailgun, and Postmark. Third-party drivers can be registered via the `fluent_mailbox_drivers` filter. Gmail/Microsoft OAuth2 is planned for a future version.
+Yes. Fluent Mailbox supports IMAP/SMTP (works with most providers), Amazon SES, Mailgun, Postmark, and Elastic Email. Third-party drivers can be registered via the `fluent_mailbox_drivers` filter. Gmail/Microsoft OAuth2 is planned for a future version.
 
 = Can I connect more than one mailbox? =
 
@@ -97,7 +97,7 @@ Yes. Add as many mailboxes as you like (e.g. marketing@, business@, support@), e
 
 = How do I receive emails? =
 
-IMAP mailboxes are polled every 5 minutes via WP-Cron. Amazon SES uses S3 and SNS (the plugin sets up the bucket, topic, and receipt rule for you). Mailgun and Postmark deliver via secured per-mailbox webhooks.
+IMAP mailboxes are polled every 5 minutes via WP-Cron. Amazon SES uses S3 and SNS (the plugin sets up the bucket, topic, and receipt rule for you). Mailgun, Postmark, and Elastic Email deliver via secured per-mailbox webhooks.
 
 = Are emails stored in WordPress database? =
 
@@ -137,6 +137,11 @@ Yes! Use keyboard shortcuts for faster navigation:
 
 == Changelog ==
 
+= 1.1.2 =
+* New driver: Elastic Email — send via the v4 API, receive via an Inbound Route notification webhook
+* Inbound emails now persist attachments (stored as protected media) and CC recipients — for every driver
+* Inbound HTML is sanitized before storage (scripts and event handlers stripped)
+
 = 1.1.1 =
 * SES configuration now lives entirely on the mailbox record (single source of truth); legacy AWS options are read only once by the upgrade migration
 * AWS setup wizard in Settings now creates/updates the SES mailbox record, including the per-mailbox SNS webhook URL
@@ -149,7 +154,7 @@ Yes! Use keyboard shortcuts for faster navigation:
 * Sidebar mailbox switcher with per-mailbox unread counts; all folder views filter by mailbox
 * Compose "From" picker; replies default to the mailbox the original arrived in
 * Unified secured webhook endpoint per mailbox (`/webhook/{driver}/{mailbox_id}?secret=...`) with per-mailbox secrets and provider signature verification
-* Mailgun inbound now ingests the full raw MIME message (attachments, CC, and original headers preserved)
+* Mailgun inbound now ingests the full raw MIME message instead of rebuilt parsed fields (attachment and CC storage arrived in 1.1.2)
 * Per-mailbox de-duplication so a message delivered to several mailboxes appears in each
 * Reliable background sync: WP-Cron event registered on a 5-minute schedule while polling mailboxes exist
 * Existing AWS SES installs are migrated automatically to a SES mailbox
@@ -174,6 +179,9 @@ Yes! Use keyboard shortcuts for faster navigation:
 * Unread indicators and badges
 
 == Upgrade Notice ==
+
+= 1.1.2 =
+Adds the Elastic Email driver.
 
 = 1.1.1 =
 Finishes the move of SES settings into the mailbox record. Requires PHP 8.0+.
@@ -226,6 +234,7 @@ fluent-mailbox/
 │       │   └── MailDriverInterface.php
 │       ├── DriverManager.php
 │       ├── Drivers/
+│       │   ├── ElasticEmailDriver.php
 │       │   ├── ImapSmtpDriver.php
 │       │   ├── MailgunDriver.php
 │       │   ├── PostmarkDriver.php

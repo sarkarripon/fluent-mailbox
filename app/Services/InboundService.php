@@ -84,13 +84,35 @@ class InboundService
                 $body = nl2br(esc_html($message->getTextContent()));
             }
 
+            // Sender-controlled HTML is rendered in the admin (v-html) —
+            // strip scripts/event handlers before it is ever persisted
+            $body = wp_kses_post($body);
+
+            $cc = [];
+            $ccHeader = $message->getHeader('cc');
+            if ($ccHeader && method_exists($ccHeader, 'getAddresses')) {
+                foreach ($ccHeader->getAddresses() as $address) {
+                    $cc[] = $address->getEmail();
+                }
+            }
+
+            // Persist attachments as WP media BEFORE the email row exists,
+            // so a storage failure aborts the import and the provider can
+            // retry the whole message instead of half of it landing
+            $attachmentIds = $this->storeAttachments($message);
+            if (is_wp_error($attachmentIds)) {
+                return $attachmentIds;
+            }
+
             // 3. Save to DB
             $emailId = Email::create([
                 'message_id' => $messageId,
                 'subject' => $subject,
                 'sender' => $from,
                 'recipients' => json_encode($recipients),
+                'cc' => $cc ? json_encode($cc) : null,
                 'body' => $body,
+                'attachments' => $attachmentIds ? json_encode($attachmentIds) : null,
                 'status' => 'inbox',
                 'is_read' => 0,
                 'mailbox_id' => $mailboxId
@@ -103,6 +125,69 @@ class InboundService
             \FluentMailbox\Services\Logger::log('Parse/Save Error', ['error' => $e->getMessage()]);
             return new \WP_Error('parse_error', $e->getMessage());
         }
+    }
+
+    /**
+     * Store every MIME attachment part as a WordPress media attachment and
+     * return the ids (the emails table stores them as a JSON id array, the
+     * same shape the compose upload flow writes).
+     *
+     * Fail-closed: on any storage error the already-saved parts are removed
+     * and a WP_Error is returned, so the caller aborts before creating the
+     * email row and the provider's retry re-imports the whole message.
+     *
+     * @param \ZBateson\MailMimeParser\IMessage $message
+     * @return int[]|\WP_Error
+     */
+    private function storeAttachments($message)
+    {
+        $attachmentIds = [];
+
+        foreach ($message->getAllAttachmentParts() as $index => $part) {
+            $content = $part->getContent();
+            if ($content === null || $content === '') {
+                continue;
+            }
+
+            $filename = sanitize_file_name((string) $part->getFilename());
+            if ($filename === '') {
+                $filename = 'attachment-' . ($index + 1);
+            }
+
+            $upload = wp_upload_bits($filename, null, $content);
+            if (!empty($upload['error'])) {
+                \FluentMailbox\Services\Logger::log('Inbound attachment store failed', ['file' => $filename, 'error' => $upload['error']]);
+                foreach ($attachmentIds as $savedId) {
+                    wp_delete_attachment($savedId, true);
+                }
+                return new \WP_Error('attachment_error', 'Failed to store inbound attachment: ' . $upload['error']);
+            }
+
+            $attachmentId = wp_insert_attachment([
+                'post_mime_type' => !empty($upload['type']) ? $upload['type'] : ((string) $part->getContentType() ?: 'application/octet-stream'),
+                'post_title' => sanitize_file_name(pathinfo($filename, PATHINFO_FILENAME)),
+                'post_content' => '',
+                'post_status' => 'inherit',
+            ], $upload['file']);
+
+            if (is_wp_error($attachmentId) || !$attachmentId) {
+                foreach ($attachmentIds as $savedId) {
+                    wp_delete_attachment($savedId, true);
+                }
+                return is_wp_error($attachmentId)
+                    ? $attachmentId
+                    : new \WP_Error('attachment_error', 'Failed to register inbound attachment: ' . $filename);
+            }
+
+            if (!function_exists('wp_generate_attachment_metadata')) {
+                require_once ABSPATH . 'wp-admin/includes/image.php';
+            }
+            wp_update_attachment_metadata($attachmentId, wp_generate_attachment_metadata($attachmentId, $upload['file']));
+
+            $attachmentIds[] = $attachmentId;
+        }
+
+        return $attachmentIds;
     }
 
     public function processFromS3($bucket, $key, $checkDuplicate = false, $mailboxId = null, $config = [])
