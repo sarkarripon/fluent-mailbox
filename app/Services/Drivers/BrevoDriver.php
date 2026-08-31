@@ -216,9 +216,16 @@ class BrevoDriver implements MailDriverInterface
                 continue;
             }
             // Fail closed on the first error: Brevo retries the whole post
-            // and already-imported items dedup on the second pass
+            // and already-imported items dedup on the second pass. The
+            // retry only happens on HTTP 429 — Brevo discards the webhook
+            // on any 5xx and on every other 4xx — so a transient import
+            // failure (attachment download, temp file, storage) must
+            // surface as 429 or the message is permanently lost
             $result = $this->importItem($item, $mailbox, $settings);
             if (is_wp_error($result)) {
+                $data = (array) $result->get_error_data();
+                $data['status'] = 429;
+                $result->add_data($data);
                 return $result;
             }
             if ($result === true) {
