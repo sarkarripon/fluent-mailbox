@@ -140,15 +140,45 @@ class PostmarkDriver implements MailDriverInterface
             $fallbackId = $payload['MessageID'] ?? ('pm_' . uniqid());
             $result = (new InboundService())->processFromContent($raw, $fallbackId, true, (int) $mailbox->id);
         } else {
-            $raw = 'From: ' . ($payload['From'] ?? '') . "\r\n"
-                . 'To: ' . ($payload['To'] ?? $mailbox->email) . "\r\n"
-                . 'Subject: ' . ($payload['Subject'] ?? '(No Subject)') . "\r\n"
-                . 'Message-ID: ' . ($payload['MessageID'] ?? ('pm_' . uniqid())) . "\r\n"
-                . 'Date: ' . ($payload['Date'] ?? '') . "\r\n"
-                . "Content-Type: text/html; charset=UTF-8\r\n\r\n"
-                . ($payload['HtmlBody'] ?? nl2br($payload['TextBody'] ?? ''));
+            // Parsed mode: rebuild the MIME from Postmark's JSON fields —
+            // including Cc and Attachments (base64 Content per the inbound
+            // webhook schema), which must not be dropped just because the
+            // mailbox isn't configured for raw posts. Sender-controlled
+            // values are CR/LF-stripped before entering the header block.
+            $sanitize = function ($value) {
+                return trim(str_replace(["\r", "\n"], ' ', (string) $value));
+            };
 
-            $result = (new InboundService())->processFromContent($raw, 'pm_' . uniqid(), true, (int) $mailbox->id);
+            $messageId = $sanitize($payload['MessageID'] ?? '') ?: ('pm_' . uniqid());
+            $headers = [
+                'From: ' . $sanitize($payload['From'] ?? ''),
+                'To: ' . $sanitize($payload['To'] ?? $mailbox->email),
+                'Subject: ' . $sanitize($payload['Subject'] ?? '(No Subject)'),
+                'Message-ID: ' . $messageId,
+                'Date: ' . $sanitize($payload['Date'] ?? ''),
+            ];
+            if (!empty($payload['Cc'])) {
+                $headers[] = 'Cc: ' . $sanitize($payload['Cc']);
+            }
+
+            $attachments = [];
+            foreach ((array) ($payload['Attachments'] ?? []) as $att) {
+                if (!empty($att['Content'])) {
+                    $attachments[] = [
+                        'name' => (string) ($att['Name'] ?? ''),
+                        'content' => (string) $att['Content'],
+                        'type' => (string) ($att['ContentType'] ?? ''),
+                    ];
+                }
+            }
+
+            $html = $payload['HtmlBody'] ?? '';
+            if ($html === '' || $html === null) {
+                $html = nl2br(esc_html((string) ($payload['TextBody'] ?? '')));
+            }
+
+            $raw = InboundService::buildRawMime($headers, $html, $attachments);
+            $result = (new InboundService())->processFromContent($raw, $messageId, true, (int) $mailbox->id);
         }
 
         if (is_wp_error($result)) {

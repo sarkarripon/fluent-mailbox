@@ -256,6 +256,62 @@ class InboundService
         return $dir;
     }
 
+    /**
+     * Build a raw MIME message from header lines, an HTML body, and
+     * base64 attachment parts — the shared reconstruction path for push
+     * providers (Elastic Email, Postmark parsed mode) whose webhooks
+     * deliver parsed fields instead of the original raw message.
+     *
+     * Header lines must already be sanitized (no CR/LF in values);
+     * attachment names/types are sanitized here.
+     *
+     * @param string[] $headers Complete header lines.
+     * @param string $html HTML body.
+     * @param array $attachments [['name' => string, 'content' => base64, 'type' => string|null], ...]
+     * @return string
+     */
+    public static function buildRawMime(array $headers, $html, array $attachments = [])
+    {
+        if (!$attachments) {
+            return implode("\r\n", $headers) . "\r\n"
+                . "MIME-Version: 1.0\r\n"
+                . "Content-Type: text/html; charset=UTF-8\r\n\r\n"
+                . $html;
+        }
+
+        $boundary = 'fm-' . md5(uniqid('', true));
+        $raw = implode("\r\n", $headers) . "\r\n"
+            . "MIME-Version: 1.0\r\n"
+            . 'Content-Type: multipart/mixed; boundary="' . $boundary . "\"\r\n\r\n"
+            . '--' . $boundary . "\r\n"
+            . "Content-Type: text/html; charset=UTF-8\r\n\r\n"
+            . $html . "\r\n";
+
+        foreach (array_values($attachments) as $i => $att) {
+            // Sender-controlled name/type land inside part headers —
+            // strip quotes, backslashes, and control characters
+            $filename = preg_replace('/[\x00-\x1f"\\\\]/', '', (string) ($att['name'] ?? ''));
+            if ($filename === '') {
+                $filename = 'attachment-' . ($i + 1);
+            }
+            $type = preg_replace('/[\x00-\x1f"\\\\]/', '', (string) ($att['type'] ?? ''));
+            if ($type === '') {
+                $detected = wp_check_filetype($filename);
+                $type = $detected['type'] ?: 'application/octet-stream';
+            }
+            // Form-urlencoded parsing decodes literal '+' to a space —
+            // map spaces back to '+' before stripping line breaks
+            $content = str_replace(["\r", "\n"], '', str_replace(' ', '+', (string) ($att['content'] ?? '')));
+            $raw .= '--' . $boundary . "\r\n"
+                . 'Content-Type: ' . $type . '; name="' . $filename . "\"\r\n"
+                . "Content-Transfer-Encoding: base64\r\n"
+                . 'Content-Disposition: attachment; filename="' . $filename . "\"\r\n\r\n"
+                . chunk_split($content) . "\r\n";
+        }
+
+        return $raw . '--' . $boundary . "--\r\n";
+    }
+
     public function processFromS3($bucket, $key, $checkDuplicate = false, $mailboxId = null, $config = [])
     {
         $s3Config = $this->resolveS3Config($config);

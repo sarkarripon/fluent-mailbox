@@ -249,35 +249,7 @@ class ElasticEmailDriver implements MailDriverInterface
             $html = nl2br(esc_html((string) ($params['body_text'] ?? '')));
         }
 
-        if ($attachments) {
-            $boundary = 'ee-' . md5($fallbackId . wp_rand());
-            $raw = implode("\r\n", $headers) . "\r\n"
-                . "MIME-Version: 1.0\r\n"
-                . 'Content-Type: multipart/mixed; boundary="' . $boundary . "\"\r\n\r\n"
-                . '--' . $boundary . "\r\n"
-                . "Content-Type: text/html; charset=UTF-8\r\n\r\n"
-                . $html . "\r\n";
-            foreach ($attachments as $att) {
-                // Sender-controlled filename lands inside part headers —
-                // strip quotes and all control characters
-                $filename = preg_replace('/[\x00-\x1f"\\\\]/', '', $att['name']);
-                $type = wp_check_filetype($filename);
-                // Form-urlencoded parsing decodes literal '+' to a space —
-                // map spaces back to '+' before stripping line breaks
-                $content = str_replace(["\r", "\n"], '', str_replace(' ', '+', $att['content']));
-                $raw .= '--' . $boundary . "\r\n"
-                    . 'Content-Type: ' . ($type['type'] ?: 'application/octet-stream') . '; name="' . $filename . "\"\r\n"
-                    . "Content-Transfer-Encoding: base64\r\n"
-                    . 'Content-Disposition: attachment; filename="' . $filename . "\"\r\n\r\n"
-                    . chunk_split($content) . "\r\n";
-            }
-            $raw .= '--' . $boundary . "--\r\n";
-        } else {
-            $raw = implode("\r\n", $headers) . "\r\n"
-                . "MIME-Version: 1.0\r\n"
-                . "Content-Type: text/html; charset=UTF-8\r\n\r\n"
-                . $html;
-        }
+        $raw = InboundService::buildRawMime($headers, $html, $attachments);
 
         // A recipient address may belong to another connected mailbox (e.g. CC),
         // but the URL-addressed mailbox wins whenever it is itself among the

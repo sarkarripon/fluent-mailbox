@@ -49,10 +49,12 @@ class Email
             $data['message_id'] = null;
         }
 
-        // Full-value dedup key: hashed from the complete Message-ID, so
-        // the unique index never conflates distinct ids the way a
-        // length-limited column prefix could
-        if (!empty($data['message_id'])) {
+        // Full-value INBOUND-ONLY dedup key: hashed from the complete
+        // Message-ID. Sent and draft rows stay NULL — a self-addressed
+        // message keeps its Message-ID from the sent copy, and hashing
+        // both would make the delivered inbox copy read as a duplicate
+        // of its own sent record.
+        if (!empty($data['message_id']) && ($data['status'] ?? '') === 'inbox') {
             $data['dedup_hash'] = hash('sha256', (string) $data['message_id']);
         }
 

@@ -40,6 +40,7 @@ final class FluentMailbox
         add_action('fluent_mailbox_sync_event', [\FluentMailbox\Services\SyncService::class, 'syncFromCron']);
         // Retry any attachment purge a crashed/timed-out deletion left pending
         add_action('fluent_mailbox_sync_event', [\FluentMailbox\Http\Controllers\AttachmentController::class, 'flushPurgeQueue']);
+        add_action('fluent_mailbox_flush_purge_queue', [\FluentMailbox\Http\Controllers\AttachmentController::class, 'flushPurgeQueue']);
         add_action('admin_menu', [$this, 'registerMenu']);
         add_action('wp_ajax_fluent_mailbox_attachment', [\FluentMailbox\Http\Controllers\AttachmentController::class, 'streamProtected']);
         add_action('admin_enqueue_scripts', [$this, 'enqueueAssets']);

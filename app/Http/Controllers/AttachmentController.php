@@ -196,6 +196,12 @@ class AttachmentController
             }
         }
         update_option(self::PURGE_QUEUE_OPTION, array_values($remaining), false);
+
+        // Retry must not depend on the polling sync cron (push-only
+        // installs never schedule it) — book a one-off retry instead
+        if ($remaining && !wp_next_scheduled('fluent_mailbox_flush_purge_queue')) {
+            wp_schedule_single_event(time() + 5 * MINUTE_IN_SECONDS, 'fluent_mailbox_flush_purge_queue');
+        }
     }
 
     private static function isReferencedByEmail($id)

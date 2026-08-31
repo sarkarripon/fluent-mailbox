@@ -116,8 +116,13 @@ class DatabaseMigration
         // exists — otherwise legacy duplicate rows would make it fail
         self::ensureDedupIndex();
 
-        return self::verifySchema();
+        // Data-migration failures (not just schema shape) must also keep
+        // the version from advancing, so the migration retries next load
+        return self::verifySchema() && empty(self::$migrationErrors);
     }
+
+    /** @var string[] Data-migration failures collected during migrate(). */
+    private static $migrationErrors = [];
 
     private static function addMissingColumns()
     {
@@ -208,10 +213,19 @@ class DatabaseMigration
             $wpdb->query("ALTER TABLE $table DROP INDEX uniq_message_mailbox");
             $unique = [];
         }
+        // Dedup is INBOUND-ONLY: a sent row sharing its Message-ID with
+        // the delivered copy (self-addressed mail) must never suppress
+        // the inbox import. Clear any hash earlier versions put on
+        // sent/draft rows; idempotent, so it runs on every migrate.
+        $wpdb->query("UPDATE $table SET dedup_hash = NULL WHERE dedup_hash IS NOT NULL AND (status = 'sent' OR status = 'draft' OR is_draft = 1)");
+
         if (empty($unique)) {
             $wpdb->query("ALTER TABLE $table MODIFY message_id varchar(255) NULL DEFAULT NULL");
             $wpdb->query("UPDATE $table SET message_id = NULL WHERE message_id = ''");
-            $wpdb->query("UPDATE $table SET dedup_hash = SHA2(message_id, 256) WHERE message_id IS NOT NULL AND dedup_hash IS NULL");
+            $wpdb->query("UPDATE $table SET dedup_hash = SHA2(message_id, 256)
+                WHERE message_id IS NOT NULL AND dedup_hash IS NULL
+                AND (status IS NULL OR (status <> 'sent' AND status <> 'draft'))
+                AND (is_draft IS NULL OR is_draft = 0)");
             // Neutralize (not delete) collisions: the oldest row keeps its
             // hash, later ones get NULL so the unique index can be created.
             // NULL-safe mailbox comparison (<=>) so still-unassigned rows
@@ -303,6 +317,7 @@ class DatabaseMigration
                 $mailboxId
             ));
             if ($assigned === false) {
+                self::$migrationErrors[] = 'Legacy mailbox assignment failed: ' . $wpdb->last_error;
                 \FluentMailbox\Services\Logger::log('Legacy mailbox assignment failed', ['error' => $wpdb->last_error]);
             }
         }
