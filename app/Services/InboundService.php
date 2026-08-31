@@ -62,16 +62,19 @@ class InboundService
             if ($checkDuplicate && $messageId) {
                 global $wpdb;
                 $table = $wpdb->prefix . 'fluent_mailbox_emails';
-                // Dedup per mailbox: the same Message-ID may legitimately arrive
-                // in several mailboxes (e.g. an email CC'd to two connected addresses)
+                // Fast-path dedup on the full-value hash key (the unique
+                // index on it is the real guard — see the insert below).
+                // Per mailbox: the same Message-ID may legitimately arrive
+                // in several mailboxes (e.g. CC'd to two connected addresses)
+                $hash = hash('sha256', (string) $messageId);
                 if ($mailboxId) {
                     $exists = $wpdb->get_var($wpdb->prepare(
-                        "SELECT id FROM $table WHERE message_id = %s AND mailbox_id = %d LIMIT 1",
-                        $messageId,
+                        "SELECT id FROM $table WHERE dedup_hash = %s AND mailbox_id = %d LIMIT 1",
+                        $hash,
                         (int) $mailboxId
                     ));
                 } else {
-                    $exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table WHERE message_id = %s LIMIT 1", $messageId));
+                    $exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table WHERE dedup_hash = %s LIMIT 1", $hash));
                 }
                 if ($exists) {
                     return false; // Skipped

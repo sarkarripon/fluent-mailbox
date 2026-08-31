@@ -49,6 +49,13 @@ class Email
             $data['message_id'] = null;
         }
 
+        // Full-value dedup key: hashed from the complete Message-ID, so
+        // the unique index never conflates distinct ids the way a
+        // length-limited column prefix could
+        if (!empty($data['message_id'])) {
+            $data['dedup_hash'] = hash('sha256', (string) $data['message_id']);
+        }
+
         // Build format array dynamically based on data keys
         $format = [];
         foreach ($data as $key => $value) {

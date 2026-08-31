@@ -76,8 +76,14 @@ final class FluentMailbox
 
         $needsMigration = version_compare($version, FLUENT_MAILBOX_VERSION, '<') || !$emailsTableExists || !$notesTableExists || !$tagsTableExists || !$emailTagsTableExists;
         if ($needsMigration) {
-            \FluentMailbox\Common\DatabaseMigration::migrate();
-            update_option('fluent_mailbox_db_version', FLUENT_MAILBOX_VERSION);
+            // Record the new version only when the schema verifiably
+            // matches it — a failed DDL must retry on the next load,
+            // not be skipped forever
+            if (\FluentMailbox\Common\DatabaseMigration::migrate()) {
+                update_option('fluent_mailbox_db_version', FLUENT_MAILBOX_VERSION);
+            } else {
+                \FluentMailbox\Services\Logger::log('Migration verification failed — db version not advanced');
+            }
             \FluentMailbox\Services\SyncService::ensureCronSchedule();
         }
     }
@@ -87,8 +93,9 @@ final class FluentMailbox
         if (file_exists(FLUENT_MAILBOX_PATH . 'vendor/autoload.php')) {
             require_once FLUENT_MAILBOX_PATH . 'vendor/autoload.php';
         }
-        \FluentMailbox\Common\DatabaseMigration::migrate();
-        update_option('fluent_mailbox_db_version', FLUENT_MAILBOX_VERSION);
+        if (\FluentMailbox\Common\DatabaseMigration::migrate()) {
+            update_option('fluent_mailbox_db_version', FLUENT_MAILBOX_VERSION);
+        }
         \FluentMailbox\Services\SyncService::ensureCronSchedule();
     }
 

@@ -109,6 +109,8 @@ class DatabaseMigration
 
         // Every mailbox needs an inbound secret for the public webhook endpoint
         self::backfillInboundSecrets();
+
+        return self::verifySchema();
     }
 
     private static function addMissingColumns()
@@ -133,7 +135,8 @@ class DatabaseMigration
             'is_draft' => "ALTER TABLE $table ADD COLUMN is_draft tinyint(1) DEFAULT 0",
             'workflow_status' => "ALTER TABLE $table ADD COLUMN workflow_status varchar(20) DEFAULT 'open'",
             'assigned_to' => "ALTER TABLE $table ADD COLUMN assigned_to bigint(20) DEFAULT NULL",
-            'mailbox_id' => "ALTER TABLE $table ADD COLUMN mailbox_id bigint(20) DEFAULT NULL"
+            'mailbox_id' => "ALTER TABLE $table ADD COLUMN mailbox_id bigint(20) DEFAULT NULL",
+            'dedup_hash' => "ALTER TABLE $table ADD COLUMN dedup_hash char(64) DEFAULT NULL"
         ];
 
         foreach ($columns_to_add as $column_name => $sql) {
@@ -163,30 +166,65 @@ class DatabaseMigration
             $wpdb->query("ALTER TABLE $table ADD INDEX mailbox_id (mailbox_id)");
         }
 
-        // DB-enforced per-mailbox de-duplication: concurrent deliveries of
-        // the same message must not double-insert, so the dedup key is a
-        // UNIQUE index and the application treats a duplicate-key insert
-        // as "already imported". Empty message ids become NULL first —
-        // NULL tuples never collide, which keeps drafts and legacy rows
-        // (no message id) out of the constraint.
+        // DB-enforced per-mailbox de-duplication on a FULL-VALUE key: the
+        // unique index pairs SHA-256(message_id) with mailbox_id, so two
+        // distinct ids can never be conflated the way a length-limited
+        // index prefix could. NON-DESTRUCTIVE migration: no row is ever
+        // deleted — where existing rows would collide, the newer rows
+        // simply keep a NULL hash (NULL tuples never participate in a
+        // unique constraint), so uniqueness applies to future inserts
+        // while all existing data, notes, and tags stay untouched.
         $unique = $wpdb->get_results("SHOW INDEX FROM $table WHERE Key_name = 'uniq_message_mailbox'");
+        $onHash = false;
+        foreach ($unique as $indexRow) {
+            if ($indexRow->Column_name === 'dedup_hash') {
+                $onHash = true;
+            }
+        }
+        if (!empty($unique) && !$onHash) {
+            // Interim 1.1.3-dev index on a message_id prefix — replace it
+            $wpdb->query("ALTER TABLE $table DROP INDEX uniq_message_mailbox");
+            $unique = [];
+        }
         if (empty($unique)) {
             $wpdb->query("ALTER TABLE $table MODIFY message_id varchar(255) NULL DEFAULT NULL");
             $wpdb->query("UPDATE $table SET message_id = NULL WHERE message_id = ''");
-            // Collapse pre-existing duplicates (keep the oldest row) so the
-            // unique index can be created; match on the index's 191-char
-            // prefix, exactly what the constraint will enforce
-            $wpdb->query("DELETE e2 FROM $table e1 JOIN $table e2
-                ON LEFT(e1.message_id, 191) = LEFT(e2.message_id, 191)
+            $wpdb->query("UPDATE $table SET dedup_hash = SHA2(message_id, 256) WHERE message_id IS NOT NULL AND dedup_hash IS NULL");
+            // Neutralize (not delete) collisions: the oldest row keeps its
+            // hash, later ones get NULL so the unique index can be created
+            $wpdb->query("UPDATE $table e2 JOIN $table e1
+                ON e1.dedup_hash = e2.dedup_hash
                 AND e1.mailbox_id = e2.mailbox_id
                 AND e2.id > e1.id
-                WHERE e1.message_id IS NOT NULL AND e1.mailbox_id IS NOT NULL");
+                SET e2.dedup_hash = NULL");
             $legacy = $wpdb->get_results("SHOW INDEX FROM $table WHERE Key_name = 'message_mailbox'");
             if (!empty($legacy)) {
                 $wpdb->query("ALTER TABLE $table DROP INDEX message_mailbox");
             }
-            $wpdb->query("ALTER TABLE $table ADD UNIQUE INDEX uniq_message_mailbox (message_id(191), mailbox_id)");
+            $wpdb->query("ALTER TABLE $table ADD UNIQUE INDEX uniq_message_mailbox (dedup_hash, mailbox_id)");
         }
+    }
+
+    /**
+     * Post-migration schema verification. The caller must not record the
+     * new database version unless this passes — otherwise a failed DDL
+     * would be silently skipped forever.
+     */
+    public static function verifySchema()
+    {
+        global $wpdb;
+        $table = $wpdb->prefix . 'fluent_mailbox_emails';
+
+        $columns = $wpdb->get_col("DESCRIBE $table");
+        if (!in_array('dedup_hash', $columns, true)) {
+            return false;
+        }
+        foreach ($wpdb->get_results("SHOW INDEX FROM $table WHERE Key_name = 'uniq_message_mailbox'") as $indexRow) {
+            if ($indexRow->Column_name === 'dedup_hash' && (int) $indexRow->Non_unique === 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
