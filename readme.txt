@@ -99,6 +99,10 @@ Yes. Add as many mailboxes as you like (e.g. marketing@, business@, support@), e
 
 IMAP mailboxes are polled every 5 minutes via WP-Cron. Amazon SES uses S3 and SNS (the plugin sets up the bucket, topic, and receipt rule for you). Mailgun, Postmark, and Elastic Email deliver via secured per-mailbox webhooks.
 
+= How are inbound attachments protected? =
+
+Attachment files from received emails are stored under `uploads/fluent-mailbox-private/` in randomized, unlisted directories with randomized filenames, registered as private media, and served only to logged-in administrators through an authenticated download endpoint. They are deleted together with their email. The directory ships a deny-all `.htaccess`; on nginx (which ignores `.htaccess`) add a rule such as `location ~ ^/wp-content/uploads/fluent-mailbox-private/ { deny all; }` for defense in depth.
+
 = Are emails stored in WordPress database? =
 
 Yes, emails are stored in a custom database table (`wp_fluent_mailbox_emails`) for quick access and management.

@@ -39,6 +39,7 @@ final class FluentMailbox
         add_filter('cron_schedules', [__CLASS__, 'registerCronInterval']);
         add_action('fluent_mailbox_sync_event', [\FluentMailbox\Services\SyncService::class, 'syncFromCron']);
         add_action('admin_menu', [$this, 'registerMenu']);
+        add_action('wp_ajax_fluent_mailbox_attachment', [\FluentMailbox\Http\Controllers\AttachmentController::class, 'streamProtected']);
         add_action('admin_enqueue_scripts', [$this, 'enqueueAssets']);
         // Run migration check on init so REST requests are covered too
         add_action('init', [__CLASS__, 'checkMigration']);

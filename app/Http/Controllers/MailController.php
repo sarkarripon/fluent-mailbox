@@ -317,7 +317,9 @@ class MailController
 
         // If email is already in trash OR permanent flag is set, permanently delete
         if ($email->status === 'trash' || $permanent) {
-            // Permanent delete - remove from database
+            // Permanent delete - remove from database, incl. its protected
+            // inbound attachment files (they must not outlive the email)
+            AttachmentController::purgeEmailAttachments($email->attachments ?? null);
             global $wpdb;
             $table = Email::getTable();
             $wpdb->delete($table, ['id' => $id], ['%d']);
@@ -363,6 +365,17 @@ class MailController
     public function emptyTrash($request)
     {
         $mailboxId = (int) $request->get_param('mailbox_id') ?: null;
+
+        // Purge protected inbound attachment files before the rows go
+        global $wpdb;
+        $table = Email::getTable();
+        $rows = $mailboxId
+            ? $wpdb->get_col($wpdb->prepare("SELECT attachments FROM $table WHERE status = 'trash' AND mailbox_id = %d AND attachments IS NOT NULL", $mailboxId))
+            : $wpdb->get_col("SELECT attachments FROM $table WHERE status = 'trash' AND attachments IS NOT NULL");
+        foreach ($rows as $attachmentsJson) {
+            AttachmentController::purgeEmailAttachments($attachmentsJson);
+        }
+
         $deleted = Email::deleteTrash($mailboxId);
 
         return rest_ensure_response([

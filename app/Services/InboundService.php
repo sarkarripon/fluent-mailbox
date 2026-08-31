@@ -128,9 +128,15 @@ class InboundService
     }
 
     /**
-     * Store every MIME attachment part as a WordPress media attachment and
-     * return the ids (the emails table stores them as a JSON id array, the
-     * same shape the compose upload flow writes).
+     * Store every MIME attachment part as a PROTECTED WordPress media
+     * attachment and return the ids (the emails table stores them as a
+     * JSON id array, the same shape the compose upload flow writes).
+     *
+     * Files live under uploads/fluent-mailbox-private/, denied to direct
+     * web access (.htaccess) and placed in an unguessable random subdir
+     * for servers that ignore .htaccess (nginx). They are served only
+     * through the authenticated admin-ajax download action and deleted
+     * with their email.
      *
      * Fail-closed: on any storage error the already-saved parts are removed
      * and a WP_Error is returned, so the caller aborts before creating the
@@ -142,6 +148,15 @@ class InboundService
     private function storeAttachments($message)
     {
         $attachmentIds = [];
+        $dir = null;
+
+        $abort = function ($error) use (&$attachmentIds) {
+            foreach ($attachmentIds as $savedId) {
+                \FluentMailbox\Http\Controllers\AttachmentController::deleteProtected($savedId);
+            }
+            \FluentMailbox\Services\Logger::log('Inbound attachment store failed', ['error' => $error]);
+            return new \WP_Error('attachment_error', 'Failed to store inbound attachment: ' . $error);
+        };
 
         foreach ($message->getAllAttachmentParts() as $index => $part) {
             $content = $part->getContent();
@@ -149,45 +164,78 @@ class InboundService
                 continue;
             }
 
+            if ($dir === null) {
+                $dir = self::protectedDir();
+                if (is_wp_error($dir)) {
+                    return $abort($dir->get_error_message());
+                }
+            }
+
             $filename = sanitize_file_name((string) $part->getFilename());
             if ($filename === '') {
                 $filename = 'attachment-' . ($index + 1);
             }
 
-            $upload = wp_upload_bits($filename, null, $content);
-            if (!empty($upload['error'])) {
-                \FluentMailbox\Services\Logger::log('Inbound attachment store failed', ['file' => $filename, 'error' => $upload['error']]);
-                foreach ($attachmentIds as $savedId) {
-                    wp_delete_attachment($savedId, true);
-                }
-                return new \WP_Error('attachment_error', 'Failed to store inbound attachment: ' . $upload['error']);
+            // Random on-disk name: even if the URL path leaks somewhere,
+            // it names nothing recognizable; the display name lives in
+            // meta and is restored on download
+            $ext = (string) pathinfo($filename, PATHINFO_EXTENSION);
+            $storedName = wp_generate_password(16, false, false) . ($ext !== '' ? '.' . $ext : '');
+            $path = $dir . '/' . $storedName;
+
+            if (file_put_contents($path, $content) === false) {
+                return $abort('could not write ' . $filename);
             }
 
+            $type = wp_check_filetype($filename);
             $attachmentId = wp_insert_attachment([
-                'post_mime_type' => !empty($upload['type']) ? $upload['type'] : ((string) $part->getContentType() ?: 'application/octet-stream'),
+                'post_mime_type' => $type['type'] ?: ((string) $part->getContentType() ?: 'application/octet-stream'),
                 'post_title' => sanitize_file_name(pathinfo($filename, PATHINFO_FILENAME)),
                 'post_content' => '',
-                'post_status' => 'inherit',
-            ], $upload['file']);
+                // private: keeps the attachment out of anonymous REST
+                // (wp/v2/media), feeds, and sitemaps — admin-only surface
+                'post_status' => 'private',
+            ], $path);
 
             if (is_wp_error($attachmentId) || !$attachmentId) {
-                foreach ($attachmentIds as $savedId) {
-                    wp_delete_attachment($savedId, true);
-                }
-                return is_wp_error($attachmentId)
-                    ? $attachmentId
-                    : new \WP_Error('attachment_error', 'Failed to register inbound attachment: ' . $filename);
+                @unlink($path);
+                return $abort(is_wp_error($attachmentId) ? $attachmentId->get_error_message() : 'could not register ' . $filename);
             }
 
-            if (!function_exists('wp_generate_attachment_metadata')) {
-                require_once ABSPATH . 'wp-admin/includes/image.php';
-            }
-            wp_update_attachment_metadata($attachmentId, wp_generate_attachment_metadata($attachmentId, $upload['file']));
-
+            update_post_meta($attachmentId, '_fluent_mailbox_protected', 1);
+            update_post_meta($attachmentId, '_fluent_mailbox_filename', $filename);
             $attachmentIds[] = $attachmentId;
         }
 
         return $attachmentIds;
+    }
+
+    /**
+     * Create (once) and return a fresh unguessable directory under the
+     * access-denied private uploads root.
+     *
+     * @return string|\WP_Error
+     */
+    private static function protectedDir()
+    {
+        $base = wp_upload_dir()['basedir'] . '/fluent-mailbox-private';
+
+        if (!is_dir($base)) {
+            if (!wp_mkdir_p($base)) {
+                return new \WP_Error('mkdir_failed', 'Cannot create ' . $base);
+            }
+            // Apache: hard deny. Nginx ignores this — the random subdir
+            // below is the barrier there (plus no public listing anywhere).
+            @file_put_contents($base . '/.htaccess', "Require all denied\nDeny from all\n");
+            @file_put_contents($base . '/index.php', "<?php // Silence is golden\n");
+        }
+
+        $dir = $base . '/' . gmdate('Y/m') . '/' . wp_generate_password(20, false, false);
+        if (!wp_mkdir_p($dir)) {
+            return new \WP_Error('mkdir_failed', 'Cannot create ' . $dir);
+        }
+
+        return $dir;
     }
 
     public function processFromS3($bucket, $key, $checkDuplicate = false, $mailboxId = null, $config = [])
